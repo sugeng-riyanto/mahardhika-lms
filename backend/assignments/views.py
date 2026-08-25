@@ -15,7 +15,7 @@ from assignments.models import Assignment, AssignmentSubmission
 from identity.permissions import (
     IsInstructorOrAbove, IsAdminOrOwner,
     _has_any_role, _has_role, get_user_organisation,
-    is_parent_of,
+    is_parent_of, IsAssignmentRole,
 )
 from courses.models import Enrolment
 
@@ -38,7 +38,7 @@ class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Assignments — instructors create, students view published."""
     audit_resource_type = 'assignment'
     serializer_class = AssignmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAssignmentRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -117,7 +117,7 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Submissions — students create/submit, instructors grade/release."""
     audit_resource_type = 'assignment_submission'
     serializer_class = AssignmentSubmissionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAssignmentRole]
 
     def get_queryset(self):
         user = self.request.user

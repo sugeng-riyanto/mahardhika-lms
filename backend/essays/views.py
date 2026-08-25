@@ -28,6 +28,7 @@ from essays.serializers import (
 from courses.models import Enrolment
 from identity.permissions import (
     _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsEssayRole,
 )
 
 
@@ -73,7 +74,7 @@ class EssayQuestionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Essay question management with RBAC filtering."""
     audit_resource_type = 'essay_question'
     serializer_class = EssayQuestionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEssayRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -109,7 +110,7 @@ class EssayResponseViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Student essay response management with RBAC."""
     audit_resource_type = 'essay_response'
     serializer_class = EssayResponseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEssayRole]
     filterset_fields = ['question', 'student', 'status']
 
     def get_queryset(self):

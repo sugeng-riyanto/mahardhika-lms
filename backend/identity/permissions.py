@@ -149,3 +149,52 @@ def is_parent_of(user, student_id: str) -> bool:
         is_active=True,
         consent_given=True,
     ).exists()
+
+
+class IsAcademicRole(BasePermission):
+    """Deny treasurer, sponsor, and third_party from academic endpoints.
+    Allows: owner, admin, instructor, student, parent."""
+    DENIED_ROLES = {'treasurer', 'sponsorship', 'third_party'}
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        roles = set(get_user_roles(request.user))
+        return not roles.intersection(self.DENIED_ROLES)
+
+
+class IsGradeRole(IsAcademicRole):
+    """Grade access: deny treasurer, sponsor, third_party.
+    Owner/admin/instructor see all in scope; student sees own released; parent sees child released."""
+    pass
+
+
+class IsEssayRole(IsAcademicRole):
+    """Essay access: deny treasurer, sponsor, third_party."""
+    pass
+
+
+class IsAssignmentRole(IsAcademicRole):
+    """Assignment access: deny treasurer, sponsor, third_party."""
+    pass
+
+
+class IsActivityRole(IsAcademicRole):
+    """Activity access: deny treasurer, sponsor, third_party."""
+    pass
+
+
+class IsSafeguardingRole(BasePermission):
+    """Safeguarding: only admin and owner."""
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and _has_any_role(
+            request.user, ['owner', 'admin']
+        )
+
+
+class IsSponsorAggregateOnly(BasePermission):
+    """Sponsor: only aggregate/programme endpoints, not individual data."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return not _has_role(request.user, 'sponsorship')

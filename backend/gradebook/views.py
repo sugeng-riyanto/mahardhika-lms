@@ -23,6 +23,7 @@ from gradebook.models import Grade, GradeEvent
 from courses.models import Enrolment
 from identity.permissions import (
     _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsGradeRole,
 )
 
 
@@ -91,7 +92,7 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Grade management with RBAC filtering and release workflow."""
     audit_resource_type = 'grade'
     serializer_class = GradeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGradeRole]
     filterset_fields = ['student', 'activity', 'released']
 
     def get_queryset(self):
@@ -300,7 +301,7 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
 class GradeEventViewSet(viewsets.ReadOnlyModelViewSet):
     """Grade event history -- read-only."""
     serializer_class = GradeEventSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGradeRole]
 
     def get_queryset(self):
         user = self.request.user
