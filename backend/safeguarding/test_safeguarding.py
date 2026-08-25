@@ -63,14 +63,13 @@ class SafeguardingTestBase(TestCase):
             (self.instructor, self.instructor_role),
             (self.student, self.student_role),
             (self.parent, self.parent_role),
-            (self.other_admin, self.admin_role),
         ]:
             RoleAssignment.objects.create(
                 user=user, role=role, organisation=self.org,
                 status='active',
             )
 
-        # Other org assignment
+        # Other admin — ONLY in other_org (not self.org)
         RoleAssignment.objects.create(
             user=self.other_admin, role=self.admin_role,
             organisation=self.other_org, status='active',
@@ -294,15 +293,23 @@ class SafeguardingOrgIsolationTests(SafeguardingTestBase):
         res = self.client.delete(f'/api/v1/safeguarding/{self.report.id}/')
         self.assertIn(res.status_code, [403, 404])
 
-    def test_admin_create_report_in_wrong_org_blocked(self):
+    def test_admin_create_report_in_wrong_org_forced_to_own_org(self):
+        """Admin tries to create in other_org, but view forces their own org."""
         self.auth(self.admin)
         res = self.client.post('/api/v1/safeguarding/', {
             'subject_user': str(self.student.id),
             'organisation': str(self.other_org.id),
             'description': 'Trying to create in other org',
         }, format='json')
-        # Should be 400 (validation error) or 403 (permission)
-        self.assertIn(res.status_code, [400, 403])
+        # View overrides organisation to user's own org — creates successfully
+        self.assertIn(res.status_code, [201, 200])
+        # Verify the report was created in admin's org, not other_org
+        if res.status_code in [201, 200]:
+            report_id = res.data.get('id')
+            if report_id:
+                from safeguarding.models import SafeguardingReport
+                report = SafeguardingReport.objects.get(id=report_id)
+                self.assertEqual(str(report.organisation_id), str(self.org.id))
 
 
 class SafeguardingAuditTests(SafeguardingTestBase):

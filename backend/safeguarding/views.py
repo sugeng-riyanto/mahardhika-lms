@@ -30,4 +30,8 @@ class SafeguardingReportViewSet(AuditLogMixin, viewsets.ModelViewSet):
         return SafeguardingReport.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(reporter=self.request.user)
+        org = get_user_organisation(self.request.user)
+        # Set extra kwargs before calling super so AuditLogMixin can log
+        serializer.validated_data['reporter'] = self.request.user
+        serializer.validated_data['organisation'] = org
+        super().perform_create(serializer)
