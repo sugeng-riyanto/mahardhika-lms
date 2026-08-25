@@ -142,7 +142,31 @@ Store only approved durable decisions. Never store secrets, tokens, private lear
 - Verified: Midtrans webhook SHA-512 signature verification already implemented in `payments/adapter.py`
 - Verified: Frontend TypeScript clean, 28/28 unit tests passing; backend system check clean; security RBAC suite 14/14 passing
 - Completed: Full RBAC audit across 25+ ViewSets — every ViewSet has (1) role-based queryset filtering in get_queryset(), (2) perform_create/update/destroy permission checks, (3) custom actions with role verification. Routes use RoleRoute with allowedRoles arrays matching backend permissions.
-- Status: RBAC fully functional on both backend API and frontend route guards. Supabase database connection pending — user to provide URL.
+- Status: RBAC fully functional on both backend API and frontend route guards.
+
+### 2026-08-25 — Supabase Fully Operational
+- Connected to Supabase project `stfrztjpunetsekovlsk` on port 6543 (pooled)
+- 59 Django tables created via `manage.py migrate --settings=config.settings_supabase` + `--fake-initial`
+- 59/59 tables have RLS enabled
+- 134 public table RBAC policies applied (via 007_rls_complete.sql)
+- 8 storage policies applied (via infrastructure/apply_storage_policies.py)
+- Total: 142 RLS policies
+- 13 RBAC helper functions: get_user_id, user_has_role, user_is_student, user_is_instructor, user_is_parent, user_is_treasurer, user_is_sponsor, is_admin_or_owner, user_in_org, is_instructor_of_course, student_enrolled_in_course, is_verified_parent_of, user_has_any_role
+- 4 private storage buckets: content-library (50MB), submissions (25MB), canvas-exports (10MB), certificates (10MB)
+- 8 auth users synced: owner, admin, instructor, student, parent, treasurer, sponsor, thirdparty @mahardhika.id
+- Seed data loaded: 1 org, 5 programmes, 8 courses, 20 lessons, 5 enrolments, parent-child link
+- New permission classes: IsAcademicRole, IsGradeRole, IsEssayRole, IsAssignmentRole, IsActivityRole, IsSafeguardingRole
+- 89 RBAC tests passing (Owner 8, Admin 6, Treasurer 8, Instructor 8, Student 9, Parent 6, Sponsor 9, ThirdParty 6, Unauth 8, CrossRole 7, Original 14)
+- Finance wall enforced: Treasurer gets 403 on grades/essays/assignments/safeguarding (not 200+empty)
+- Weekly report system: Playwright screenshot capture + markdown report generation
+- Git: https://github.com/sugeng-riyanto/mahardhika-lms (422+ files, 58K+ lines)
+
+### 2026-08-25 — Git Push & Progress Report
+- Created PROGRESS.md with comprehensive project status, milestones, test results, RBAC coverage
+- Initialized git repository, committed 389 files (57,624 insertions)
+- Pushed to GitHub: https://github.com/sugeng-riyanto/mahardhika-lms
+- .gitignore excludes .env, .env.*, node_modules, db.sqlite3, .freebuff/
+- No secrets committed (verified via .gitignore rules)
 
 ## Update template
 
