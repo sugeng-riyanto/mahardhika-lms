@@ -1,8 +1,8 @@
 # AKADEMI Digital Campus — Weekly Progress Report
 
 **Week of:** 2026-08-25
-**Git Commit:** 0928c14 (2026-08-25 08:20:01 +0700)
-**Commit Message:** Add weekly reports INDEX.md with embedded screenshots
+**Git Commit:** c4c29c5 (2026-08-25 12:12:59 +0700)
+**Commit Message:** Add staging deployment infrastructure (Vercel + Railway)
 
 ---
 
@@ -12,8 +12,8 @@
 |--------|-------|
 | Screenshots Captured | 28/28 |
 | Screenshot Failures | 0 |
-| Git Commit | 0928c14 |
-| Report Generated | 2026-08-25 01:26:18 |
+| Git Commit | c4c29c5 |
+| Report Generated | 2026-08-25 05:30:56 |
 
 ---
 
