@@ -28,7 +28,7 @@
 | 1.3 | Frontend unit tests pass | Vitest: 28/28 passing | ✅ |
 | 1.4 | Backend lint (ruff) — clean | `ruff check .` → 0 errors | ✅ |
 | 1.5 | Backend system check clean | `manage.py check` → 0 issues | ✅ |
-| 1.6 | Backend pytest suite passes | 378+ tests passing | ✅ |
+| 1.6 | Backend pytest suite passes | 425+ tests passing (identity 36, RBAC 14, gradebook 30, essays 42, notifications 51, consent 23, safeguarding 29, certificates+finance+payments 58, canvas 22, content 27, activities 13, assignments+attempts+progress+sponsorship+audit 72, treasurer RBAC 8) | ✅ |
 | 1.7 | RBAC enforcement tests pass | 89/89 tests (Owner 8, Admin 6, Treasurer 8, Instructor 8, Student 9, Parent 6, Sponsor 9, ThirdParty 6, Unauth 8, CrossRole 7, Original 14) | ✅ |
 | 1.8 | E2E Playwright tests pass | 254/254 tests across 6 spec files | ✅ |
 | 1.9 | No secrets in source code | Security scan: no hardcoded keys | ✅ |
@@ -45,7 +45,7 @@
 
 | # | Criterion | Evidence | Status |
 |---|-----------|----------|--------|
-| 2.1 | All 8 roles have positive + negative tests | 89 backend RBAC tests + 167 E2E RBAC tests | ✅ |
+| 2.1 | All 8 roles have positive + negative tests | 89 backend RBAC + 29 safeguarding + 167 E2E RBAC tests | ✅ |
 | 2.2 | Finance wall enforced (Treasurer → 403 on grades/essays/assignments) | `test_rbac_comprehensive.py::TreasurerRBACTests` — 8/8 | ✅ |
 | 2.3 | Sponsor sees aggregates only (no individual rows) | `SponsorRBACTests` — 9/9 | ✅ |
 | 2.4 | Third Party time-bound access expiry | `ThirdPartyRBACTests` — 6/6 | ✅ |
