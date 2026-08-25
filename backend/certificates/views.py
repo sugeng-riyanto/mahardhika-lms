@@ -17,6 +17,7 @@ from audit.models import AuditEvent
 from certificates.models import Certificate
 from identity.permissions import (
     _has_role, _has_any_role, get_user_organisation,
+    IsAcademicRole,
 )
 from courses.models import Enrolment
 
@@ -40,7 +41,7 @@ class CertificateViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Certificate management — RBAC-scoped."""
     audit_resource_type = 'certificate'
     serializer_class = CertificateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
 
     def get_queryset(self):
         user = self.request.user

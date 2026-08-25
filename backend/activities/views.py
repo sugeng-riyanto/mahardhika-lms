@@ -17,7 +17,8 @@ from activities.models import ActivityDefinition, ActivityQuestion, ActivityVers
 from attempts.models import Attempt, Response as AttemptResponse
 from courses.models import Enrolment
 from identity.permissions import (
-    _has_role, _has_any_role, get_user_roles, get_user_organisation
+    _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsActivityRole,
 )
 
 
@@ -44,7 +45,7 @@ class ActivityDefinitionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Activity definition management with RBAC filtering."""
     audit_resource_type = 'activity_definition'
     serializer_class = ActivityDefinitionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsActivityRole]
     filterset_fields = ['activity_type', 'status', 'lesson']
 
     def get_queryset(self):
@@ -132,7 +133,7 @@ class ActivityQuestionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Activity question management with RBAC filtering."""
     audit_resource_type = 'activity_question'
     serializer_class = ActivityQuestionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsActivityRole]
     filterset_fields = ['activity', 'question_type']
 
     def get_queryset(self):

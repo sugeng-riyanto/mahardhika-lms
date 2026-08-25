@@ -35,6 +35,7 @@ from payments.adapter import get_payment_adapter
 from finance.models import Invoice
 from identity.permissions import (
     _has_role, _has_any_role, get_user_organisation, is_parent_of,
+    IsPaymentRole,
 )
 from courses.models import Enrolment
 
@@ -89,7 +90,7 @@ class PaymentIntentViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Payment intents — RBAC-scoped."""
     audit_resource_type = 'payment_intent'
     serializer_class = PaymentIntentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsPaymentRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -194,7 +195,7 @@ class PaymentRefundViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Refund requests — Treasurer requests, Owner approves (dual approval)."""
     audit_resource_type = 'payment_refund'
     serializer_class = PaymentRefundSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsPaymentRole]
 
     def get_queryset(self):
         user = self.request.user

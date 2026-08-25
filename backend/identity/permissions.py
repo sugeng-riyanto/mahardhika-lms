@@ -198,3 +198,27 @@ class IsSponsorAggregateOnly(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         return not _has_role(request.user, 'sponsorship')
+
+
+class IsConsentRole(BasePermission):
+    """Consent/Privacy: owner, admin, student (own), parent (child)."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return _has_any_role(request.user, ['owner', 'admin', 'student', 'parent'])
+
+
+class IsSponsorshipRole(BasePermission):
+    """Sponsorship: owner, admin (manage), sponsor (own grants)."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return _has_any_role(request.user, ['owner', 'admin', 'sponsorship'])
+
+
+class IsPaymentRole(BasePermission):
+    """Payments: owner, treasurer (manage), student (own invoice), parent (child invoice)."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return _has_any_role(request.user, ['owner', 'treasurer', 'student', 'parent'])

@@ -12,6 +12,7 @@ from courses.models import Programme
 from courses.serializers import ProgrammeSerializer
 from identity.permissions import (
     _has_any_role, get_user_organisation,
+    IsAcademicRole,
 )
 
 
@@ -19,7 +20,7 @@ class ProgrammeViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Programme management -- org-scoped, read for all, write for admin/owner."""
     audit_resource_type = 'programme'
     serializer_class = ProgrammeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     search_fields = ['name', 'slug']
     filterset_fields = ['level', 'is_active', 'organisation']
 

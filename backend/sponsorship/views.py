@@ -16,7 +16,7 @@ from django.db.models import Count, Avg, Q
 
 from core.audit_mixin import AuditLogMixin
 from sponsorship.models import SponsorshipProgramme
-from identity.permissions import get_user_organisation
+from identity.permissions import get_user_organisation, IsSponsorshipRole
 
 
 class SponsorshipProgrammeSerializer(serializers.ModelSerializer):
@@ -119,7 +119,7 @@ class SponsorshipProgrammeViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Sponsorship — sponsors see own grants; admins manage all."""
     audit_resource_type = 'sponsorship_programme'
     serializer_class = SponsorshipProgrammeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSponsorshipRole]
 
     def get_queryset(self):
         user = self.request.user

@@ -21,6 +21,7 @@ from attendance.serializers import (
 from courses.models import Enrolment
 from identity.permissions import (
     _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsAcademicRole,
 )
 
 
@@ -30,7 +31,7 @@ class LessonScheduleViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Lesson schedule management with RBAC."""
     audit_resource_type = 'lesson_schedule'
     serializer_class = LessonScheduleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     filterset_fields = ['course', 'lesson', 'date', 'is_cancelled']
 
     def get_queryset(self):
@@ -96,7 +97,7 @@ class AttendanceRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Attendance record management with RBAC."""
     audit_resource_type = 'attendance_record'
     serializer_class = AttendanceRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     filterset_fields = ['schedule', 'student', 'status']
 
     def get_queryset(self):

@@ -27,7 +27,8 @@ from core.audit_mixin import AuditLogMixin
 from content.models import ContentItem, ContentStatusLog
 from courses.models import Enrolment
 from identity.permissions import (
-    _has_role, _has_any_role, get_user_roles, get_user_organisation
+    _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsAcademicRole,
 )
 
 
@@ -60,7 +61,7 @@ class ContentItemViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Content library management with lifecycle workflow."""
     audit_resource_type = 'content_item'
     serializer_class = ContentItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     filterset_fields = ['content_type', 'course', 'status']
 
     def get_queryset(self):

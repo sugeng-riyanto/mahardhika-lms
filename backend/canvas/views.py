@@ -24,7 +24,8 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from core.audit_mixin import AuditLogMixin
 from canvas.models import CanvasDocument, CanvasVersion
 from identity.permissions import (
-    _has_role, _has_any_role, get_user_roles, get_user_organisation
+    _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsAcademicRole,
 )
 
 
@@ -71,7 +72,7 @@ class CanvasDocumentViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """
     audit_resource_type = 'canvas_document'
     serializer_class = CanvasDocumentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
 
     def get_queryset(self):
         user = self.request.user

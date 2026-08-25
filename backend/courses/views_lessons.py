@@ -13,7 +13,8 @@ from core.audit_mixin import AuditLogMixin
 from courses.models import Lesson, Course, Enrolment
 from courses.serializers import LessonSerializer
 from identity.permissions import (
-    _has_role, _has_any_role, get_user_roles, get_user_organisation
+    _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsAcademicRole,
 )
 
 
@@ -21,7 +22,7 @@ class LessonViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Lesson management with RBAC filtering."""
     audit_resource_type = 'lesson'
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     filterset_fields = ['course', 'content_type', 'is_published']
 
     def get_queryset(self):

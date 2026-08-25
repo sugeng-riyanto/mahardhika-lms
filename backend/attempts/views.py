@@ -18,7 +18,8 @@ from attempts.models import Attempt, Response
 from activities.models import ActivityQuestion
 from courses.models import Enrolment
 from identity.permissions import (
-    _has_role, _has_any_role, get_user_roles, get_user_organisation
+    _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsAcademicRole,
 )
 
 
@@ -58,7 +59,7 @@ class AttemptViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Attempt management with RBAC filtering and server-side scoring."""
     audit_resource_type = 'attempt'
     serializer_class = AttemptSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     filterset_fields = ['student', 'activity', 'status']
 
     def get_queryset(self):
@@ -356,7 +357,7 @@ class ResponseViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Response management with RBAC filtering."""
     audit_resource_type = 'response'
     serializer_class = ResponseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
     filterset_fields = ['attempt', 'question']
 
     def get_queryset(self):

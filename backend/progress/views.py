@@ -15,6 +15,7 @@ from core.audit_mixin import AuditLogMixin
 from progress.models import CompletionRecord, CourseProgress
 from identity.permissions import (
     _has_role, _has_any_role, get_user_organisation, is_parent_of,
+    IsAcademicRole,
 )
 from courses.models import Course, Enrolment
 
@@ -49,7 +50,7 @@ class CompletionRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Completion records — RBAC-scoped."""
     audit_resource_type = 'completion_record'
     serializer_class = CompletionRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -129,7 +130,7 @@ class CourseProgressViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Course progress — RBAC-scoped."""
     audit_resource_type = 'course_progress'
     serializer_class = CourseProgressSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
 
     def get_queryset(self):
         user = self.request.user

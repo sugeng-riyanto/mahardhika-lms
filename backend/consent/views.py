@@ -22,7 +22,8 @@ from rest_framework.exceptions import PermissionDenied
 from core.audit_mixin import AuditLogMixin
 from consent.models import ConsentRecord, ConsentAuditLog, DataExportRequest, DataDeletionRequest
 from identity.permissions import (
-    _has_role, _has_any_role, get_user_roles, get_user_organisation
+    _has_role, _has_any_role, get_user_roles, get_user_organisation,
+    IsConsentRole,
 )
 
 
@@ -91,7 +92,7 @@ class ConsentRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Consent management with RBAC and UU PDP withdrawal support."""
     audit_resource_type = 'consent_record'
     serializer_class = ConsentRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsConsentRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -230,7 +231,7 @@ class ConsentRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
 class DataExportRequestViewSet(viewsets.ModelViewSet):
     """UU PDP Article 26 — right to data portability."""
     serializer_class = DataExportRequestSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsConsentRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -265,7 +266,7 @@ class DataExportRequestViewSet(viewsets.ModelViewSet):
 class DataDeletionRequestViewSet(viewsets.ModelViewSet):
     """UU PDP Article 26 — right to erasure."""
     serializer_class = DataDeletionRequestSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsConsentRole]
 
     def get_queryset(self):
         user = self.request.user
