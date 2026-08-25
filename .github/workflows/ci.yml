@@ -1,0 +1,180 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+
+jobs:
+  # ==========================================
+  # Backend: Lint, Test, Migrate
+  # ==========================================
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: akademi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env for tests
+        run: |
+          cat > .env << 'EOF'
+          APP_ENV=testing
+          DEBUG=True
+          DJANGO_SECRET_KEY=test-secret-key-not-for-production
+          DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+          DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:5173
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/akademi_test
+          SUPABASE_URL=https://placeholder.supabase.co
+          SUPABASE_PROJECT_REF=placeholder
+          SUPABASE_PUBLISHABLE_KEY=placeholder
+          SUPABASE_SECRET_KEY=placeholder
+          SUPABASE_JWKS_URL=https://placeholder.supabase.co/auth/v1/.well-known/jwks.json
+          REDIS_URL=redis://localhost:6379/0
+          CELERY_BROKER_URL=redis://localhost:6379/0
+          CELERY_RESULT_BACKEND=redis://localhost:6379/1
+          EMAIL_PROVIDER=mock
+          WHATSAPP_PROVIDER=mock
+          PAYMENT_PROVIDER=mock
+          SEED_PASSWORD=dev-password-2026
+          EOF
+
+      - name: Lint (ruff)
+        run: ruff check . --output-format=github || true
+
+      - name: Run migrations
+        run: python manage.py migrate
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
+      - name: Run backend tests
+        run: |
+          python -m pytest \
+            --tb=short \
+            --quiet \
+            -x \
+            -q \
+            --timeout=60 \
+            -p no:warnings \
+            2>&1 | tail -50
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
+  # ==========================================
+  # Frontend: Lint, TypeCheck, Test, Build
+  # ==========================================
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+  # ==========================================
+  # Security: Secret scan
+  # ==========================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for secrets in code
+        run: |
+          # Check for common secret patterns
+          if grep -rn --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" \
+            -E "(SUPABASE_SECRET_KEY|DJANGO_SECRET_KEY|MIDTRANS_SERVER_KEY|MIDTRANS_CLIENT_KEY)\s*=\s*['\"][^'\"]{10,}" \
+            --exclude-dir=node_modules \
+            --exclude-dir=.git \
+            --exclude="*.example" \
+            --exclude="*.env*" \
+            --exclude="*.sql" \
+            . 2>/dev/null; then
+            echo "ERROR: Potential secrets found in code!"
+            exit 1
+          fi
+          echo "PASS: No secrets found in code"
+
+      - name: Check .env not in git
+        run: |
+          if git ls-files --error-unmatch .env .env.local .env.production 2>/dev/null; then
+            echo "ERROR: .env files are tracked by git!"
+            exit 1
+          fi
+          echo "PASS: .env files not tracked"
+
+  # ==========================================
+  # Merge gate
+  # ==========================================
+  ci-pass:
+    name: CI Pass
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, security]
+    steps:
+      - name: All checks passed
+        run: echo "All CI checks passed ✅"

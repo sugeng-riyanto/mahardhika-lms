@@ -1,0 +1,14 @@
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<h1>404 Not Found</h1>
+<ul>
+<li>Code: NoSuchKey</li>
+<li>Message: The specified key does not exist.</li>
+<li>Key: amd64/k6-v0.56.0-windows-amd64.zip</li>
+<li>RequestId: A5FNGJEH5RG9EC4H</li>
+<li>HostId: 32jpZsNUUD5TWNq8PsczN7AVZSKAQGB5B4+fX6YIZwmFbosH4RSlZIKX74nCli0QoLpQCRlh89SlhVMh/3nSOStCzx0oFi0Q</li>
+</ul>
+<hr/>
+</body>
+</html>

@@ -1,0 +1,37 @@
+from django.contrib import admin
+from django.urls import path, include
+from core.views import health_check
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/v1/health/', health_check, name='health-check'),
+    path('api/v1/auth/', include('identity.urls_auth')),
+    path('api/v1/users/', include('identity.urls_users')),
+    path('api/v1/role-assignments/', include('identity.urls_roles')),
+    path('api/v1/roles/', include('identity.urls_roles_list')),
+    path('api/v1/parent-child-links/', include('identity.urls_parent_child')),
+    path('api/v1/third-party-grants/', include('identity.urls_third_party')),
+    path('api/v1/organisations/', include('organisations.urls')),
+    path('api/v1/programmes/', include('courses.urls_programmes')),
+    path('api/v1/courses/', include('courses.urls_courses')),
+    path('api/v1/lessons/', include('courses.urls_lessons')),
+    path('api/v1/content/', include('content.urls')),
+    path('api/v1/activities/', include('activities.urls')),
+    path('api/v1/essays/', include('essays.urls')),
+    path('api/v1/canvas-documents/', include('canvas.urls')),
+    path('api/v1/attempts/responses/', include('attempts.urls_responses')),
+    path('api/v1/attempts/', include('attempts.urls')),
+    path('api/v1/grades/', include('gradebook.urls')),
+    path('api/v1/audit-events/', include('audit.urls')),
+    path('api/v1/attendance/', include('attendance.urls')),
+    path('api/v1/assignments/submissions/', include('assignments.urls_submissions')),
+    path('api/v1/assignments/', include('assignments.urls')),
+    path('api/v1/sponsorship-programmes/', include('sponsorship.urls')),
+    path('api/v1/finance/', include('finance.urls')),
+    path('api/v1/payments/', include('payments.urls')),
+    path('api/v1/notifications/', include('notifications.urls')),
+    path('api/v1/certificates/', include('certificates.urls')),
+    path('api/v1/progress/', include('progress.urls')),
+    path('api/v1/consent/', include('consent.urls')),
+    path('api/v1/safeguarding/', include('safeguarding.urls')),
+]

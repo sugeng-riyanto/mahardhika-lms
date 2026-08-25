@@ -1,0 +1,342 @@
+{
+  "timestamp": "2026-08-23T12-49-41-331Z",
+  "results": [
+    {
+      "name": "Health Check (unauthenticated)",
+      "id": "health",
+      "url": "http://localhost:8000/api/v1/health/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 11.02,
+      "requests": 15252,
+      "rps": 1386.55,
+      "throughput": 492183.28,
+      "latencyAvg": 6.7,
+      "latencyP50": 7,
+      "latencyP95": 0,
+      "latencyP99": 13,
+      "latencyMax": 53,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 15252
+        }
+      }
+    },
+    {
+      "name": "Auth /me (authenticated)",
+      "id": "auth-me",
+      "url": "http://localhost:8000/api/v1/auth/me/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 1941,
+      "rps": 194.1,
+      "throughput": 118796.8,
+      "latencyAvg": 50.83,
+      "latencyP50": 49,
+      "latencyP95": 0,
+      "latencyP99": 99,
+      "latencyMax": 125,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1941
+        }
+      }
+    },
+    {
+      "name": "Course List (student)",
+      "id": "courses-list",
+      "url": "http://localhost:8000/api/v1/courses/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 1491,
+      "rps": 149.1,
+      "throughput": 56960,
+      "latencyAvg": 66.32,
+      "latencyP50": 65,
+      "latencyP95": 0,
+      "latencyP99": 113,
+      "latencyMax": 1034,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1491
+        }
+      }
+    },
+    {
+      "name": "Course List (instructor)",
+      "id": "courses-instructor",
+      "url": "http://localhost:8000/api/v1/courses/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.02,
+      "requests": 1417,
+      "rps": 141.7,
+      "throughput": 54134.4,
+      "latencyAvg": 69.66,
+      "latencyP50": 66,
+      "latencyP95": 0,
+      "latencyP99": 132,
+      "latencyMax": 285,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1417
+        }
+      }
+    },
+    {
+      "name": "Grade List (instructor)",
+      "id": "grades-instructor",
+      "url": "http://localhost:8000/api/v1/grades/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.02,
+      "requests": 1457,
+      "rps": 145.7,
+      "throughput": 55660.8,
+      "latencyAvg": 68.08,
+      "latencyP50": 67,
+      "latencyP95": 0,
+      "latencyP99": 115,
+      "latencyMax": 1048,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1457
+        }
+      }
+    },
+    {
+      "name": "Grade List (student)",
+      "id": "grades-student",
+      "url": "http://localhost:8000/api/v1/grades/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 1466,
+      "rps": 146.6,
+      "throughput": 56000,
+      "latencyAvg": 67.51,
+      "latencyP50": 66,
+      "latencyP95": 0,
+      "latencyP99": 114,
+      "latencyMax": 793,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1466
+        }
+      }
+    },
+    {
+      "name": "Essay Questions (instructor)",
+      "id": "essays-questions",
+      "url": "http://localhost:8000/api/v1/essays/questions/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 1784,
+      "rps": 178.4,
+      "throughput": 68156.8,
+      "latencyAvg": 55.45,
+      "latencyP50": 53,
+      "latencyP95": 0,
+      "latencyP99": 100,
+      "latencyMax": 891,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1784
+        }
+      }
+    },
+    {
+      "name": "Essay Responses (student)",
+      "id": "essays-responses",
+      "url": "http://localhost:8000/api/v1/essays/responses/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.02,
+      "requests": 1378,
+      "rps": 137.81,
+      "throughput": 52643.2,
+      "latencyAvg": 71.93,
+      "latencyP50": 69,
+      "latencyP95": 0,
+      "latencyP99": 133,
+      "latencyMax": 1275,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1378
+        }
+      }
+    },
+    {
+      "name": "Notifications List",
+      "id": "notifications",
+      "url": "http://localhost:8000/api/v1/notifications/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 3902,
+      "rps": 390.2,
+      "throughput": 149059.21,
+      "latencyAvg": 25.1,
+      "latencyP50": 23,
+      "latencyP95": 0,
+      "latencyP99": 63,
+      "latencyMax": 472,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 3902
+        }
+      }
+    },
+    {
+      "name": "Activity List",
+      "id": "activities",
+      "url": "http://localhost:8000/api/v1/activities/definitions/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 1684,
+      "rps": 168.4,
+      "throughput": 64329.6,
+      "latencyAvg": 58.74,
+      "latencyP50": 56,
+      "latencyP95": 0,
+      "latencyP99": 105,
+      "latencyMax": 973,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1684
+        }
+      }
+    },
+    {
+      "name": "Canvas Documents (instructor)",
+      "id": "canvas-list",
+      "url": "http://localhost:8000/api/v1/canvas-documents/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.02,
+      "requests": 1991,
+      "rps": 199.1,
+      "throughput": 76051.2,
+      "latencyAvg": 49.68,
+      "latencyP50": 48,
+      "latencyP95": 0,
+      "latencyP99": 92,
+      "latencyMax": 910,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1991
+        }
+      }
+    },
+    {
+      "name": "Attendance Records",
+      "id": "attendance",
+      "url": "http://localhost:8000/api/v1/attendance/records/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.02,
+      "requests": 1322,
+      "rps": 132.2,
+      "throughput": 50499.2,
+      "latencyAvg": 75.06,
+      "latencyP50": 73,
+      "latencyP95": 0,
+      "latencyP99": 134,
+      "latencyMax": 527,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 0,
+      "statusCodes": {
+        "200": {
+          "count": 1322
+        }
+      }
+    },
+    {
+      "name": "Audit Events (admin)",
+      "id": "audit-events",
+      "url": "http://localhost:8000/api/v1/audit-events/",
+      "method": "GET",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 2540,
+      "rps": 254,
+      "throughput": 100083.2,
+      "latencyAvg": 38.78,
+      "latencyP50": 35,
+      "latencyP95": 0,
+      "latencyP99": 106,
+      "latencyMax": 572,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 2540,
+      "statusCodes": {
+        "403": {
+          "count": 2540
+        }
+      }
+    },
+    {
+      "name": "POST Grade Create (instructor)",
+      "id": "grade-create",
+      "url": "http://localhost:8000/api/v1/grades/",
+      "method": "POST",
+      "connections": 10,
+      "duration": 10.01,
+      "requests": 2761,
+      "rps": 276.11,
+      "throughput": 144688,
+      "latencyAvg": 35.65,
+      "latencyP50": 34,
+      "latencyP95": 0,
+      "latencyP99": 85,
+      "latencyMax": 114,
+      "errors": 0,
+      "timeouts": 0,
+      "non2xx": 2761,
+      "statusCodes": {
+        "400": {
+          "count": 2761
+        }
+      }
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,1 @@
+{"name":"akademi-load-tests","version":"1.0.0","private":true,"scripts":{"load":"node run.js"},"dependencies":{"autocannon":"^8.0.0"}}

@@ -1,0 +1,353 @@
+[
+  {
+    "id": "b7c48e85-ebdc-4983-898f-d9e4e50c8bdd",
+    "name": "users.read",
+    "resource": "users",
+    "action": "read",
+    "description": "Read user profiles",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "1934ae9d-9aae-48f3-8663-6506f8439b52",
+    "name": "users.create",
+    "resource": "users",
+    "action": "create",
+    "description": "Create new users",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "e088bb5e-2e20-474a-83b4-14c90df3ea21",
+    "name": "users.update",
+    "resource": "users",
+    "action": "update",
+    "description": "Update user profiles",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "648e43ed-cbd9-4015-8d3b-9a2edfd2dc88",
+    "name": "users.delete",
+    "resource": "users",
+    "action": "delete",
+    "description": "Deactivate users",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "c7572479-6ef0-490e-8d0d-49725221ef97",
+    "name": "courses.read",
+    "resource": "courses",
+    "action": "read",
+    "description": "Read courses",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "ab0e74fc-4979-4a04-8bf0-453e7e64d003",
+    "name": "courses.create",
+    "resource": "courses",
+    "action": "create",
+    "description": "Create courses",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "a784a3b8-a70e-46df-aa4e-62de934d740c",
+    "name": "courses.update",
+    "resource": "courses",
+    "action": "update",
+    "description": "Update courses",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "9f095ac4-86b7-4fe4-9cb3-fa17c01b1550",
+    "name": "courses.delete",
+    "resource": "courses",
+    "action": "delete",
+    "description": "Delete courses",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "2e3c24bc-699e-431a-87e6-dd78362de1cb",
+    "name": "lessons.read",
+    "resource": "lessons",
+    "action": "read",
+    "description": "Read lessons",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "bf57045b-0164-4610-95c6-bc32bab3bb6d",
+    "name": "lessons.create",
+    "resource": "lessons",
+    "action": "create",
+    "description": "Create lessons",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "cc6bfd4c-e480-4e9a-8569-ac1a432e0c0c",
+    "name": "lessons.update",
+    "resource": "lessons",
+    "action": "update",
+    "description": "Update lessons",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "a14910a3-9274-4fa9-9a3a-f665b012eeb0",
+    "name": "lessons.delete",
+    "resource": "lessons",
+    "action": "delete",
+    "description": "Delete lessons",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "4ea55202-4f77-426b-b30b-a974fc3b14b9",
+    "name": "grades.read",
+    "resource": "grades",
+    "action": "read",
+    "description": "Read grades",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "d6e6a2af-cf96-48ee-8357-3c42880f564c",
+    "name": "grades.create",
+    "resource": "grades",
+    "action": "create",
+    "description": "Create grades",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "7075e1f2-43ba-4b4d-aac0-0b25ecc77c0f",
+    "name": "grades.update",
+    "resource": "grades",
+    "action": "update",
+    "description": "Update grades",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "05c3a2ae-5a35-41a6-b64e-3537eb2d1759",
+    "name": "grades.release",
+    "resource": "grades",
+    "action": "release",
+    "description": "Release grades to students",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "5e00bdd5-6add-4e6c-b7cd-6f922e2dd5e5",
+    "name": "enrolments.read",
+    "resource": "enrolments",
+    "action": "read",
+    "description": "Read enrolments",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "5dff6fb6-b6d4-4910-b910-84975f107d68",
+    "name": "enrolments.create",
+    "resource": "enrolments",
+    "action": "create",
+    "description": "Enrol students",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "2acd4305-cdd7-473e-9254-8263bee9d0af",
+    "name": "enrolments.delete",
+    "resource": "enrolments",
+    "action": "delete",
+    "description": "Drop enrolments",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "aaa24ed3-2b4d-459c-8361-cab5721a861f",
+    "name": "finance.read",
+    "resource": "finance",
+    "action": "read",
+    "description": "Read financial records",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "b9f1437d-f5d8-432f-b5cd-dedbb0fc4f28",
+    "name": "finance.create",
+    "resource": "finance",
+    "action": "create",
+    "description": "Create invoices",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "72526586-947f-4c39-95b5-a3768a25f101",
+    "name": "finance.update",
+    "resource": "finance",
+    "action": "update",
+    "description": "Update invoices",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "ef1e0c0b-4c78-489e-a4bc-dccaf7d97be5",
+    "name": "audit.read",
+    "resource": "audit",
+    "action": "read",
+    "description": "Read audit log",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "0931e777-a63c-4b35-9fec-f69df1ba7fde",
+    "name": "settings.manage",
+    "resource": "settings",
+    "action": "manage",
+    "description": "Manage organisation settings",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "f52e741b-3f87-4507-bd88-3869f08ebbe6",
+    "name": "roles.manage",
+    "resource": "roles",
+    "action": "manage",
+    "description": "Manage role assignments",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "ceae459a-2114-492e-8be7-09ccdcd90883",
+    "name": "content.read",
+    "resource": "content",
+    "action": "read",
+    "description": "Read content library",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "2139a72d-3d7e-4017-a23b-30e9b04a25cb",
+    "name": "content.create",
+    "resource": "content",
+    "action": "create",
+    "description": "Upload content",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "e38a7f74-2379-4908-9570-9a2facb10969",
+    "name": "content.update",
+    "resource": "content",
+    "action": "update",
+    "description": "Update content",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "01f70d62-026d-4cdc-8316-0db43c215a40",
+    "name": "content.delete",
+    "resource": "content",
+    "action": "delete",
+    "description": "Delete content",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "341548d3-34c0-450b-9203-af012d3bfed2",
+    "name": "canvas.read",
+    "resource": "canvas",
+    "action": "read",
+    "description": "Read canvas documents",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "1008a4ea-037d-48b9-9816-2e537f3a251b",
+    "name": "canvas.update",
+    "resource": "canvas",
+    "action": "update",
+    "description": "Update canvas (layer-specific)",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "700102e5-aa85-4991-b821-e5cd16b973ad",
+    "name": "canvas.submit",
+    "resource": "canvas",
+    "action": "submit",
+    "description": "Submit canvas for assessment",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "8a1c7340-cbda-47a3-87e9-cb1dcab9a880",
+    "name": "essays.read",
+    "resource": "essays",
+    "action": "read",
+    "description": "Read essay questions",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "bfaf4e9d-b3ad-43fd-a887-7aa2900ade9d",
+    "name": "essays.create",
+    "resource": "essays",
+    "action": "create",
+    "description": "Create essay questions",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "50f8d326-b0ce-4d3b-a62b-90cb25e867ec",
+    "name": "essays.update",
+    "resource": "essays",
+    "action": "update",
+    "description": "Update essay questions",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "af888f09-43d9-40d7-a689-c8bd11c5e435",
+    "name": "safeguarding.read",
+    "resource": "safeguarding",
+    "action": "read",
+    "description": "Read safeguarding reports",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "4fc3091b-d046-4690-bc6f-d8d562cb8569",
+    "name": "safeguarding.create",
+    "resource": "safeguarding",
+    "action": "create",
+    "description": "Create safeguarding reports",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "b2c60ebe-59eb-4932-a6e4-f007f4506c2d",
+    "name": "notifications.read",
+    "resource": "notifications",
+    "action": "read",
+    "description": "Read own notifications",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "fa6583fb-870c-45de-95d3-0f4ef3e427c8",
+    "name": "notifications.create",
+    "resource": "notifications",
+    "action": "create",
+    "description": "Create notifications (admin)",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  }
+]

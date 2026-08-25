@@ -1,0 +1,68 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+venv/
+.venv/
+env/
+*.pem
+*.key
+credentials/
+secrets/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+*.log
+
+# Vite
+frontend/dist/
+frontend/.vite/
+
+# Coverage
+htmlcov/
+.coverage
+coverage/
+.pytest_cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Supabase
+supabase/.temp/
+
+# Misc
+*.bak
+*.tmp
+*.orig
+.freebuff/
+db.sqlite3
+*.log
+.vite/

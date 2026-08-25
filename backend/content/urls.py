@@ -1,0 +1,10 @@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from content.views import ContentItemViewSet
+
+router = DefaultRouter()
+router.register(r'', ContentItemViewSet, basename='content-item')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]

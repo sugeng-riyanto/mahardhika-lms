@@ -1,0 +1,66 @@
+[
+  {
+    "id": "59f56082-45f2-4e7a-a4a5-cf4c38e67531",
+    "name": "owner",
+    "display_name": "Owner",
+    "description": "System governance and organisation configuration",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "468c39e5-c8fe-46d4-b852-29b1d0d086ce",
+    "name": "admin",
+    "display_name": "Administrator",
+    "description": "User, programme, and operational management",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "66a17d88-4cf2-4445-b388-654da4dde3e7",
+    "name": "treasurer",
+    "display_name": "Treasurer",
+    "description": "Finance, invoice, reconciliation, and financial reports",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "9db088fa-c847-460f-a555-e6d22f4d8815",
+    "name": "instructor",
+    "display_name": "Instructor",
+    "description": "Course, lesson, assessment, rubric, grading, and student progress",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "8a25d11b-f9fe-46c3-b643-69172653270f",
+    "name": "student",
+    "display_name": "Student",
+    "description": "Learning materials, activities, submissions, and personal progress",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "bb914022-d26e-473d-827e-28c780ac6bed",
+    "name": "parent",
+    "display_name": "Parent/Guardian",
+    "description": "Child progress and communication",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "552bc247-fc2e-4e37-b56c-cd3c00e3ec0f",
+    "name": "sponsorship",
+    "display_name": "Sponsor",
+    "description": "Sponsorship information and limited reports",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  },
+  {
+    "id": "900cc773-1982-4f83-b5eb-9c2770df39aa",
+    "name": "third_party",
+    "display_name": "Third Party",
+    "description": "Time-bound, purpose-bound integration support",
+    "created_at": "2026-08-24 23:01:10.130344+00:00",
+    "updated_at": "2026-08-24 23:01:10.130344+00:00"
+  }
+]
