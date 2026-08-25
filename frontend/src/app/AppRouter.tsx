@@ -86,7 +86,7 @@ export function AppRouter() {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="activities/:activityId/play" element={<ActivityPlayerPage />} />
-        <Route path="content" element={<RoleRoute allowedRoles={['admin', 'instructor']}><ContentLibraryPage /></RoleRoute>} />
+        <Route path="content" element={<RoleRoute allowedRoles={['owner', 'admin', 'instructor']}><ContentLibraryPage /></RoleRoute>} />
         <Route path="finance" element={<RoleRoute allowedRoles={['owner', 'treasurer']}><FinancePage /></RoleRoute>} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
