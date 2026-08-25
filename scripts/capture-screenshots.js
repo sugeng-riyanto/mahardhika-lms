@@ -58,12 +58,37 @@ const PAGES = [
   ['/consent',                      '28-consent',                     'Consent Management',          'parent'],
 ];
 
-// Mock auth: simulate login by setting localStorage before navigation
-async function setupAuth(page) {
-  // The app uses mock auth via localStorage when Supabase isn't configured
-  // We just need to navigate and let the mock auth auto-login as admin
+// Role-to-email mapping for mock auth
+const ROLE_EMAILS = {
+  'admin':       'admin@mahardhika.id',
+  'owner':       'owner@mahardhika.id',
+  'instructor':  'instructor@mahardhika.id',
+  'student':     'student@mahardhika.id',
+  'parent':      'parent@mahardhika.id',
+  'treasurer':   'treasurer@mahardhika.id',
+  'sponsorship': 'sponsor@mahardhika.id',
+  'third_party': 'thirdparty@mahardhika.id',
+  'all':         'admin@mahardhika.id',  // default to admin for shared pages
+  'public':      null,                    // no auth needed
+};
+
+// Login as a specific role by setting mock auth in localStorage
+async function loginAs(page, role) {
+  const email = ROLE_EMAILS[role] || ROLE_EMAILS['all'];
+  if (!email) return; // public page, no login needed
+
+  // Navigate to login page first to initialize the app
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle', timeout: 15000 });
-  await page.waitForTimeout(1000);
+  
+  // Set mock user in localStorage (this is how the app stores mock auth)
+  await page.evaluate((em) => {
+    localStorage.setItem('akademi_mock_user', em);
+    localStorage.setItem('akademi_access_token', 'mock-token-' + em);
+  }, email);
+  
+  // Reload to pick up the new auth state
+  await page.reload({ waitUntil: 'networkidle', timeout: 15000 });
+  await page.waitForTimeout(800);
 }
 
 async function captureAll() {
@@ -82,16 +107,21 @@ async function captureAll() {
   });
   const page = await context.newPage();
 
-  // Setup auth
-  await setupAuth(page);
-
   const results = [];
+  let lastRole = null;
 
   for (const [route, filename, label, roles] of PAGES) {
     const outPath = path.join(OUTPUT_DIR, `${filename}.png`);
     try {
+      // Login as the required role (skip if same role as previous page)
+      if (roles !== lastRole) {
+        await loginAs(page, roles);
+        lastRole = roles;
+      }
+
+      // Navigate to the target page
       await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle', timeout: 15000 });
-      await page.waitForTimeout(500); // Let animations settle
+      await page.waitForTimeout(800); // Let animations settle
 
       // Close any modals/notifications that might overlay
       try {

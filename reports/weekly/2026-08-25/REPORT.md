@@ -1,8 +1,8 @@
 # AKADEMI Digital Campus — Weekly Progress Report
 
 **Week of:** 2026-08-25
-**Git Commit:** be1ba9e (2026-08-25 08:13:58 +0700)
-**Commit Message:** Add weekly report system with automated screenshots
+**Git Commit:** 0928c14 (2026-08-25 08:20:01 +0700)
+**Commit Message:** Add weekly reports INDEX.md with embedded screenshots
 
 ---
 
@@ -12,8 +12,8 @@
 |--------|-------|
 | Screenshots Captured | 28/28 |
 | Screenshot Failures | 0 |
-| Git Commit | be1ba9e |
-| Report Generated | 2026-08-25 01:18:01 |
+| Git Commit | 0928c14 |
+| Report Generated | 2026-08-25 01:26:18 |
 
 ---
 
@@ -21,115 +21,115 @@
 
 ### Login Page
 ![Login Page](01-login.png)
-- Role: `public` | Size: 77KB
+- Role: `public` | Size: 187KB
 
 ### Admin Dashboard
 ![Admin Dashboard](02-admin-dashboard.png)
-- Role: `admin` | Size: 77KB
+- Role: `admin` | Size: 187KB
 
 ### Owner Dashboard
 ![Owner Dashboard](03-owner-dashboard.png)
-- Role: `owner` | Size: 77KB
+- Role: `owner` | Size: 152KB
 
 ### Instructor Dashboard
 ![Instructor Dashboard](04-instructor-dashboard.png)
-- Role: `instructor` | Size: 77KB
+- Role: `instructor` | Size: 203KB
 
 ### Student Dashboard
 ![Student Dashboard](05-student-dashboard.png)
-- Role: `student` | Size: 77KB
+- Role: `student` | Size: 188KB
 
 ### Parent Dashboard
 ![Parent Dashboard](06-parent-dashboard.png)
-- Role: `parent` | Size: 77KB
+- Role: `parent` | Size: 87KB
 
 ### Treasurer Dashboard
 ![Treasurer Dashboard](07-treasurer-dashboard.png)
-- Role: `treasurer` | Size: 77KB
+- Role: `treasurer` | Size: 112KB
 
 ### Sponsor Dashboard
 ![Sponsor Dashboard](08-sponsor-dashboard.png)
-- Role: `sponsorship` | Size: 77KB
+- Role: `sponsorship` | Size: 200KB
 
 ### Third Party Dashboard
 ![Third Party Dashboard](09-thirdparty-dashboard.png)
-- Role: `third_party` | Size: 77KB
+- Role: `third_party` | Size: 94KB
 
 ### Course List
 ![Course List](10-courses.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 120KB
 
 ### User Management
 ![User Management](11-users.png)
-- Role: `admin` | Size: 77KB
+- Role: `admin` | Size: 197KB
 
 ### Programme Management
 ![Programme Management](12-programmes.png)
-- Role: `admin` | Size: 77KB
+- Role: `admin` | Size: 175KB
 
 ### Gradebook
 ![Gradebook](13-gradebook.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 139KB
 
 ### Essay List
 ![Essay List](14-essays.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 130KB
 
 ### Annotation Canvas
 ![Annotation Canvas](15-canvas.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 276KB
 
 ### Attendance
 ![Attendance](16-attendance.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 158KB
 
 ### Calendar
 ![Calendar](17-calendar.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 136KB
 
 ### Content Library
 ![Content Library](18-content-library.png)
-- Role: `instructor` | Size: 77KB
+- Role: `instructor` | Size: 143KB
 
 ### Assignments
 ![Assignments](19-assignments.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 120KB
 
 ### Finance
 ![Finance](20-finance.png)
-- Role: `treasurer` | Size: 77KB
+- Role: `treasurer` | Size: 73KB
 
 ### Notifications
 ![Notifications](21-notifications.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 108KB
 
 ### Reports & Analytics
 ![Reports & Analytics](22-reports.png)
-- Role: `admin` | Size: 77KB
+- Role: `admin` | Size: 156KB
 
 ### Audit Log
 ![Audit Log](23-audit-log.png)
-- Role: `admin` | Size: 77KB
+- Role: `admin` | Size: 208KB
 
 ### Certificates
 ![Certificates](24-certificates.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 106KB
 
 ### Settings
 ![Settings](25-settings.png)
-- Role: `admin` | Size: 77KB
+- Role: `admin` | Size: 160KB
 
 ### Profile
 ![Profile](26-profile.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 165KB
 
 ### Privacy Notice
 ![Privacy Notice](27-privacy.png)
-- Role: `all` | Size: 77KB
+- Role: `all` | Size: 323KB
 
 ### Consent Management
 ![Consent Management](28-consent.png)
-- Role: `parent` | Size: 77KB
+- Role: `parent` | Size: 136KB
 
 ---
 
