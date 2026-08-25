@@ -37,3 +37,6 @@ black>=24.8,<25.0
 
 # CORS
 django-cors-headers
+
+# Production server
+gunicorn>=22.0,<23.0

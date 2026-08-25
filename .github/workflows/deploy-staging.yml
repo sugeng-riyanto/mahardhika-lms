@@ -1,0 +1,140 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  # ==========================================
+  # Backend: Test → Deploy to Railway
+  # ==========================================
+  deploy-backend:
+    name: Deploy Backend to Railway
+    runs-on: ubuntu-latest
+    needs: []  # runs in parallel with frontend
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Run backend tests
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          DATABASE_URL: "sqlite:///db.sqlite3"
+          SUPABASE_URL: "https://placeholder.supabase.co"
+          SUPABASE_SECRET_KEY: "placeholder"
+          SUPABASE_PUBLISHABLE_KEY: "placeholder"
+        run: |
+          pip install -r requirements.txt
+          python manage.py migrate --settings=config.settings
+          python -m pytest --tb=short --quiet -x -q --timeout=60 -p no:warnings 2>&1 | tail -20
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: |
+          railway up --service akademi-staging-api --environment staging
+          railway service logs --service akademi-staging-api --environment staging 2>&1 | tail -20
+
+  # ==========================================
+  # Frontend: Build → Deploy to Vercel
+  # ==========================================
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    needs: []
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_URL: /api/v1
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel (staging)
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel deploy --prod --token=$VERCEL_TOKEN --yes
+
+  # ==========================================
+  # Post-deploy: Run E2E tests against staging
+  # ==========================================
+  e2e-staging:
+    name: E2E Tests on Staging
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: success()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: Run E2E tests against staging
+        working-directory: frontend
+        env:
+          BASE_URL: https://akademi-staging.vercel.app
+        run: |
+          npx playwright test \
+            --project=chromium \
+            --reporter=line \
+            --timeout=30000 \
+            -g "Login Flow|Protected Routes|Page Routing"
