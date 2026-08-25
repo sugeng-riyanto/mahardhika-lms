@@ -19,7 +19,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], launchOptions: { args: ['--no-sandbox', '--disable-gpu'] } },
     },
     {
       name: 'firefox',
@@ -27,7 +27,7 @@ export default defineConfig({
     },
     {
       name: 'tablet',
-      use: { ...devices['iPad (gen 7)'] },
+      use: { ...devices['iPad (gen 7)'], launchOptions: { args: ['--no-sandbox', '--disable-gpu'] } },
     },
   ],
   webServer: {

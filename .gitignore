@@ -66,3 +66,4 @@ supabase/.temp/
 db.sqlite3
 *.log
 .vite/
+frontend/test-results/
