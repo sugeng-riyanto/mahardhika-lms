@@ -162,7 +162,13 @@ class SponsorshipProgrammeViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='aggregate')
     def aggregate_stats(self, request):
-        """Return aggregate stats across all sponsor's programmes."""
+        """Return aggregate stats across all sponsor's programmes.
+
+        UU PDP compliance: if total unique students < SPONSOR_DISCLOSURE_THRESHOLD,
+        individual-level aggregates are suppressed to prevent small-group identification.
+        """
+        SPONSOR_DISCLOSURE_THRESHOLD = 10  # Minimum students before showing aggregates
+
         user = request.user
         programmes = SponsorshipProgramme.objects.filter(
             sponsor_user=user,
@@ -187,16 +193,31 @@ class SponsorshipProgrammeViewSet(AuditLogMixin, viewsets.ModelViewSet):
             except Exception:
                 pass
 
-        # Consent summary
-        consent_summary = {'learning': 0, 'analytics': 0, 'communication': 0, 'third_party': 0}
-        try:
-            from consent.models import ConsentRecord
-            for purpose in consent_summary:
-                consent_summary[purpose] = ConsentRecord.objects.filter(
-                    purpose=purpose, granted=True,
-                ).count()
-        except Exception:
-            pass
+        # Consent summary — only if above disclosure threshold
+        consent_summary = {}
+        if total_students >= SPONSOR_DISCLOSURE_THRESHOLD:
+            consent_summary = {'learning': 0, 'analytics': 0, 'communication': 0, 'third_party': 0}
+            try:
+                from consent.models import ConsentRecord
+                for purpose in consent_summary:
+                    consent_summary[purpose] = ConsentRecord.objects.filter(
+                        purpose=purpose, granted=True,
+                    ).count()
+            except Exception:
+                pass
+
+        # Suppress grade averages if below threshold (prevent small-group identification)
+        average_grade = None
+        if total_students >= SPONSOR_DISCLOSURE_THRESHOLD:
+            try:
+                from gradebook.models import Grade
+                avg = Grade.objects.filter(
+                    activity__lesson__course__programme__organisation=user.organisation,
+                    released=True,
+                ).aggregate(avg=Avg('score'))['avg']
+                average_grade = round(float(avg), 1) if avg else 0
+            except Exception:
+                pass
 
         return DRFResponse({
             'programme_count': programmes.count(),
@@ -205,5 +226,8 @@ class SponsorshipProgrammeViewSet(AuditLogMixin, viewsets.ModelViewSet):
             'total_fund': total_fund,
             'total_utilised': total_utilised,
             'fund_percentage': round((total_utilised / total_fund * 100), 1) if total_fund > 0 else 0,
+            'average_grade': average_grade,
             'consent_summary': consent_summary,
+            'disclosure_threshold': SPONSOR_DISCLOSURE_THRESHOLD,
+            'threshold_met': total_students >= SPONSOR_DISCLOSURE_THRESHOLD,
         })
