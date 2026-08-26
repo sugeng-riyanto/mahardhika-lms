@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/auth/AuthProvider'
 import { isSupabaseConfigured } from '@/api/supabase'
+import { t } from '@/i18n/translations'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -64,8 +65,8 @@ export function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl mb-4">
             <span className="text-white font-bold text-2xl">A</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">AKADEMI Digital Campus</h1>
-          <p className="text-navy-400 mt-2">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-white">{t('app.name')}</h1>
+          <p className="text-navy-400 mt-2">{t('app.subtitle')}</p>
         </div>
 
         {/* Login form */}
@@ -80,13 +81,13 @@ export function LoginPage() {
 
             <div>
               <label htmlFor="email" className="label">
-                Email address
+                {t('auth.email')}
               </label>
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.email.placeholder')}
                 className="input-field focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 aria-describedby={errors.email ? 'email-error' : undefined}
                 aria-invalid={!!errors.email}
@@ -99,14 +100,14 @@ export function LoginPage() {
 
             <div>
               <label htmlFor="password" className="label">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.password.placeholder')}
                   className="input-field pr-10"
                   {...register('password')}
                 />
@@ -130,13 +131,13 @@ export function LoginPage() {
                   type="checkbox"
                   className="w-4 h-4 rounded border-navy-600 bg-navy-800 text-cyan-500 focus:ring-cyan-500"
                 />
-                <span className="text-sm text-navy-300">Remember me</span>
+                <span className="text-sm text-navy-300">{t('auth.remember')}</span>
               </label>
               <Link
                 to="/forgot-password"
                 className="text-sm text-cyan-400 hover:text-cyan-300"
               >
-                Forgot password?
+                {t('auth.forgot')}
               </Link>
             </div>
 
@@ -149,10 +150,10 @@ export function LoginPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Signing in...
+                  {t('auth.signin')}...
                 </>
               ) : (
-                'Sign in'
+                t('auth.signin')
               )}
             </button>
           </form>
