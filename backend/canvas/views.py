@@ -310,3 +310,70 @@ class CanvasDocumentViewSet(AuditLogMixin, viewsets.ModelViewSet):
             return Response({'error': 'Version not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = CanvasVersionSerializer(version)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='export')
+    def export_canvas(self, request, pk=None):
+        """Export canvas document as structured JSON (for PDF/PNG rendering on frontend).
+
+        Returns the document data with all layers and metadata.
+        The frontend renders this into PDF or PNG.
+
+        RBAC:
+        - Owner/Admin: export any canvas
+        - Instructor: export canvas for their courses
+        - Student: export own canvas
+        - Parent: export linked child's canvas (released only)
+        """
+        doc = self.get_object()
+        user = request.user
+        roles = get_user_roles(user)
+
+        # Students can only export their own
+        if 'student' in roles and doc.student_id != user.id:
+            raise PermissionDenied('You can only export your own canvas.')
+
+        # Parents can only export released child canvas
+        if 'parent' in roles:
+            if doc.status not in ('finalised',):
+                raise PermissionDenied('You can only export finalised canvas.')
+
+        # Instructors can only export their course's canvas
+        if 'instructor' in roles:
+            if not doc.course or doc.course.instructor_id != user.id:
+                raise PermissionDenied('You can only export canvas for your own courses.')
+
+        format_type = request.query_params.get('format', 'json')
+
+        export_data = {
+            'document_id': str(doc.id),
+            'schema_version': doc.schema_version,
+            'status': doc.status,
+            'version': doc.document_version,
+            'checksum': doc.checksum,
+            'page_width': doc.page_width,
+            'page_height': doc.page_height,
+            'exported_at': timezone.now().isoformat(),
+            'layers': {
+                'question': doc.question_data,
+                'student_answer': doc.student_answer_data,
+                'teacher_feedback': doc.teacher_feedback_data,
+                'student_revision': doc.student_revision_data,
+            },
+            'metadata': {
+                'student_email': doc.student.email if doc.student else '',
+                'course_name': doc.course.title if doc.course else '',
+                'submitted_version': doc.submitted_version,
+                'is_locked': doc.is_locked,
+            },
+        }
+
+        if format_type == 'json':
+            return Response(export_data)
+
+        # For PDF/PNG, return the structured data for frontend rendering
+        return Response({
+            'format': format_type,
+            'render_url': f'/api/v1/canvas-documents/{doc.id}/export?format=json',
+            'message': f'Use the JSON data to render {format_type.upper()} on the frontend.',
+            'data': export_data,
+        })

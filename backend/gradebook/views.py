@@ -297,6 +297,85 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
         return DRFResponse(GradeSerializer(grade).data)
 
+    @action(detail=False, methods=['get'], url_path='export-csv')
+    def export_csv(self, request):
+        """Export grades as CSV.
+
+        Query params:
+        - activity: filter by activity ID
+        - course: filter by course ID
+        - released_only: only export released grades (default: false)
+
+        RBAC:
+        - Owner/Admin: export all grades in org
+        - Instructor: export grades for their courses
+        - Student: export own grades only
+        - Parent: export linked child's released grades
+        """
+        import csv
+        from django.http import HttpResponse
+
+        user = request.user
+        roles = get_user_roles(user)
+        org = get_user_organisation(user)
+
+        qs = Grade.objects.select_related('student', 'activity', 'activity__lesson', 'activity__lesson__course')
+
+        if _has_any_role(user, ['owner', 'admin']):
+            if org:
+                qs = qs.filter(activity__organisation=org)
+        elif 'instructor' in roles:
+            qs = qs.filter(activity__lesson__course__instructor=user)
+        elif 'student' in roles:
+            qs = qs.filter(student=user)
+        elif 'parent' in roles:
+            from identity.models import ParentChildLink
+            child_ids = ParentChildLink.objects.filter(
+                parent_user=user, is_verified=True, is_active=True, consent_given=True,
+            ).values_list('student_user_id', flat=True)
+            qs = qs.filter(student_id__in=child_ids, released=True)
+        else:
+            return DRFResponse({'detail': 'No access to grades.'}, status=403)
+
+        # Apply filters
+        activity_id = request.query_params.get('activity')
+        if activity_id:
+            qs = qs.filter(activity_id=activity_id)
+
+        course_id = request.query_params.get('course')
+        if course_id:
+            qs = qs.filter(activity__lesson__course_id=course_id)
+
+        released_only = request.query_params.get('released_only', 'false').lower() == 'true'
+        if released_only:
+            qs = qs.filter(released=True)
+
+        # Build CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="grades-{timezone.now().strftime("%Y%m%d")}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'Student Email', 'Student Name', 'Activity', 'Course',
+            'Score', 'Max Score', 'Percentage', 'Released', 'Released At', 'Graded At',
+        ])
+
+        for grade in qs[:1000]:  # Limit to 1000 rows
+            writer.writerow([
+                grade.student.email if grade.student else '',
+                grade.student.full_name if grade.student else '',
+                grade.activity.title if grade.activity else '',
+                grade.activity.lesson.course.title if grade.activity and grade.activity.lesson and grade.activity.lesson.course else '',
+                str(grade.score),
+                str(grade.max_score),
+                str(grade.percentage) if grade.percentage else '',
+                'Yes' if grade.released else 'No',
+                grade.released_at.isoformat() if grade.released_at else '',
+                grade.created_at.isoformat() if grade.created_at else '',
+            ])
+
+        return response
+
 
 class GradeEventViewSet(viewsets.ReadOnlyModelViewSet):
     """Grade event history -- read-only."""
