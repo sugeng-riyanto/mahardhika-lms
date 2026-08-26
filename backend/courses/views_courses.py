@@ -15,7 +15,7 @@ from courses.models import Course, Enrolment
 from courses.serializers import CourseSerializer
 from identity.permissions import (
     _has_role, _has_any_role, get_user_roles, get_user_organisation,
-    IsAcademicRole,
+    IsAcademicReadOrSponsorRole,
 )
 
 
@@ -23,7 +23,7 @@ class CourseViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Course management with RBAC filtering."""
     audit_resource_type = 'course'
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated, IsAcademicRole]
+    permission_classes = [IsAuthenticated, IsAcademicReadOrSponsorRole]
     search_fields = ['title', 'slug']
     filterset_fields = ['programme', 'is_published', 'instructor']
 

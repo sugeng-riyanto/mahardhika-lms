@@ -223,3 +223,22 @@ class IsPaymentRole(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         return _has_any_role(request.user, ['owner', 'treasurer', 'student', 'parent'])
+
+
+class IsAcademicReadOrSponsorRole(BasePermission):
+    """Academic read-only + sponsor read-only.
+    Allows: owner, admin, instructor, student, parent (full).
+    Allows sponsor on GET/HEAD/OPTIONS only (read-only programmes/courses).
+    Denies: treasurer, third_party."""
+    DENIED_ROLES = {'treasurer', 'third_party'}
+    SPONSOR_READ = {'sponsorship'}
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        roles = set(get_user_roles(request.user))
+        if not roles.intersection(self.DENIED_ROLES):
+            return True  # owner, admin, instructor, student, parent
+        if roles.intersection(self.SPONSOR_READ) and request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return True  # sponsor can read
+        return False
