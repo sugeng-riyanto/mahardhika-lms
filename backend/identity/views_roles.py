@@ -18,7 +18,7 @@ from identity.serializers import (
 )
 from core.audit_mixin import AuditLogMixin
 from identity.permissions import (
-    IsAdminOrOwner, _has_role, _has_any_role, get_user_roles, get_user_organisation
+    IsAdminOrOwner, IsConsentRole, _has_role, _has_any_role, get_user_roles, get_user_organisation
 )
 
 logger = logging.getLogger('audit')
@@ -79,7 +79,7 @@ class ParentChildLinkViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Manage parent-child relationships — org-scoped."""
     audit_resource_type = 'parent_child_link'
     serializer_class = ParentChildLinkSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsConsentRole]
     filterset_fields = ['parent_user', 'student_user', 'is_verified', 'is_active']
 
     def get_queryset(self):
@@ -138,6 +138,11 @@ class ParentChildLinkViewSet(AuditLogMixin, viewsets.ModelViewSet):
         link.save(update_fields=['consent_given', 'consent_date', 'updated_at'])
         logger.info(f'Consent granted: {link.id} by {request.user.email}')
         return Response({'status': 'consent_granted'})
+
+    def perform_destroy(self, instance):
+        if not _has_any_role(self.request.user, ['owner', 'admin']):
+            raise PermissionDenied('Only admins can delete parent-child links.')
+        instance.delete()
 
 
 class ThirdPartyGrantViewSet(AuditLogMixin, viewsets.ModelViewSet):

@@ -28,7 +28,7 @@ from essays.serializers import (
 from courses.models import Enrolment
 from identity.permissions import (
     _has_role, _has_any_role, get_user_roles, get_user_organisation,
-    IsEssayRole,
+    IsEssayRole, IsAcademicRole,
 )
 
 
@@ -344,7 +344,7 @@ class RubricCriterionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Rubric criterion management."""
     audit_resource_type = 'rubric_criterion'
     serializer_class = RubricCriterionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEssayRole]
     filterset_fields = ['question']
 
     def get_serializer_class(self):
@@ -391,6 +391,11 @@ class RubricCriterionViewSet(AuditLogMixin, viewsets.ModelViewSet):
             return
         raise PermissionDenied('You do not have permission to edit rubric criteria.')
 
+    def perform_destroy(self, instance):
+        if not _has_any_role(self.request.user, ['owner', 'admin']):
+            raise PermissionDenied('Only owners and admins can delete rubric criteria.')
+        instance.delete()
+
 
 # ─── Rubric Score ────────────────────────────────────────────────────────
 
@@ -398,7 +403,7 @@ class RubricScoreViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Rubric scoring by instructors."""
     audit_resource_type = 'rubric_score'
     serializer_class = RubricScoreSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEssayRole]
     filterset_fields = ['response', 'criterion']
 
     def get_queryset(self):
@@ -455,6 +460,11 @@ class RubricScoreViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
         raise PermissionDenied('You do not have permission to modify rubric scores.')
 
+    def perform_destroy(self, instance):
+        if not _has_any_role(self.request.user, ['owner', 'admin']):
+            raise PermissionDenied('Only owners and admins can delete rubric scores.')
+        instance.delete()
+
 
 # ─── Inline Feedback ─────────────────────────────────────────────────────
 
@@ -462,7 +472,7 @@ class InlineFeedbackViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """Inline teacher feedback on essay responses."""
     audit_resource_type = 'inline_feedback'
     serializer_class = InlineFeedbackSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEssayRole]
     filterset_fields = ['response', 'anchor_type']
 
     def get_queryset(self):
@@ -522,3 +532,8 @@ class InlineFeedbackViewSet(AuditLogMixin, viewsets.ModelViewSet):
             return
 
         raise PermissionDenied('You do not have permission to modify inline feedback.')
+
+    def perform_destroy(self, instance):
+        if not _has_any_role(self.request.user, ['owner', 'admin']):
+            raise PermissionDenied('Only owners and admins can delete inline feedback.')
+        instance.delete()

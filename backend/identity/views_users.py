@@ -14,7 +14,7 @@ from core.audit_mixin import AuditLogMixin
 from identity.models import User, Profile
 from identity.serializers import UserSerializer, ProfileSerializer
 from identity.permissions import (
-    IsAdminOrOwner, _has_role, _has_any_role, get_user_roles, get_user_organisation
+    IsAdminOrOwner, IsAcademicRole, _has_role, _has_any_role, get_user_roles, get_user_organisation
 )
 
 
@@ -58,7 +58,7 @@ class ProfileViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """User profile management."""
     audit_resource_type = 'profile'
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAcademicRole]
 
     def get_queryset(self):
         user = self.request.user

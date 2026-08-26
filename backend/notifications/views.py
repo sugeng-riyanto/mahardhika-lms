@@ -53,6 +53,16 @@ class NotificationViewSet(AuditLogMixin, viewsets.ModelViewSet):
             raise PermissionDenied('Only admins can create notifications.')
         serializer.save()
 
+    def perform_update(self, serializer):
+        """Users can update their own notifications (mark as read)."""
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Only admins/owners can delete notifications."""
+        if not _has_any_role(self.request.user, ['owner', 'admin']):
+            raise PermissionDenied('Only admins can delete notifications.')
+        instance.delete()
+
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
         """Mark a single notification as read."""
