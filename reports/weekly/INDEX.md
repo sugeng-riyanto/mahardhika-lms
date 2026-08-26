@@ -19,6 +19,7 @@ git push
 
 | Week | Date | Screenshots | Status |
 |------|------|-------------|--------|
+| Week 2 | [2026-08-26](./2026-08-26/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-26/REPORT.md) |
 | Week 1 | [2026-08-25](./2026-08-25/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-25/REPORT.md) |
 
 ---
@@ -83,3 +84,35 @@ git push
 
 *All screenshots are captured automatically from the live dev server using Playwright.*
 *For detailed metrics, see the [full report](./2026-08-25/REPORT.md).*
+
+---
+
+## Week 2 — August 26, 2026
+
+### 🌐 Public Access
+
+| URL | Description |
+|-----|-------------|
+| https://bd53-2404-8000-100c-11f6-7c93-f20-7b8d-abfa.ngrok-free.app | Public URL (ngrok) |
+| http://localhost:5173 | Local development |
+
+### 🔐 RBAC Updates
+
+- **34/34 ViewSets** now have explicit role-based permission classes
+- **IsFinanceRole fix:** admin can now list invoices
+- **Safeguarding fix:** admin org isolation + audit mixin
+- **254 E2E tests** passing across all 8 roles
+
+### 📊 Week 2 Summary
+
+| Metric | Value |
+|--------|-------|
+| Screenshots | 28/28 ✅ |
+| E2E Tests | 254/254 ✅ |
+| Backend Tests | 425+ ✅ |
+| RBAC Permission Classes | 34/34 ✅ |
+| RLS Policies | 142 ✅ |
+| RBAC Roles | 8 ✅ |
+| ngrok Public URL | ✅ Active |
+
+*For detailed metrics, see the [full report](./2026-08-26/REPORT.md).*

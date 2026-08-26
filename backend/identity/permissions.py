@@ -53,10 +53,11 @@ class IsInstructorOrAbove(BasePermission):
 
 
 class IsFinanceRole(BasePermission):
-    """Allow treasurer and owner for finance operations."""
+    """Allow owner, admin, and treasurer for finance operations.
+    RBAC matrix: Treasurer=G, Admin=Operational support, Owner=Governance summary."""
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and _has_any_role(
-            request.user, ['owner', 'treasurer']
+            request.user, ['owner', 'admin', 'treasurer']
         )
 
 

@@ -100,7 +100,10 @@ async function captureAll() {
   // Create output directory
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+  });
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2,

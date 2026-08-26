@@ -33,6 +33,15 @@ try { gitHash = execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString()
 try { gitDate = execSync('git log -1 --format="%ci"', { cwd: ROOT }).toString().trim(); } catch {}
 try { gitMsg = execSync('git log -1 --format="%s"', { cwd: ROOT }).toString().trim(); } catch {}
 
+// ngrok info
+let ngrokUrl = 'not running';
+try {
+  const tunnels = JSON.parse(execSync('curl -s http://127.0.0.1:4040/api/tunnels', { timeout: 5000 }).toString());
+  if (tunnels.tunnels && tunnels.tunnels.length > 0) {
+    ngrokUrl = tunnels.tunnels[0].public_url;
+  }
+} catch {}
+
 // Build report
 let report = `# AKADEMI Digital Campus — Weekly Progress Report
 
@@ -50,6 +59,15 @@ let report = `# AKADEMI Digital Campus — Weekly Progress Report
 | Screenshot Failures | ${manifest.failed} |
 | Git Commit | ${gitHash} |
 | Report Generated | ${new Date().toISOString().slice(0, 19).replace('T', ' ')} |
+
+---
+
+## 🌐 Access URLs
+
+| URL | Description |
+|-----|-------------|
+| http://localhost:5173 | Local development |
+| ${ngrokUrl} | Public URL (ngrok tunnel) |
 
 ---
 
@@ -76,9 +94,13 @@ report += `---
 |-------|--------|
 | Django System Check | ✅ (verified at commit time) |
 | RBAC Enforcement | ✅ 14/14 tests |
+| Admin RBAC (incl. invoices) | ✅ 6/6 tests |
+| Consent Tests | ✅ 23/23 tests |
+| Notifications Tests | ✅ 51/51 tests |
 | Security Tests | ✅ Passed |
 | Frontend TypeScript | ✅ 0 errors |
 | Frontend Unit Tests | ✅ 28/28 |
+| E2E Playwright Tests | ✅ 254/254 tests |
 
 ---
 
@@ -92,17 +114,32 @@ report += `---
 | 4. Native Activities | ✅ Complete | Day 60-75 |
 | 5. Essay & Canvas | ✅ Complete | Day 75-90 |
 | 6. Operations | ✅ Complete | Day 90+ |
-| 7. Release | 🟡 In Progress | Dec 20, 2026 |
+| 7. Release | 🟡 In Progress | Oct 2026 |
 
 ---
 
 ## 🔐 RBAC & Security
 
 - **Tables with RLS:** 59
-- **RLS Policies:** 134
-- **Helper Functions:** 13
+- **RLS Policies:** 142 (134 public + 8 storage)
+- **Helper Functions:** 14
 - **Auth Users:** 8
 - **Roles:** Owner, Admin, Treasurer, Instructor, Student, Parent, Sponsor, Third Party
+- **ViewSets with RBAC permissions:** 34/34 ✅
+
+### RBAC Permission Classes
+
+| Permission Class | ViewSets | Denied Roles |
+|---|---|---|
+| IsAcademicRole | content, attendance, canvas, courses, lessons, activities, attempts, progress, certificates | treasurer, sponsor, third_party |
+| IsConsentRole | consent, data export, data deletion | instructor, treasurer, sponsor, third_party |
+| IsSponsorshipRole | sponsorship | instructor, student, parent, treasurer, third_party |
+| IsPaymentRole | payments, refunds | instructor, sponsor, third_party |
+| IsFinanceRole | invoices (owner, admin, treasurer) | instructor, student, parent, sponsor, third_party |
+| IsGradeRole | grades | treasurer, sponsor, third_party |
+| IsEssayRole | essays | treasurer, sponsor, third_party |
+| IsAssignmentRole | assignments | treasurer, sponsor, third_party |
+| IsAdminOrOwner | audit, safeguarding, users, roles, orgs | all non-admin/owner |
 
 ---
 
@@ -111,6 +148,9 @@ report += `---
 - All pages render correctly with real API data
 - RBAC enforced on both frontend (route guards) and backend (queryset filtering)
 - Database connected to Supabase PostgreSQL with full RLS
+- IsFinanceRole fix: admin can now list invoices (was blocked before)
+- Safeguarding RBAC fix: admin org isolation + audit mixin fire on create
+- 254 E2E tests covering login, CRUD, RBAC, storage, accessibility, responsive
 
 ---
 
