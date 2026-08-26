@@ -245,10 +245,10 @@
 |---|-----------|----------|--------|
 | 11.1 | Frontend build size acceptable | JS 230KB gzipped (limit 500KB) | ✅ |
 | 11.2 | Page load < 3s on 3G | Lighthouse performance score > 90 | ⬜ |
-| 11.3 | API response time < 500ms (p95) | Load test results | ⬜ |
+| 11.3 | API response time < 500ms (p95) | k6: P95 = 8ms (62x under threshold) | ✅ |
 | 11.4 | Database query performance | No N+1 queries, indexes verified | ⬜ |
 | 11.5 | Static asset caching | Cache-Control headers set | ⬜ |
-| 11.6 | Concurrent user test (50+ users) | Load test with k6/Artillery | ⬜ |
+| 11.6 | Concurrent user test (50+ users) | k6: 4,005 requests in 2min, 50 VUs | ✅ |
 | 11.7 | Memory leak check | No heap growth over 1hr | ⬜ |
 | 11.8 | Canvas autosave performance | Debounce + optimistic concurrency | ⬜ |
 | 11.9 | File upload performance | 25MB file upload < 10s | ⬜ |
@@ -338,7 +338,7 @@
 | 8 | Security Review | Sep 15 | ⬜ 8/10 | ⬜ |
 | 9 | Privacy & Compliance | Sep 22 | ⬜ 5/10 | ⬜ |
 | 10 | Accessibility Audit | Sep 29 | ⬜ 9/10 | ⬜ |
-| 11 | Performance & Load Testing | Oct 1 | ⬜ 2/10 | ⬜ |
+| 11 | Performance & Load Testing | Oct 1 | ⬜ 4/10 | ⬜ |
 | 12 | UAT | Oct 8 | ⬜ | ⬜ |
 | 13 | Production Deployment | Oct 15 | ⬜ | ⬜ |
 | 14 | Go-Live Sign-off | Oct 20 | ⬜ | ⬜ |
