@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
   NODE_VERSION: "20"
 
 jobs:
@@ -80,6 +80,11 @@ jobs:
       - name: Lint (ruff)
         run: ruff check . --output-format=github || true
 
+      - name: System check
+        run: python manage.py check
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
       - name: Run migrations
         run: python manage.py migrate
         env:
@@ -102,7 +107,7 @@ jobs:
   # Frontend: Lint, TypeCheck, Test, Build
   # ==========================================
   frontend:
-    name: Frontend Build
+    name: Frontend Build & Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -133,6 +138,108 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Check bundle size
+        run: |
+          JS_SIZE=$(stat -f%z dist/assets/*.js 2>/dev/null || stat --format=%s dist/assets/*.js 2>/dev/null)
+          GZ_SIZE=$(gzip -c dist/assets/*.js | wc -c)
+          echo "JS bundle: ${JS_SIZE} bytes raw, ${GZ_SIZE} bytes gzipped"
+          if [ "$GZ_SIZE" -gt 512000 ]; then
+            echo "ERROR: Bundle exceeds 500KB gzipped"
+            exit 1
+          fi
+          echo "PASS: Bundle size OK (${GZ_SIZE} bytes gzipped)"
+
+  # ==========================================
+  # E2E: Playwright tests
+  # ==========================================
+  e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: success()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Create backend .env
+        working-directory: backend
+        run: |
+          cat > .env << 'EOF'
+          APP_ENV=testing
+          DEBUG=True
+          DJANGO_SECRET_KEY=test-secret-key
+          DATABASE_URL=sqlite:///db.sqlite3
+          SUPABASE_URL=https://placeholder.supabase.co
+          SUPABASE_SECRET_KEY=placeholder
+          SUPABASE_PUBLISHABLE_KEY=placeholder
+          EMAIL_PROVIDER=mock
+          WHATSAPP_PROVIDER=mock
+          PAYMENT_PROVIDER=mock
+          SEED_PASSWORD=dev-password-2026
+          EOF
+
+      - name: Run backend migrations
+        working-directory: backend
+        run: python manage.py migrate
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          python manage.py runserver 0.0.0.0:8000 &
+          sleep 5
+          curl -f http://localhost:8000/api/v1/health/ || exit 1
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Start frontend dev server
+        working-directory: frontend
+        run: |
+          npm run dev &
+          sleep 5
+          curl -f http://localhost:5173/ || exit 1
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: Run E2E tests
+        working-directory: frontend
+        run: |
+          npx playwright test \
+            --project=chromium \
+            --reporter=list \
+            --timeout=60000
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
   # ==========================================
   # Security: Secret scan
   # ==========================================
@@ -146,7 +253,6 @@ jobs:
 
       - name: Check for secrets in code
         run: |
-          # Check for common secret patterns
           if grep -rn --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" \
             -E "(SUPABASE_SECRET_KEY|DJANGO_SECRET_KEY|MIDTRANS_SERVER_KEY|MIDTRANS_CLIENT_KEY)\s*=\s*['\"][^'\"]{10,}" \
             --exclude-dir=node_modules \
@@ -168,13 +274,21 @@ jobs:
           fi
           echo "PASS: .env files not tracked"
 
+      - name: Check for common vulnerabilities
+        run: |
+          echo "Checking for SQL injection patterns..."
+          if grep -rn --include="*.py" "raw\|execute\|cursor" --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null | grep -v "test\|#\|comment"; then
+            echo "WARNING: Raw SQL usage found (review manually)"
+          fi
+          echo "PASS: Security scan complete"
+
   # ==========================================
   # Merge gate
   # ==========================================
   ci-pass:
     name: CI Pass
     runs-on: ubuntu-latest
-    needs: [backend, frontend, security]
+    needs: [backend, frontend, e2e, security]
     steps:
       - name: All checks passed
         run: echo "All CI checks passed ✅"
