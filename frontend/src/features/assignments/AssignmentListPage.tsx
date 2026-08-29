@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardList, Clock, CheckCircle, FileText, Users, Search } from 'lucide-react'
+import { ClipboardList, Clock, CheckCircle, FileText, Users, Search, Plus, Send, Edit, Trash2 } from 'lucide-react'
 import { useAssignments } from '@/api/hooks'
+import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
+import { CrudModal, type CrudField } from '@/components/CrudModal'
 import type { Assignment } from '@/types'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -23,7 +25,44 @@ function formatDueDate(dateStr: string | null): string {
   return `Due in ${days}d`
 }
 
-function AssignmentCard({ assignment }: { assignment: Assignment }) {
+const ASSIGNMENT_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Assignment title' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Assignment description...' },
+  { name: 'max_score', label: 'Max Score', type: 'number', required: true, placeholder: '100' },
+  { name: 'due_date', label: 'Due Date', type: 'text', placeholder: 'YYYY-MM-DD' },
+  { name: 'status', label: 'Status', type: 'select', options: [
+    { value: 'draft', label: 'Draft' },
+    { value: 'published', label: 'Published' },
+  ]},
+]
+
+const SUBMIT_FIELDS: CrudField[] = [
+  { name: 'content', label: 'Your Submission', type: 'textarea', required: true, placeholder: 'Write your answer here...' },
+]
+
+interface ModalState {
+  isOpen: boolean
+  mode: 'create' | 'edit' | 'delete' | 'submit' | 'view'
+  data: Record<string, unknown>
+}
+
+function AssignmentCard({
+  assignment,
+  isStudent,
+  isInstructor,
+  isAdmin,
+  onSubmit,
+  onEdit,
+  onDelete,
+}: {
+  assignment: Assignment
+  isStudent: boolean
+  isInstructor: boolean
+  isAdmin: boolean
+  onSubmit: (a: Assignment) => void
+  onEdit: (a: Assignment) => void
+  onDelete: (a: Assignment) => void
+}) {
   const statusCfg = STATUS_CONFIG[assignment.status] || STATUS_CONFIG.draft
   const dueText = formatDueDate(assignment.due_date)
   const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date()
@@ -70,12 +109,35 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
         </p>
       )}
 
-      <Link
-        to={`/assignments/${assignment.id}`}
-        className="inline-block text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-      >
-        View details →
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          to={`/assignments/${assignment.id}`}
+          className="flex-1 inline-block text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+        >
+          View details →
+        </Link>
+        {isStudent && (
+          <button
+            onClick={() => onSubmit(assignment)}
+            className="btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
+          >
+            <Send size={12} />
+            Submit
+          </button>
+        )}
+        {(isInstructor || isAdmin) && (
+          <>
+            <button onClick={() => onEdit(assignment)} className="p-1.5 text-navy-400 hover:text-yellow-400 transition-colors" title="Edit">
+              <Edit size={14} />
+            </button>
+            {isAdmin && (
+              <button onClick={() => onDelete(assignment)} className="p-1.5 text-navy-400 hover:text-red-400 transition-colors" title="Delete">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -84,14 +146,59 @@ export function AssignmentListPage() {
   const { roles } = useAuth()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+
+  const isStudent = roles.includes('student')
+  const isInstructor = roles.includes('instructor')
+  const isAdmin = roles.includes('admin') || roles.includes('owner')
+  const canCreate = isInstructor || isAdmin
 
   const params: Record<string, string> = {}
   if (search) params.search = search
   if (statusFilter) params.status = statusFilter
 
-  const { data: assignments = [], isLoading } = useAssignments(params)
+  const { data: assignments = [], isLoading, refetch } = useAssignments(params)
 
-  const isStudent = roles.includes('student')
+  const openCreate = () => setModal({
+    isOpen: true, mode: 'create',
+    data: { title: '', description: '', max_score: 100, due_date: '', status: 'draft' },
+  })
+
+  const openEdit = (a: Assignment) => setModal({
+    isOpen: true, mode: 'edit',
+    data: { id: a.id, title: a.title, description: a.description || '', max_score: a.max_score, due_date: a.due_date || '', status: a.status },
+  })
+
+  const openSubmit = (a: Assignment) => setModal({
+    isOpen: true, mode: 'submit',
+    data: { assignment_id: a.id, assignment_title: a.title, content: '' },
+  })
+
+  const openDelete = (a: Assignment) => setModal({
+    isOpen: true, mode: 'delete',
+    data: { id: a.id, title: a.title },
+  })
+
+  const handleSave = async (data: Record<string, unknown>) => {
+    if (modal.mode === 'create') {
+      await apiClient.post('/assignments/', data)
+    } else if (modal.mode === 'edit' && data.id) {
+      await apiClient.patch(`/assignments/${data.id}/`, data)
+    } else if (modal.mode === 'submit') {
+      await apiClient.post('/assignments/submissions/', {
+        assignment: data.assignment_id,
+        content_data: { text: data.content },
+      })
+    }
+    await refetch()
+  }
+
+  const handleDelete = async () => {
+    if (modal.data.id) {
+      await apiClient.delete(`/assignments/${modal.data.id}/`)
+      await refetch()
+    }
+  }
 
   return (
     <div className="page-container">
@@ -100,6 +207,12 @@ export function AssignmentListPage() {
           <ClipboardList className="text-cyan-400" size={24} />
           <h1 className="page-title mb-0">Assignments</h1>
         </div>
+        {canCreate && (
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+            <Plus size={16} />
+            Create Assignment
+          </button>
+        )}
       </div>
 
       <p className="page-subtitle">
@@ -146,18 +259,37 @@ export function AssignmentListPage() {
           <ClipboardList className="mx-auto text-navy-600 mb-3" size={48} />
           <h3 className="text-navy-400 text-lg">No assignments found</h3>
           <p className="text-navy-500 text-sm mt-1">
-            {isStudent
-              ? 'No assignments are available for your courses yet.'
-              : 'Create your first assignment to get started.'}
+            {isStudent ? 'No assignments are available for your courses yet.' : 'Create your first assignment to get started.'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {assignments.map((a: Assignment) => (
-            <AssignmentCard key={a.id} assignment={a} />
+            <AssignmentCard
+              key={a.id}
+              assignment={a}
+              isStudent={isStudent}
+              isInstructor={isInstructor}
+              isAdmin={isAdmin}
+              onSubmit={openSubmit}
+              onEdit={openEdit}
+              onDelete={openDelete}
+            />
           ))}
         </div>
       )}
+
+      {/* CRUD Modal */}
+      <CrudModal
+        isOpen={modal.isOpen}
+        mode={modal.mode === 'submit' ? 'create' : modal.mode}
+        title={modal.mode === 'submit' ? `Submit: ${modal.data.assignment_title || 'Assignment'}` : 'Assignment'}
+        fields={modal.mode === 'submit' ? SUBMIT_FIELDS : ASSIGNMENT_FIELDS}
+        data={modal.data}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
+      />
     </div>
   )
 }

@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import {
   PenTool, Clock, CheckCircle, AlertTriangle, Star,
-  Users, FileText, Plus,
+  Users, FileText, Plus, Send,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEssayQuestions, useEssayResponses } from '@/api/hooks'
+import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
+import { CrudModal, type CrudField } from '@/components/CrudModal'
 import type { EssayQuestion, EssayResponse } from '@/types'
 
 function QuestionCard({ question }: { question: EssayQuestion }) {
@@ -115,14 +118,41 @@ function ResponseCard({ response }: { response: EssayResponse }) {
   )
 }
 
+const SUBMIT_ESSAY_FIELDS: CrudField[] = [
+  { name: 'response_text', label: 'Your Essay', type: 'textarea', required: true, placeholder: 'Write your essay here...' },
+]
+
+interface ModalState {
+  isOpen: boolean
+  mode: 'create' | 'edit' | 'delete' | 'submit' | 'view'
+  data: Record<string, unknown>
+}
+
 export function EssayListPage() {
   const { roles } = useAuth()
-  const { data: questions, isLoading: questionsLoading } = useEssayQuestions()
-  const { data: responses, isLoading: responsesLoading } = useEssayResponses()
+  const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+  const { data: questions, isLoading: questionsLoading, refetch: refetchQ } = useEssayQuestions()
+  const { data: responses, isLoading: responsesLoading, refetch: refetchR } = useEssayResponses()
 
   const isInstructor = roles.some((r) => ['owner', 'admin', 'instructor'].includes(r))
+  const isStudent = roles.includes('student')
 
   const isLoading = questionsLoading || responsesLoading
+
+  const openSubmit = (q: EssayQuestion) => setModal({
+    isOpen: true, mode: 'submit',
+    data: { question_id: q.id, question_title: q.title, response_text: '' },
+  })
+
+  const handleSave = async (data: Record<string, unknown>) => {
+    if (modal.mode === 'submit' && data.question_id) {
+      await apiClient.post('/essays/responses/', {
+        question: data.question_id,
+        typed_answer: data.response_text,
+      })
+      await refetchR()
+    }
+  }
 
   if (isLoading) {
     return (
@@ -169,7 +199,18 @@ export function EssayListPage() {
             {questions && questions.length > 0 ? (
               <div className="space-y-3">
                 {questions.map((q) => (
-                  <QuestionCard key={q.id} question={q} />
+                  <div key={q.id} className="relative">
+                    <QuestionCard question={q} />
+                    {isStudent && (
+                      <button
+                        onClick={() => openSubmit(q)}
+                        className="absolute top-4 right-4 btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
+                      >
+                        <Send size={12} />
+                        Submit
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -212,6 +253,17 @@ export function EssayListPage() {
           )}
         </div>
       </div>
+
+      {/* Submit Modal */}
+      <CrudModal
+        isOpen={modal.isOpen}
+        mode="create"
+        title={`Submit Essay: ${modal.data.question_title || ''}`}
+        fields={SUBMIT_ESSAY_FIELDS}
+        data={modal.data}
+        onSave={handleSave}
+        onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
+      />
     </div>
   )
 }
