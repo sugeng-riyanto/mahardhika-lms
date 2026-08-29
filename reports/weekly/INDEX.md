@@ -19,6 +19,7 @@ git push
 
 | Week | Date | Screenshots | Status |
 |------|------|-------------|--------|
+| Week 3 | [2026-08-29](./2026-08-29/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-29/REPORT.md) |
 | Week 2 | [2026-08-26](./2026-08-26/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-26/REPORT.md) |
 | Week 1 | [2026-08-25](./2026-08-25/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-25/REPORT.md) |
 
@@ -84,6 +85,46 @@ git push
 
 *All screenshots are captured automatically from the live dev server using Playwright.*
 *For detailed metrics, see the [full report](./2026-08-25/REPORT.md).*
+
+---
+
+## Week 3 — August 29, 2026
+
+### 🌐 Public Access
+
+| URL | Description |
+|-----|-------------|
+| https://79d5-2404-8000-100c-11f6-1805-3200-cfe6-a7f.ngrok-free.app | Public URL (ngrok) |
+| http://localhost:5173 | Local development |
+
+### 🔐 RBAC Updates
+
+- **450+ backend tests** passing across all modules
+- **69/69 RBAC comprehensive tests** (10 role classes + cross-role isolation)
+- **37 ViewSets** with explicit RBAC permission classes
+- **Canvas export** (JSON) + **Grade CSV export** endpoints with RBAC
+- **4 ViewSets** missing CRUD fixed (perform_destroy added)
+- **Sponsor** read-only access to programmes/courses fixed
+- **Cache-Control middleware** added for static assets
+- **k6 load test** — 50 VUs, P95 latency 8ms
+- **Bahasa Indonesia** translations wired to login + settings + error pages
+- **Security audit** — Gate 8 fully verified (8.1-8.10)
+
+### 📊 Week 3 Summary
+
+| Metric | Value |
+|--------|-------|
+| Screenshots | 28/28 ✅ |
+| Backend Tests | 450+ ✅ |
+| RBAC Comprehensive | 69/69 ✅ |
+| RBAC Enforcement | 14/14 ✅ |
+| ViewSets with RBAC | 37/37 ✅ |
+| RLS Policies | 142 ✅ |
+| k6 Load Test | 50 VUs, 8ms P95 ✅ |
+| Security Gate | 8/8 ✅ |
+| ngrok Public URL | ✅ Active |
+
+*For detailed metrics, see the [full report](./2026-08-29/REPORT.md).*
 
 ---
 
