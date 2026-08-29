@@ -13,16 +13,6 @@ const USER_FIELDS: CrudField[] = [
   { name: 'mfa_enabled', label: 'MFA Enabled', type: 'toggle' },
 ]
 
-const ROLE_OPTIONS = [
-  { value: 'owner', label: 'Owner' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'instructor', label: 'Instructor' },
-  { value: 'student', label: 'Student' },
-  { value: 'parent', label: 'Parent' },
-  { value: 'treasurer', label: 'Treasurer' },
-  { value: 'sponsorship', label: 'Sponsor' },
-  { value: 'third_party', label: 'Third Party' },
-]
 
 interface ModalState {
   isOpen: boolean

@@ -234,15 +234,13 @@ export function CourseListPage() {
                       >
                         <Edit size={14} />
                       </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => openDelete(course)}
-                          className="btn-ghost text-sm flex items-center gap-1 px-3 text-red-400 hover:text-red-300"
-                          aria-label={`Delete ${course.title}`}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => openDelete(course)}
+                        className="btn-ghost text-sm flex items-center gap-1 px-3 text-red-400 hover:text-red-300"
+                        aria-label={`Delete ${course.title}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </>
                   )}
                 </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   PenTool, Clock, CheckCircle, AlertTriangle, Star,
-  Users, FileText, Plus, Send,
+  Users, FileText, Plus, Send, Edit, Trash2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEssayQuestions, useEssayResponses } from '@/api/hooks'
@@ -122,6 +122,21 @@ const SUBMIT_ESSAY_FIELDS: CrudField[] = [
   { name: 'response_text', label: 'Your Essay', type: 'textarea', required: true, placeholder: 'Write your essay here...' },
 ]
 
+const ESSAY_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Essay question title' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Essay prompt...' },
+  { name: 'marks', label: 'Max Marks', type: 'number', required: true, placeholder: '100' },
+  { name: 'difficulty', label: 'Difficulty', type: 'select', options: [
+    { value: 'easy', label: 'Easy' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'hard', label: 'Hard' },
+  ]},
+  { name: 'status', label: 'Status', type: 'select', options: [
+    { value: 'draft', label: 'Draft' },
+    { value: 'published', label: 'Published' },
+  ]},
+]
+
 interface ModalState {
   isOpen: boolean
   mode: 'create' | 'edit' | 'delete' | 'submit' | 'view'
@@ -144,6 +159,21 @@ export function EssayListPage() {
     data: { question_id: q.id, question_title: q.title, response_text: '' },
   })
 
+  const openCreateEssay = () => setModal({
+    isOpen: true, mode: 'create',
+    data: { title: '', description: '', marks: 100, difficulty: 'medium', status: 'draft' },
+  })
+
+  const openEditEssay = (q: EssayQuestion) => setModal({
+    isOpen: true, mode: 'edit',
+    data: { id: q.id, title: q.title, description: q.description || '', marks: q.marks, difficulty: q.difficulty || 'medium', status: q.status },
+  })
+
+  const openDeleteEssay = (q: EssayQuestion) => setModal({
+    isOpen: true, mode: 'delete',
+    data: { id: q.id, title: q.title },
+  })
+
   const handleSave = async (data: Record<string, unknown>) => {
     if (modal.mode === 'submit' && data.question_id) {
       await apiClient.post('/essays/responses/', {
@@ -151,6 +181,21 @@ export function EssayListPage() {
         typed_answer: data.response_text,
       })
       await refetchR()
+    } else if (modal.mode === 'create') {
+      await apiClient.post('/essays/', data)
+      await refetchQ()
+    } else if (modal.mode === 'edit' && data.id) {
+      await apiClient.patch(`/essays/${data.id}/`, data)
+      await refetchQ()
+    }
+    setModal({ isOpen: false, mode: 'create', data: {} })
+  }
+
+  const handleDelete = async () => {
+    if (modal.data.id) {
+      await apiClient.delete(`/essays/${modal.data.id}/`)
+      await refetchQ()
+      setModal({ isOpen: false, mode: 'create', data: {} })
     }
   }
 
@@ -178,16 +223,16 @@ export function EssayListPage() {
           </div>
         </div>
         {isInstructor && (
-          <Link to="/essays/new" className="btn-primary flex items-center gap-2 text-sm">
+          <button onClick={openCreateEssay} className="btn-primary flex items-center gap-2 text-sm">
             <Plus size={14} />
             New Essay
-          </Link>
+          </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Questions (Instructor view) */}
-        {isInstructor && (
+        {/* Questions */}
+        {(
           <div>
             <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
               <FileText size={14} className="text-cyan-400" />
@@ -201,15 +246,35 @@ export function EssayListPage() {
                 {questions.map((q) => (
                   <div key={q.id} className="relative">
                     <QuestionCard question={q} />
-                    {isStudent && (
-                      <button
-                        onClick={() => openSubmit(q)}
-                        className="absolute top-4 right-4 btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
-                      >
-                        <Send size={12} />
-                        Submit
-                      </button>
-                    )}
+                    <div className="absolute top-4 right-4 flex items-center gap-1">
+                      {isStudent && (
+                        <button
+                          onClick={() => openSubmit(q)}
+                          className="btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
+                        >
+                          <Send size={12} />
+                          Submit
+                        </button>
+                      )}
+                      {isInstructor && (
+                        <>
+                          <button
+                            onClick={() => openEditEssay(q)}
+                            className="p-1.5 text-navy-400 hover:text-yellow-400 transition-colors"
+                            title="Edit essay"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => openDeleteEssay(q)}
+                            className="p-1.5 text-navy-400 hover:text-red-400 transition-colors"
+                            title="Delete essay"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -254,14 +319,19 @@ export function EssayListPage() {
         </div>
       </div>
 
-      {/* Submit Modal */}
+      {/* CRUD Modal */}
       <CrudModal
         isOpen={modal.isOpen}
-        mode="create"
-        title={`Submit Essay: ${modal.data.question_title || ''}`}
-        fields={SUBMIT_ESSAY_FIELDS}
+        mode={modal.mode === 'submit' ? 'create' : modal.mode}
+        title={
+          modal.mode === 'submit' ? `Submit Essay: ${modal.data.question_title || ''}` :
+          modal.mode === 'delete' ? `Delete Essay: ${modal.data.title || ''}` :
+          'Essay Question'
+        }
+        fields={modal.mode === 'submit' ? SUBMIT_ESSAY_FIELDS : ESSAY_FIELDS}
         data={modal.data}
         onSave={handleSave}
+        onDelete={handleDelete}
         onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
       />
     </div>

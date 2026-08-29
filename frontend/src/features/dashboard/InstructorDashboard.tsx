@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, Users, BarChart3, FileText, PenTool, Plus, Edit, Award } from 'lucide-react'
+import { BookOpen, ClipboardList, Users, BarChart3, FileText, PenTool, Plus, Award } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { t } from '@/i18n/translations'
 

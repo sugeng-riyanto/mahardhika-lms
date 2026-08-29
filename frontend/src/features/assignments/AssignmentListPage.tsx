@@ -131,11 +131,9 @@ function AssignmentCard({
             <button onClick={() => onEdit(assignment)} className="p-1.5 text-navy-400 hover:text-yellow-400 transition-colors" title="Edit">
               <Edit size={14} />
             </button>
-            {isAdmin && (
-              <button onClick={() => onDelete(assignment)} className="p-1.5 text-navy-400 hover:text-red-400 transition-colors" title="Delete">
-                <Trash2 size={14} />
-              </button>
-            )}
+            <button onClick={() => onDelete(assignment)} className="p-1.5 text-navy-400 hover:text-red-400 transition-colors" title="Delete">
+              <Trash2 size={14} />
+            </button>
           </>
         )}
       </div>
