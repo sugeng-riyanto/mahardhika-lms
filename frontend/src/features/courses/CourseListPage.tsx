@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { BookOpen, Search, Plus, Users, FileText, Eye, Edit, GraduationCap } from 'lucide-react'
+import { BookOpen, Search, Plus, Users, FileText, Eye, Edit, Trash2, GraduationCap } from 'lucide-react'
 import { useCourses } from '@/api/hooks'
+import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
+import { CrudModal, type CrudField } from '@/components/CrudModal'
 
 const LEVEL_COLORS: Record<string, string> = {
   jhs: 'bg-blue-900/30 text-blue-400 border-blue-700/30',
@@ -14,14 +16,33 @@ const LEVEL_COLORS: Record<string, string> = {
   teacher_dev: 'bg-teal-900/30 text-teal-400 border-teal-700/30',
 }
 
+const COURSE_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Course Title', type: 'text', required: true, placeholder: 'Mathematics 7A' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Course description...' },
+  { name: 'programme_id', label: 'Programme', type: 'select', required: true, options: [
+    { value: '1', label: 'JHS Mathematics' },
+    { value: '2', label: 'SHS Physics' },
+    { value: '3', label: 'IELTS Preparation' },
+    { value: '4', label: 'STEAM & Robotics' },
+  ]},
+  { name: 'is_published', label: 'Published', type: 'toggle' },
+]
+
+interface ModalState {
+  isOpen: boolean
+  mode: 'create' | 'edit' | 'delete' | 'view'
+  data: Record<string, unknown>
+}
+
 export function CourseListPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilter, setLevelFilter] = useState<string>('all')
+  const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
   const { roles } = useAuth()
   const isInstructor = roles.includes('instructor')
   const isAdmin = roles.includes('admin') || roles.includes('owner')
 
-  const { data: courses, isLoading, error } = useCourses()
+  const { data: courses, isLoading, error, refetch } = useCourses()
 
   const filteredCourses = courses?.filter((c) => {
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -33,6 +54,46 @@ export function CourseListPage() {
   const publishedCount = courses?.filter(c => c.is_published).length || 0
   const draftCount = courses?.filter(c => !c.is_published).length || 0
 
+  const openCreate = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', description: '', programme_id: '', is_published: false },
+  })
+
+  const openEdit = (c: typeof filteredCourses[0]) => setModal({
+    isOpen: true,
+    mode: 'edit',
+    data: { id: c.id, title: c.title, description: c.description || '', programme_id: c.programme_id, is_published: c.is_published },
+  })
+
+  const openView = (c: typeof filteredCourses[0]) => setModal({
+    isOpen: true,
+    mode: 'view',
+    data: { ...c, programme_name: c.programme_name || 'Unknown', instructor_email: c.instructor_email || 'Unassigned' },
+  })
+
+  const openDelete = (c: typeof filteredCourses[0]) => setModal({
+    isOpen: true,
+    mode: 'delete',
+    data: { id: c.id, title: c.title },
+  })
+
+  const handleSave = async (data: Record<string, unknown>) => {
+    if (modal.mode === 'create') {
+      await apiClient.post('/courses/', data)
+    } else if (modal.mode === 'edit' && data.id) {
+      await apiClient.patch(`/courses/${data.id}/`, data)
+    }
+    await refetch()
+  }
+
+  const handleDelete = async () => {
+    if (modal.data.id) {
+      await apiClient.delete(`/courses/${modal.data.id}/`)
+      await refetch()
+    }
+  }
+
   return (
     <div className="page-container">
       <div className="flex items-center justify-between mb-6">
@@ -41,7 +102,7 @@ export function CourseListPage() {
           <h1 className="page-title mb-0">Courses</h1>
         </div>
         {(isAdmin || isInstructor) && (
-          <button className="btn-primary flex items-center gap-2">
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
             <Plus size={16} />
             Create Course
           </button>
@@ -115,7 +176,6 @@ export function CourseListPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredCourses.map((course) => (
             <div key={course.id} className="card hover:border-cyan-700/50 transition-all cursor-pointer group">
-              {/* Thumbnail placeholder */}
               <div className="h-36 bg-gradient-to-br from-navy-800 to-navy-900 rounded-t-xl flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-purple-600/10" />
                 <BookOpen className="text-cyan-500/30 relative z-10" size={40} />
@@ -127,7 +187,6 @@ export function CourseListPage() {
               </div>
 
               <div className="p-5">
-                {/* Programme badge */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`badge text-[10px] border ${LEVEL_COLORS[course.programme_level] || 'bg-navy-800 text-navy-400'}`}>
                     {course.programme_name}
@@ -141,7 +200,6 @@ export function CourseListPage() {
                   {course.description || 'No description'}
                 </p>
 
-                {/* Meta info */}
                 <div className="flex items-center gap-4 text-xs text-navy-500 mb-4">
                   <span className="flex items-center gap-1">
                     <FileText size={12} />
@@ -153,17 +211,33 @@ export function CourseListPage() {
                   </span>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-2">
-                  <button className="flex-1 btn-secondary text-sm flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-cyan-400">
-                    <Eye size={14} aria-hidden="true" />
+                  <button
+                    onClick={() => openView(course)}
+                    className="flex-1 btn-secondary text-sm flex items-center justify-center gap-1"
+                  >
+                    <Eye size={14} />
                     View
                   </button>
                   {(isAdmin || (isInstructor && course.instructor_id)) && (
-                    <button className="btn-ghost text-sm flex items-center gap-1 px-3 focus:outline-none focus:ring-2 focus:ring-cyan-400" aria-label={`Edit ${course.title}`}>
-                      <Edit size={14} aria-hidden="true" />
-                      Edit
-                    </button>
+                    <>
+                      <button
+                        onClick={() => openEdit(course)}
+                        className="btn-ghost text-sm flex items-center gap-1 px-3"
+                        aria-label={`Edit ${course.title}`}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => openDelete(course)}
+                          className="btn-ghost text-sm flex items-center gap-1 px-3 text-red-400 hover:text-red-300"
+                          aria-label={`Delete ${course.title}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -180,6 +254,18 @@ export function CourseListPage() {
           </p>
         </div>
       )}
+
+      {/* CRUD Modal */}
+      <CrudModal
+        isOpen={modal.isOpen}
+        mode={modal.mode}
+        title="Course"
+        fields={COURSE_FIELDS}
+        data={modal.data}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
+      />
     </div>
   )
 }
