@@ -1,9 +1,52 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from core.views import health_check
+
+
+def api_root(request):
+    """API root — lists all available endpoints."""
+    return JsonResponse({
+        'service': 'AKADEMI Digital Campus API',
+        'version': 'v1',
+        'endpoints': {
+            'health': '/api/v1/health/',
+            'auth': '/api/v1/auth/',
+            'users': '/api/v1/users/',
+            'role_assignments': '/api/v1/role-assignments/',
+            'roles': '/api/v1/roles/',
+            'parent_child_links': '/api/v1/parent-child-links/',
+            'third_party_grants': '/api/v1/third-party-grants/',
+            'organisations': '/api/v1/organisations/',
+            'programmes': '/api/v1/programmes/',
+            'courses': '/api/v1/courses/',
+            'lessons': '/api/v1/lessons/',
+            'content': '/api/v1/content/',
+            'activities': '/api/v1/activities/',
+            'essays': '/api/v1/essays/',
+            'canvas_documents': '/api/v1/canvas-documents/',
+            'attempts': '/api/v1/attempts/',
+            'grades': '/api/v1/grades/',
+            'audit_events': '/api/v1/audit-events/',
+            'attendance': '/api/v1/attendance/',
+            'assignments': '/api/v1/assignments/',
+            'submissions': '/api/v1/assignments/submissions/',
+            'sponsorship': '/api/v1/sponsorship-programmes/',
+            'finance': '/api/v1/finance/',
+            'payments': '/api/v1/payments/',
+            'notifications': '/api/v1/notifications/',
+            'certificates': '/api/v1/certificates/',
+            'progress': '/api/v1/progress/',
+            'consent': '/api/v1/consent/',
+            'safeguarding': '/api/v1/safeguarding/',
+        },
+        'documentation': 'See docs/RUNBOOK.md for API usage',
+    })
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/', api_root, name='api-root'),
     path('api/v1/health/', health_check, name='health-check'),
     path('api/v1/auth/', include('identity.urls_auth')),
     path('api/v1/users/', include('identity.urls_users')),
