@@ -67,3 +67,7 @@ db.sqlite3
 *.log
 .vite/
 frontend/test-results/
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
