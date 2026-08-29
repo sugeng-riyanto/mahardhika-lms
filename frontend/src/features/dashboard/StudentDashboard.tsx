@@ -1,5 +1,6 @@
 import { GraduationCap, BookOpen, ClipboardList, BarChart3, Award, Clock } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { t } from '@/i18n/translations'
 
 const stats = [
   { label: 'Enrolled Courses', value: '4', icon: <BookOpen size={20} />, color: 'text-cyan-400', bg: 'bg-cyan-900/30' },
@@ -19,10 +20,10 @@ export function StudentDashboard() {
     <div className="page-container">
       <div className="flex items-center gap-3 mb-6">
         <GraduationCap className="text-green-400" size={24} />
-        <h1 className="page-title mb-0">Student Dashboard</h1>
+        <h1 className="page-title mb-0">{t('dash.student.title')}</h1>
       </div>
 
-      <p className="page-subtitle">Your courses, assignments, and learning progress</p>
+      <p className="page-subtitle">{t('dash.student.subtitle')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
@@ -44,8 +45,8 @@ export function StudentDashboard() {
         {/* Upcoming assignments */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Upcoming Assignments</h2>
-            <Link to="/assignments" className="text-sm text-cyan-400 hover:text-cyan-300">View all →</Link>
+            <h2 className="text-lg font-semibold text-white">{t('dash.upcomingAssignments')}</h2>
+            <Link to="/assignments" className="text-sm text-cyan-400 hover:text-cyan-300">{t('dash.viewAll')}</Link>
           </div>
           <div className="space-y-3">
             {upcomingAssignments.map((assignment, i) => (
@@ -67,7 +68,7 @@ export function StudentDashboard() {
 
         {/* Course progress */}
         <div className="card">
-          <h2 className="text-lg font-semibold text-white mb-4">Course Progress</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">{t('dash.courseProgress')}</h2>
           <div className="space-y-4">
             {[
               { name: 'Physics 101', progress: 72, color: 'bg-cyan-500' },
@@ -90,7 +91,7 @@ export function StudentDashboard() {
             ))}
           </div>
           <Link to="/courses" className="block mt-4 text-sm text-cyan-400 hover:text-cyan-300">
-            View all courses →
+            {t('dash.viewAll')}
           </Link>
         </div>
       </div>

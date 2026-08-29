@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Heart, BookOpen, BarChart3, Users, ChevronRight, AlertCircle, Shield } from 'lucide-react'
 import { useParentChildren, useChildGrades, useChildCourses } from '@/api/hooks'
 import type { ParentChildLink, ChildGrade, ChildCourse } from '@/api/hooks'
+import { t } from '@/i18n/translations'
 
 function ChildSelector({
   links,
@@ -68,18 +69,18 @@ function ChildStatsCard({
           <div className="flex items-center gap-2 mt-1">
             {link.is_verified ? (
               <span className="inline-flex items-center gap-1 text-xs text-green-400">
-                <Shield size={10} /> Verified
+                <Shield size={10} /> {t('dash.parent.verified')}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs text-yellow-400">
-                <AlertCircle size={10} /> Pending verification
+                <AlertCircle size={10} /> {t('dash.parent.pendingVerification')}
               </span>
             )}
             <span className="text-navy-600">|</span>
             {link.consent_given ? (
-              <span className="text-xs text-green-400">Consent granted</span>
+              <span className="text-xs text-green-400">{t('dash.parent.consentGranted')}</span>
             ) : (
-              <span className="text-xs text-yellow-400">Consent pending</span>
+              <span className="text-xs text-yellow-400">{t('dash.parent.consentPending')}</span>
             )}
           </div>
         </div>
@@ -88,19 +89,19 @@ function ChildStatsCard({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-navy-700">
         <div>
           <p className="text-2xl font-bold text-white">{courses.length}</p>
-          <p className="text-sm text-navy-400">Active Courses</p>
+          <p className="text-sm text-navy-400">{t('dash.parent.activeCourses')}</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white">{releasedGrades.length}</p>
-          <p className="text-sm text-navy-400">Graded Activities</p>
+          <p className="text-sm text-navy-400">{t('dash.parent.gradedActivities')}</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-green-400">{avgGrade}%</p>
-          <p className="text-sm text-navy-400">Average Grade</p>
+          <p className="text-sm text-navy-400">{t('dash.parent.avgGrade')}</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white">{letterGrade}</p>
-          <p className="text-sm text-navy-400">Overall Letter</p>
+          <p className="text-sm text-navy-400">{t('dash.parent.overallLetter')}</p>
         </div>
       </div>
     </div>
@@ -113,20 +114,19 @@ function GradesPanel({ grades }: { grades: ChildGrade[] }) {
   if (releasedGrades.length === 0) {
     return (
       <div className="card">
-        <h2 className="text-lg font-semibold text-white mb-4">Released Grades</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">{t('dash.parent.releasedGrades')}</h2>
         <div className="text-center py-8">
           <BarChart3 className="mx-auto text-navy-600 mb-3" size={32} />
-          <p className="text-navy-400 text-sm">No grades have been released yet.</p>
-          <p className="text-navy-500 text-xs mt-1">Only released grades are visible to parents.</p>
+          <p className="text-navy-400 text-sm">{t('dash.parent.noGrades')}</p>
+          <p className="text-navy-500 text-xs mt-1">{t('dash.parent.noGradesDesc')}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="card">
-      <h2 className="text-lg font-semibold text-white mb-4">
-        Released Grades
+    <div className="card">        <h2 className="text-lg font-semibold text-white mb-4">
+        {t('dash.parent.releasedGrades')}
         <span className="ml-2 text-sm text-navy-400 font-normal">({releasedGrades.length})</span>
       </h2>
       <div className="space-y-3">
@@ -165,19 +165,18 @@ function CoursesPanel({ courses }: { courses: ChildCourse[] }) {
   if (courses.length === 0) {
     return (
       <div className="card">
-        <h2 className="text-lg font-semibold text-white mb-4">Enrolled Courses</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">{t('dash.parent.enrolledCourses')}</h2>
         <div className="text-center py-8">
           <BookOpen className="mx-auto text-navy-600 mb-3" size={32} />
-          <p className="text-navy-400 text-sm">No active courses found.</p>
+          <p className="text-navy-400 text-sm">{t('dash.parent.noCourses')}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="card">
-      <h2 className="text-lg font-semibold text-white mb-4">
-        Enrolled Courses
+    <div className="card">        <h2 className="text-lg font-semibold text-white mb-4">
+        {t('dash.parent.enrolledCourses')}
         <span className="ml-2 text-sm text-navy-400 font-normal">({courses.length})</span>
       </h2>
       <div className="space-y-3">
@@ -212,7 +211,7 @@ function ConsentStatus({ links }: { links: ParentChildLink[] }) {
       <div className="flex items-start gap-3">
         <AlertCircle className="text-yellow-400 shrink-0 mt-0.5" size={18} />
         <div>
-          <h3 className="text-sm font-medium text-yellow-400">Action Required</h3>
+          <h3 className="text-sm font-medium text-yellow-400">{t('dash.parent.actionRequired')}</h3>
           <ul className="text-xs text-yellow-300/80 mt-1 space-y-1">
             {pendingVerification.length > 0 && (
               <li>{pendingVerification.length} child link(s) pending verification by school admin.</li>
@@ -247,11 +246,11 @@ export function ParentDashboard() {
       <div className="page-container">
         <div className="flex items-center gap-3 mb-6">
           <Heart className="text-orange-400" size={24} />
-          <h1 className="page-title mb-0">Parent Dashboard</h1>
+          <h1 className="page-title mb-0">{t('dash.parent.title')}</h1>
         </div>
         <div className="card p-12 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-navy-400">Loading your children's data...</p>
+          <p className="text-navy-400">{t('dash.parent.loading')}</p>
         </div>
       </div>
     )
@@ -262,13 +261,13 @@ export function ParentDashboard() {
       <div className="page-container">
         <div className="flex items-center gap-3 mb-6">
           <Heart className="text-orange-400" size={24} />
-          <h1 className="page-title mb-0">Parent Dashboard</h1>
+          <h1 className="page-title mb-0">{t('dash.parent.title')}</h1>
         </div>
         <div className="card p-12 text-center">
           <Users className="mx-auto text-navy-600 mb-4" size={40} />
-          <p className="text-navy-400 mb-2">No linked children found.</p>
+          <p className="text-navy-400 mb-2">{t('dash.parent.noChildren')}</p>
           <p className="text-navy-500 text-sm">
-            Contact the school administrator to link your account to your child's profile.
+            {t('dash.parent.noChildrenDesc')}
           </p>
         </div>
       </div>
@@ -279,7 +278,7 @@ export function ParentDashboard() {
     <div className="page-container">
       <div className="flex items-center gap-3 mb-6">
         <Heart className="text-orange-400" size={24} />
-        <h1 className="page-title mb-0">Parent Dashboard</h1>
+        <h1 className="page-title mb-0">{t('dash.parent.title')}</h1>
       </div>
 
       <p className="page-subtitle">
@@ -324,8 +323,7 @@ export function ParentDashboard() {
       {/* Information notice */}
       <div className="mt-8 p-4 bg-navy-800/30 rounded-lg border border-navy-700">
         <p className="text-xs text-navy-500 text-center">
-          Only released grades and verified information are displayed. For additional details, please contact the school administration.
-          Data access follows the consent and verification model as per UU PDP requirements.
+          {t('dash.parent.infoNotice')}
         </p>
       </div>
     </div>

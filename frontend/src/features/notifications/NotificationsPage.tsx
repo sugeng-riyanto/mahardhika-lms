@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bell, CheckCheck, Filter, Search, Eye, Mail, MessageSquare } from 'lucide-react'
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/api/hooks'
+import { t } from '@/i18n/translations'
 
 const channelIcons: Record<string, React.ReactNode> = {
   in_app: <Bell size={14} className="text-cyan-400" />,
@@ -43,10 +44,10 @@ export function NotificationsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Bell className="text-cyan-400" size={24} />
-          <h1 className="page-title mb-0">Notifications</h1>
+          <h1 className="page-title mb-0">{t('notif.title')}</h1>
           {unreadCount > 0 && (
             <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-medium rounded-full">
-              {unreadCount} unread
+              {unreadCount} {t('notif.unread')}
             </span>
           )}
         </div>
@@ -57,7 +58,7 @@ export function NotificationsPage() {
             className="btn-secondary flex items-center gap-2 text-sm"
           >
             <CheckCheck size={16} />
-            Mark All Read
+            {t('notif.markAllRead')}
           </button>
         )}
       </div>
@@ -71,7 +72,7 @@ export function NotificationsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search notifications..."
+              placeholder={t('notif.search.placeholder')}
               className="input-field w-full pl-10"
               aria-label="Search notifications"
             />
@@ -85,7 +86,7 @@ export function NotificationsPage() {
                 className="input-field pl-9 pr-4"
                 aria-label="Filter by channel"
               >
-                <option value="all">All Channels</option>
+                <option value="all">{t('notif.allChannels')}</option>
                 <option value="in_app">In-App</option>
                 <option value="email">Email</option>
                 <option value="whatsapp">WhatsApp</option>
@@ -97,9 +98,9 @@ export function NotificationsPage() {
               className="input-field"
               aria-label="Filter by read status"
             >
-              <option value="all">All</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
+              <option value="all">{t('notif.all')}</option>
+              <option value="unread">{t('notif.unreadFilter')}</option>
+              <option value="read">{t('notif.read')}</option>
             </select>
           </div>
         </div>
@@ -109,14 +110,14 @@ export function NotificationsPage() {
       {isLoading ? (
         <div className="text-center py-12">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full mx-auto" />
-          <p className="text-navy-400 mt-3">Loading notifications...</p>
+          <p className="text-navy-400 mt-3">{t('notif.loading')}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="card text-center py-12">
           <Bell className="mx-auto text-navy-600 mb-4" size={48} />
-          <h2 className="text-lg font-semibold text-white mb-2">No notifications</h2>
+          <h2 className="text-lg font-semibold text-white mb-2">{t('notif.noNotifications')}</h2>
           <p className="text-navy-400 text-sm">
-            {searchQuery ? 'No notifications match your search.' : 'You\'re all caught up!'}
+            {searchQuery ? t('notif.noNotifications.search') : t('notif.noNotifications.empty')}
           </p>
         </div>
       ) : (
@@ -156,7 +157,7 @@ export function NotificationsPage() {
                       disabled={markRead.isPending}
                       className="p-2 rounded-lg hover:bg-navy-700 text-navy-400 hover:text-white transition-colors"
                       aria-label="Mark as read"
-                      title="Mark as read"
+                      title={t('notif.markRead')}
                     >
                       <Eye size={16} />
                     </button>

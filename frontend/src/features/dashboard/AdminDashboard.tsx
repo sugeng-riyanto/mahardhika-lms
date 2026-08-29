@@ -1,5 +1,6 @@
 import { Settings, Users, BookOpen, GraduationCap, ClipboardList, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { t } from '@/i18n/translations'
 
 const stats = [
   { label: 'Active Users', value: '24', icon: <Users size={20} />, color: 'text-purple-400', bg: 'bg-purple-900/30' },
@@ -13,10 +14,10 @@ export function AdminDashboard() {
     <div className="page-container">
       <div className="flex items-center gap-3 mb-6">
         <Settings className="text-purple-400" size={24} />
-        <h1 className="page-title mb-0">Admin Dashboard</h1>
+        <h1 className="page-title mb-0">{t('dash.admin.title')}</h1>
       </div>
 
-      <p className="page-subtitle">Operational management and user administration</p>
+      <p className="page-subtitle">{t('dash.admin.subtitle')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
@@ -39,60 +40,60 @@ export function AdminDashboard() {
           <h2 className="text-lg font-semibold text-white mb-4" id="user-mgmt-heading">User Management</h2>
           <div className="space-y-2">
             <Link to="/users" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
-              View all users →
+              {t('dash.viewAllUsers')}
             </Link>
             <div className="p-3 bg-navy-700/30 rounded-lg">
-              <p className="text-sm text-navy-300" id="invite-label">Quick invite</p>
+              <p className="text-sm text-navy-300" id="invite-label">{t('dash.invite')}</p>
               <div className="flex gap-2 mt-2">
                 <input
                   type="email"
-                  placeholder="Email address"
+                  placeholder={t('dash.invite.placeholder')}
                   className="input-field flex-1 text-sm py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   aria-labelledby="invite-label"
                   aria-label="Email address for quick invite"
                 />
-                <button className="btn-primary text-sm py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-400">Invite</button>
+                <button className="btn-primary text-sm py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-400">{t('dash.invite.btn')}</button>
               </div>
             </div>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="text-lg font-semibold text-white mb-4" id="programmes-heading">Programmes & Courses</h2>
+          <h2 className="text-lg font-semibold text-white mb-4" id="programmes-heading">{t('dash.programmes')} & {t('dash.courses')}</h2>
           <div className="space-y-2">
             <Link to="/programmes" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
-              Manage programmes →
+              {t('dash.manageProgrammes')}
             </Link>
             <Link to="/courses" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
-              Manage courses →
+              {t('dash.manageCourses')}
             </Link>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="text-lg font-semibold text-white mb-4" id="system-health-heading">System Health</h2>
+          <h2 className="text-lg font-semibold text-white mb-4" id="system-health-heading">{t('dash.systemHealth')}</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">API Status</span>
-              <span className="badge-success">Operational</span>
+              <span className="text-sm text-navy-300">{t('dash.apiStatus')}</span>
+              <span className="badge-success">{t('dash.operational')}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">Database</span>
-              <span className="badge-success">Operational</span>
+              <span className="text-sm text-navy-300">{t('dash.database')}</span>
+              <span className="badge-success">{t('dash.operational')}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">Storage</span>
-              <span className="badge-success">Operational</span>
+              <span className="text-sm text-navy-300">{t('dash.storage')}</span>
+              <span className="badge-success">{t('dash.operational')}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">Workers</span>
-              <span className="badge-warning">Starting</span>
+              <span className="text-sm text-navy-300">{t('dash.workers')}</span>
+              <span className="badge-warning">{t('dash.starting')}</span>
             </div>
           </div>
           <div className="mt-4 p-3 bg-red-900/20 border border-red-700/30 rounded-lg">
             <div className="flex items-center gap-2 text-red-400 text-sm">
               <AlertCircle size={14} />
-              <span className="text-xs">2 pending role approvals need attention</span>
+              <span className="text-xs">{t('dash.pendingApprovals')}</span>
             </div>
           </div>
         </div>
