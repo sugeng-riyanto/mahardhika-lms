@@ -4,6 +4,12 @@ from django.http import JsonResponse
 from core.views import health_check
 
 
+def root_redirect(request):
+    """Redirect root URL to API root."""
+    from django.shortcuts import redirect
+    return redirect('/api/v1/')
+
+
 def api_root(request):
     """API root — lists all available endpoints."""
     return JsonResponse({
@@ -46,6 +52,7 @@ def api_root(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', root_redirect, name='root-redirect'),
     path('api/v1/', api_root, name='api-root'),
     path('api/v1/health/', health_check, name='health-check'),
     path('api/v1/auth/', include('identity.urls_auth')),
