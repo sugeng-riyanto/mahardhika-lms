@@ -20,10 +20,10 @@ const COURSE_FIELDS: CrudField[] = [
   { name: 'title', label: 'Course Title', type: 'text', required: true, placeholder: 'Mathematics 7A' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Course description...' },
   { name: 'programme_id', label: 'Programme', type: 'select', required: true, options: [
-    { value: '1', label: 'JHS Mathematics' },
-    { value: '2', label: 'SHS Physics' },
-    { value: '3', label: 'IELTS Preparation' },
-    { value: '4', label: 'STEAM & Robotics' },
+    { value: '9489972e-78eb-4e73-a039-accef1bc2fa8', label: 'JHS Mathematics' },
+    { value: 'c27bec66-b395-4d9d-8aaa-41e7e1b11dfc', label: 'SHS Physics' },
+    { value: '23f48cdc-f327-498d-ab78-c667e98121bf', label: 'IELTS Preparation' },
+    { value: 'ee6bd9f2-c8bc-4ffe-a7da-1c1cd7c7f258', label: 'STEAM & Robotics' },
   ]},
   { name: 'is_published', label: 'Published', type: 'toggle' },
 ]
@@ -79,10 +79,16 @@ export function CourseListPage() {
   })
 
   const handleSave = async (data: Record<string, unknown>) => {
+    // Map frontend field names to backend field names
+    const payload: Record<string, unknown> = { ...data }
+    if (payload.programme_id) {
+      payload.programme = payload.programme_id
+      delete payload.programme_id
+    }
     if (modal.mode === 'create') {
-      await apiClient.post('/courses/', data)
-    } else if (modal.mode === 'edit' && data.id) {
-      await apiClient.patch(`/courses/${data.id}/`, data)
+      await apiClient.post('/courses/', payload)
+    } else if (modal.mode === 'edit' && payload.id) {
+      await apiClient.patch(`/courses/${payload.id}/`, payload)
     }
     await refetch()
   }

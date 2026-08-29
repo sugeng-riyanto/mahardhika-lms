@@ -28,6 +28,7 @@ function formatDueDate(dateStr: string | null): string {
 const ASSIGNMENT_FIELDS: CrudField[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Assignment title' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Assignment description...' },
+  { name: 'course', label: 'Course ID', type: 'text', required: true, placeholder: 'Course UUID' },
   { name: 'max_score', label: 'Max Score', type: 'number', required: true, placeholder: '100' },
   { name: 'due_date', label: 'Due Date', type: 'text', placeholder: 'YYYY-MM-DD' },
   { name: 'status', label: 'Status', type: 'select', options: [

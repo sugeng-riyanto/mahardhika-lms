@@ -22,7 +22,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'description', 'instructor', 'instructor_email',
             'is_published', 'thumbnail_url', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'organisation', 'slug']
 
 
 class LessonSerializer(serializers.ModelSerializer):

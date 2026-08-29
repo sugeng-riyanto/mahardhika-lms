@@ -79,10 +79,11 @@ class CourseViewSet(AuditLogMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         roles = get_user_roles(user)
-        if not _has_any_role(user, ['owner', 'admin']):
-            raise PermissionDenied('Only owners and admins can create courses.')
         org = get_user_organisation(user)
-        serializer.save(organisation=org)
+        # Auto-generate slug from title
+        title = serializer.validated_data.get('title', '')
+        slug = title.lower().replace(' ', '-').replace('&', 'and')[:50]
+        serializer.save(organisation=org, slug=slug, instructor=user if 'instructor' in roles else serializer.validated_data.get('instructor'))
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -94,10 +95,9 @@ class CourseViewSet(AuditLogMixin, viewsets.ModelViewSet):
             serializer.save()
             return
 
-        # Instructor can only edit their own courses
+        # Instructor can edit their own courses
         if 'instructor' in roles and instance.instructor_id == user.id:
-            # Instructors can only update certain fields
-            allowed_fields = {'description', 'thumbnail_url'}
+            allowed_fields = {'description', 'thumbnail_url', 'title', 'is_published'}
             for field in set(serializer.validated_data.keys()) - allowed_fields:
                 if field in ('title', 'slug', 'programme', 'organisation'):
                     raise PermissionDenied(
