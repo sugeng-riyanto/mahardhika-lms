@@ -1,0 +1,71 @@
+# Render Blueprint — AKADEMI Backend
+# Free tier: 750 hours/month, 512MB RAM, cold start after 15min
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # Django Backend API
+  - type: web
+    name: akademi-api
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "config.settings"
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true  # Auto-generate secret
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false  # Set in dashboard
+      - key: DJANGO_CORS_ALLOWED_ORIGINS
+        sync: false  # Set in dashboard
+      - key: DATABASE_URL
+        fromDatabase:
+          name: akademi-db
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false  # Set in dashboard
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false  # Set in dashboard
+      - key: SUPABASE_SECRET_KEY
+        sync: false  # Set in dashboard
+      - key: SUPABASE_JWKS_URL
+        sync: false  # Set in dashboard
+      - key: EMAIL_PROVIDER
+        value: "mock"
+      - key: WHATSAPP_PROVIDER
+        value: "mock"
+      - key: PAYMENT_PROVIDER
+        value: "mock"
+      - key: SEED_PASSWORD
+        sync: false  # Set in dashboard
+    healthCheckPath: /api/v1/health/
+    autoDeploy: true
+    branch: main
+
+  # PostgreSQL Database
+  - type: pgsql
+    name: akademi-db
+    plan: free  # 30-day expiry on free tier!
+    databaseName: akademi
+    databaseUser: akademi
+    # Note: Free PostgreSQL expires after 30 days
+    # For production, upgrade to paid plan ($7/mo)
+
+# Note: Render free tier limitations:
+# - Web services spin down after 15 minutes of inactivity
+# - Cold start takes 30-50 seconds
+# - Free PostgreSQL expires after 30 days
+# - 750 hours/month per workspace
+# - 512MB RAM, 0.1 CPU
+#
+# For production, consider:
+# - Starter plan ($7/mo) — no cold starts
+# - Paid PostgreSQL ($7/mo) — no expiry

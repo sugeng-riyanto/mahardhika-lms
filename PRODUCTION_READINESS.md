@@ -129,19 +129,19 @@
 ## Gate 6: Staging Deployment
 
 **Target date:** September 1, 2026
-**Status:** ⬜ NOT STARTED
+**Status:** ⬜ IN PROGRESS (free tier configs ready)
 
 | # | Criterion | Evidence | Status |
 |---|-----------|----------|--------|
-| 6.1 | Vercel frontend deployed | https://akademi-staging.vercel.app accessible | ⬜ |
-| 6.2 | Railway backend deployed | https://akademi-staging-api.up.railway.app accessible | ⬜ |
-| 6.3 | Staging env vars configured | All secrets in Vercel + Railway dashboards | ⬜ |
+| 6.1 | Frontend deployed | Cloudflare Pages: https://akademi.pages.dev | ⬜ |
+| 6.2 | Backend deployed | Render: https://akademi-api.onrender.com | ⬜ |
+| 6.3 | Staging env vars configured | All secrets in Cloudflare + Render dashboards | ⬜ |
 | 6.4 | Staging database connected | Supabase PostgreSQL reachable from Railway | ⬜ |
 | 6.5 | Staging Redis connected | Railway Redis addon working | ⬜ |
 | 6.6 | Login works on staging | All 8 roles can log in via Supabase Auth | ⬜ |
 | 6.7 | API endpoints respond on staging | Health check + CRUD operations | ⬜ |
 | 6.8 | E2E tests pass against staging | Playwright tests against staging URL | ⬜ |
-| 6.9 | CI/CD pipeline working | Push to main → auto-deploy | ⬜ |
+| 6.9 | CI/CD pipeline working | `.github/workflows/ci.yml` + `deploy-staging.yml` | ✅ |
 | 6.10 | Staging screenshots captured | Weekly report from staging environment | ⬜ |
 
 **Sign-off:** _________________ (DevOps Lead) Date: _________

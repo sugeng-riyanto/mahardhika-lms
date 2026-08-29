@@ -1,0 +1,38 @@
+# Cloudflare Pages — AKADEMI Frontend
+# Free tier: 500 builds/month, unlimited bandwidth, no cold starts
+# Docs: https://developers.cloudflare.com/pages/
+
+name = "akademi-frontend"
+compatibility_date = "2024-01-01"
+
+# Build settings
+[build]
+  command = "npm run build"
+  directory = "dist"
+  # Environment variables are set in Cloudflare dashboard
+
+# Routes — SPA fallback for React Router
+[[routes]]
+  pattern = "/*"
+  zone_name = ""  # Set in dashboard if using custom domain
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-XSS-Protection = "1; mode=block"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Environment variables (set in Cloudflare dashboard, NOT here)
+# VITE_API_URL = https://akademi-api.onrender.com/api/v1
+# VITE_SUPABASE_URL = https://stfrztjpunetsekovlsk.supabase.co
+# VITE_SUPABASE_PUBLISHABLE_KEY = eyJhbGci...
