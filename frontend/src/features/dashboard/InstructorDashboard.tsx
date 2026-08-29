@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardList, Users, BarChart3, FileText, PenTool } from 'lucide-react'
+import { BookOpen, ClipboardList, Users, BarChart3, FileText, PenTool, Plus, Edit, Award } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { t } from '@/i18n/translations'
 
@@ -65,22 +65,40 @@ export function InstructorDashboard() {
         {/* Quick actions */}
         <div className="card">
           <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <Link to="/courses" className="flex items-center gap-2 p-3 rounded-lg bg-cyan-900/20 hover:bg-cyan-900/40 border border-cyan-700/30 transition-colors">
+              <Plus size={16} className="text-cyan-400" />
+              <span className="text-sm text-cyan-300">Create Course</span>
+            </Link>
+            <Link to="/assignments" className="flex items-center gap-2 p-3 rounded-lg bg-yellow-900/20 hover:bg-yellow-900/40 border border-yellow-700/30 transition-colors">
+              <Plus size={16} className="text-yellow-400" />
+              <span className="text-sm text-yellow-300">Create Assignment</span>
+            </Link>
+            <Link to="/essays/new" className="flex items-center gap-2 p-3 rounded-lg bg-purple-900/20 hover:bg-purple-900/40 border border-purple-700/30 transition-colors">
+              <Plus size={16} className="text-purple-400" />
+              <span className="text-sm text-purple-300">Create Essay</span>
+            </Link>
+            <Link to="/content" className="flex items-center gap-2 p-3 rounded-lg bg-green-900/20 hover:bg-green-900/40 border border-green-700/30 transition-colors">
+              <Plus size={16} className="text-green-400" />
+              <span className="text-sm text-green-300">Upload Content</span>
+            </Link>
+          </div>
           <div className="space-y-2">
             <Link to="/courses" className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-700 transition-colors">
               <BookOpen size={18} className="text-cyan-400" />
-              <span className="text-sm text-navy-200">{t('dash.manageCoursesLink')}</span>
+              <span className="text-sm text-navy-200">Manage Courses</span>
             </Link>
             <Link to="/assignments" className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-700 transition-colors">
               <ClipboardList size={18} className="text-yellow-400" />
-              <span className="text-sm text-navy-200">{t('dash.gradeSubmissions')}</span>
+              <span className="text-sm text-navy-200">Grade Submissions</span>
             </Link>
             <Link to="/gradebook" className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-700 transition-colors">
               <BarChart3 size={18} className="text-green-400" />
-              <span className="text-sm text-navy-200">{t('dash.viewGradebook')}</span>
+              <span className="text-sm text-navy-200">View Gradebook</span>
             </Link>
-            <Link to="/content" className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-700 transition-colors">
-              <FileText size={18} className="text-purple-400" />
-              <span className="text-sm text-navy-200">{t('dash.contentLibrary')}</span>
+            <Link to="/essays" className="flex items-center gap-3 p-3 rounded-lg hover:bg-navy-700 transition-colors">
+              <Award size={18} className="text-purple-400" />
+              <span className="text-sm text-navy-200">Essay Assessment</span>
             </Link>
           </div>
 

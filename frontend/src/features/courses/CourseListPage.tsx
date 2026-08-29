@@ -219,7 +219,7 @@ export function CourseListPage() {
                     <Eye size={14} />
                     View
                   </button>
-                  {(isAdmin || (isInstructor && course.instructor_id)) && (
+                  {(isAdmin || isInstructor) && (
                     <>
                       <button
                         onClick={() => openEdit(course)}
