@@ -24,7 +24,7 @@
       "filename": "03-owner-dashboard",
       "roles": "owner",
       "status": "✅",
-      "size": "135KB"
+      "size": "152KB"
     },
     {
       "label": "Instructor Dashboard",
@@ -45,21 +45,21 @@
       "filename": "06-parent-dashboard",
       "roles": "parent",
       "status": "✅",
-      "size": "79KB"
+      "size": "87KB"
     },
     {
       "label": "Treasurer Dashboard",
       "filename": "07-treasurer-dashboard",
       "roles": "treasurer",
       "status": "✅",
-      "size": "91KB"
+      "size": "112KB"
     },
     {
       "label": "Sponsor Dashboard",
       "filename": "08-sponsor-dashboard",
       "roles": "sponsorship",
       "status": "✅",
-      "size": "46KB"
+      "size": "189KB"
     },
     {
       "label": "Third Party Dashboard",
@@ -73,35 +73,35 @@
       "filename": "10-courses",
       "roles": "all",
       "status": "✅",
-      "size": "117KB"
+      "size": "120KB"
     },
     {
       "label": "User Management",
       "filename": "11-users",
       "roles": "admin",
       "status": "✅",
-      "size": "115KB"
+      "size": "197KB"
     },
     {
       "label": "Programme Management",
       "filename": "12-programmes",
       "roles": "admin",
       "status": "✅",
-      "size": "120KB"
+      "size": "175KB"
     },
     {
       "label": "Gradebook",
       "filename": "13-gradebook",
       "roles": "all",
       "status": "✅",
-      "size": "122KB"
+      "size": "139KB"
     },
     {
       "label": "Essay List",
       "filename": "14-essays",
       "roles": "all",
       "status": "✅",
-      "size": "78KB"
+      "size": "130KB"
     },
     {
       "label": "Annotation Canvas",
@@ -115,7 +115,7 @@
       "filename": "16-attendance",
       "roles": "all",
       "status": "✅",
-      "size": "79KB"
+      "size": "159KB"
     },
     {
       "label": "Calendar",
@@ -129,14 +129,14 @@
       "filename": "18-content-library",
       "roles": "instructor",
       "status": "✅",
-      "size": "140KB"
+      "size": "143KB"
     },
     {
       "label": "Assignments",
       "filename": "19-assignments",
       "roles": "all",
       "status": "✅",
-      "size": "114KB"
+      "size": "120KB"
     },
     {
       "label": "Finance",
@@ -150,28 +150,28 @@
       "filename": "21-notifications",
       "roles": "all",
       "status": "✅",
-      "size": "104KB"
+      "size": "108KB"
     },
     {
       "label": "Reports & Analytics",
       "filename": "22-reports",
       "roles": "admin",
       "status": "✅",
-      "size": "106KB"
+      "size": "156KB"
     },
     {
       "label": "Audit Log",
       "filename": "23-audit-log",
       "roles": "admin",
       "status": "✅",
-      "size": "114KB"
+      "size": "208KB"
     },
     {
       "label": "Certificates",
       "filename": "24-certificates",
       "roles": "all",
       "status": "✅",
-      "size": "99KB"
+      "size": "106KB"
     },
     {
       "label": "Settings",
@@ -192,14 +192,14 @@
       "filename": "27-privacy",
       "roles": "all",
       "status": "✅",
-      "size": "82KB"
+      "size": "323KB"
     },
     {
       "label": "Consent Management",
       "filename": "28-consent",
       "roles": "parent",
       "status": "✅",
-      "size": "63KB"
+      "size": "136KB"
     }
   ]
 }
