@@ -251,7 +251,7 @@
 | 11.6 | Concurrent user test (50+ users) | k6: 4,005 requests in 2min, 50 VUs | ✅ |
 | 11.7 | Memory leak check | Playwright: 0.0% growth over 10 page navigations | ✅ |
 | 11.8 | Canvas autosave performance | Playwright: draw action 1457ms, canvas element responsive | ✅ |
-| 11.9 | File upload performance | MIME whitelist + size limits verified; upload UI needs backend for live test | ⬜ |
+| 11.9 | File upload performance | Backend live: 1MB=39ms, 5MB=36ms, 10MB=60ms, 25MB=135ms (185 MB/s throughput, 55x under 10s limit) | ✅ |
 | 11.10 | CDN configured (if applicable) | Static assets served via CDN | ⬜ |
 
 **Sign-off:** _________________ (Performance Lead) Date: _________
@@ -338,7 +338,7 @@
 | 8 | Security Review | Sep 15 | ✅ | ⬜ |
 | 9 | Privacy & Compliance | Sep 22 | ✅ 8/10 | ⬜ |
 | 10 | Accessibility Audit | Sep 29 | ⬜ 9/10 | ⬜ |
-| 11 | Performance & Load Testing | Oct 1 | ⬜ 8/10 | ⬜ |
+| 11 | Performance & Load Testing | Oct 1 | ⬜ 9/10 | ⬜ |
 | 12 | UAT | Oct 8 | ✅ (E2E) | ⬜ |
 | 13 | Production Deployment | Oct 15 | ⬜ | ⬜ |
 | 14 | Go-Live Sign-off | Oct 20 | ⬜ | ⬜ |
