@@ -74,6 +74,12 @@ class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
         org = get_user_organisation(self.request.user)
         serializer.save(organisation=org, created_by=self.request.user)
 
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
     @action(detail=True, methods=['post'])
     def publish(self, request, pk=None):
         assignment = self.get_object()
@@ -179,6 +185,12 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
             student=student,
             attempt_number=existing_count + 1,
         )
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
 
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):

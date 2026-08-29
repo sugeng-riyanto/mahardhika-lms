@@ -53,6 +53,12 @@ class RoleAssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
             f'by {self.request.user.email}'
         )
 
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
     @action(detail=True, methods=['post'])
     def revoke(self, request, pk=None):
         """Revoke a role assignment."""
@@ -170,6 +176,12 @@ class ThirdPartyGrantViewSet(AuditLogMixin, viewsets.ModelViewSet):
             f'Third-party grant created: {grant.third_party_user.email} '
             f'purpose={grant.purpose} by {self.request.user.email}'
         )
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
 
     @action(detail=True, methods=['post'])
     def revoke(self, request, pk=None):

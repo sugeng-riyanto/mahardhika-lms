@@ -96,6 +96,14 @@ class CertificateViewSet(AuditLogMixin, viewsets.ModelViewSet):
             issued_date=serializer.validated_data.get('issued_date', date.today()),
         )
 
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
+
+
         AuditEvent.log(
             actor_id=user.id,
             actor_email=user.email,

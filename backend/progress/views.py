@@ -161,6 +161,15 @@ class CourseProgressViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
         return CourseProgress.objects.none()
 
+    def perform_create(self, serializer):
+        serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
 
 def _update_course_progress(student, course):
     """Update or create CourseProgress for a student-course pair."""

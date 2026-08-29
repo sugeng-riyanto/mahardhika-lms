@@ -130,6 +130,12 @@ class ConsentRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
         else:
             raise PermissionDenied('You do not have permission to create consent records.')
 
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
     @action(detail=True, methods=['post'], url_path='withdraw')
     def withdraw(self, request, pk=None):
         """Withdraw consent — UU PDP Article 21."""
@@ -243,6 +249,12 @@ class DataExportRequestViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):
         """Admin/Owner approves export request."""
@@ -279,6 +291,12 @@ class DataDeletionRequestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, requested_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
 
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):

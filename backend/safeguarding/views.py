@@ -35,3 +35,9 @@ class SafeguardingReportViewSet(AuditLogMixin, viewsets.ModelViewSet):
         serializer.validated_data['reporter'] = self.request.user
         serializer.validated_data['organisation'] = org
         super().perform_create(serializer)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()

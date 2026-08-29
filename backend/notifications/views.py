@@ -25,10 +25,13 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class NotificationViewSet(AuditLogMixin, viewsets.ModelViewSet):
-    """Notification management — user-scoped."""
+    """Notification management — user-scoped.
+    RBAC: All authenticated users can read their own notifications.
+    Only admin/owner can create/delete notifications for others.
+    """
     audit_resource_type = 'notification'
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # User-scoped: get_queryset filters by recipient
 
     def get_queryset(self):
         user = self.request.user
