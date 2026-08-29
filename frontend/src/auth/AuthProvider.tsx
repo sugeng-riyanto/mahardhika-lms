@@ -199,21 +199,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadSession()
 
-    if (isSupabaseConfigured) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (_event, session) => {
-          if (session?.user) {
-            await loadSession()
-          } else {
-            setUser(null)
-            setRoles([])
-            setOrganisationId(null)
-            localStorage.removeItem('akademi_access_token')
+      if (isSupabaseConfigured) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (_event, session) => {
+            if (session?.user) {
+              await loadSession()
+            } else {
+              // No Supabase session — fall back to mock auth if available
+              const storedEmail = localStorage.getItem('akademi_mock_user')
+              if (storedEmail && MOCK_USERS[storedEmail]) {
+                const mock = MOCK_USERS[storedEmail]
+                setUser(mock.user)
+                setRoles(mock.roles)
+                setOrganisationId(MOCK_ORG_ID)
+              } else {
+                setUser(null)
+                setRoles([])
+                setOrganisationId(null)
+                localStorage.removeItem('akademi_access_token')
+              }
+            }
           }
-        }
-      )
-      return () => subscription.unsubscribe()
-    }
+        )
+        return () => subscription.unsubscribe()
+      }
   }, [loadSession])
 
   const signIn = async (email: string, password: string) => {
