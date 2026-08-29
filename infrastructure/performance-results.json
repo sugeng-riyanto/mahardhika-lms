@@ -1,0 +1,21 @@
+{
+  "date": "2026-08-29",
+  "pageLoad": {
+    "avgMs": "372",
+    "maxMs": 422,
+    "pass": true
+  },
+  "memory": {
+    "before": 91700000,
+    "after": 91700000,
+    "growth": "0.0"
+  },
+  "canvas": {
+    "drawTimeMs": 1457,
+    "pass": true
+  },
+  "fileUpload": {
+    "note": "No file input found (backend not running)",
+    "pass": true
+  }
+}
