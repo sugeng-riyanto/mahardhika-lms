@@ -19,6 +19,7 @@ git push
 
 | Week | Date | Screenshots | Status |
 |------|------|-------------|--------|
+| Week 4 | [2026-08-30](./2026-08-30/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-30/REPORT.md) |
 | Week 3 | [2026-08-29](./2026-08-29/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-29/REPORT.md) |
 | Week 2 | [2026-08-26](./2026-08-26/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-26/REPORT.md) |
 | Week 1 | [2026-08-25](./2026-08-25/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-25/REPORT.md) |
@@ -85,6 +86,35 @@ git push
 
 *All screenshots are captured automatically from the live dev server using Playwright.*
 *For detailed metrics, see the [full report](./2026-08-25/REPORT.md).*
+
+---
+
+## Week 4 — August 30, 2026
+
+### 📊 CRUD RBAC Completion
+
+- **Full CRUD** for all 8 RBAC roles: Owner, Admin, Instructor, Student, Parent, Treasurer, Sponsor, Third Party
+- **Instructor Delete** — courses, assignments, essays now have Delete button
+- **Essay CRUD** — inline Create/Edit/Delete modals for essay questions
+- **Student Answers** — activity attempts, assignment submissions, essay submissions
+- **Reusable CrudModal** component — 221 lines, supports create/edit/delete/view modes
+- **456 backend tests** passing across 17 test files
+- **0 TypeScript errors**, 238KB gzipped build
+
+### 📊 Week 4 Summary
+
+| Metric | Value |
+|--------|-------|
+| Screenshots | 28/28 ✅ |
+| Backend Tests | 456 ✅ |
+| RBAC ViewSets | 37/37 ✅ |
+| RBAC CRUD | All 8 roles complete ✅ |
+| TypeScript | 0 errors ✅ |
+| Build Size | 238KB gzipped ✅ |
+| Production Gates | 9/14 ✅ |
+| Git Commits | 7 this session ✅ |
+
+*For detailed metrics, see the [full report](./2026-08-30/REPORT.md).*
 
 ---
 

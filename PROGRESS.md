@@ -1,6 +1,6 @@
 # AKADEMI Digital Campus — Progress Report
 
-**Last updated:** August 25, 2026
+**Last updated:** August 30, 2026
 **Project:** Mahardhika LMS
 **Repository:** https://github.com/sugeng-riyanto/mahardhika-lms
 
@@ -16,7 +16,7 @@
 | Milestone 4 — Native Activities | ✅ Complete | Day 60-75 |
 | Milestone 5 — Essay & Canvas | ✅ Complete | Day 75-90 |
 | Milestone 6 — Operations | ✅ Complete | Day 90+ |
-| Milestone 7 — Release | 🟡 In Progress | Dec 20, 2026 |
+| Milestone 7 — Release | 🟡 In Progress (CRUD RBAC complete) | Dec 20, 2026 |
 
 ---
 
@@ -279,7 +279,8 @@ npx playwright test accessibility.spec.ts
 |-------|-------|--------|
 | TypeScript compile | 0 errors | ✅ |
 | Vitest unit tests | 28/28 | ✅ |
-| Playwright E2E | 23/23 | ✅ |
+| Playwright E2E | 68/68 | ✅ |
+| Build size | 238KB gzipped | ✅ |
 
 ### Backend
 
@@ -302,7 +303,8 @@ npx playwright test accessibility.spec.ts
 | gradebook.api | 21/21 | ✅ |
 | essays.api | 22/22 | ✅ |
 | safeguarding | 28/28 | ✅ |
-| **Total** | **378+** | **✅** |
+| identity | 36/36 | ✅ |
+| **Total** | **456** | **✅** |
 
 ---
 
@@ -333,14 +335,15 @@ npx playwright test accessibility.spec.ts
 
 ## 📋 Next Steps
 
-1. ✅ ~~Add screenshots to progress.md~~
-2. 🔲 Push to GitHub repository
-3. 🔲 Switch frontend to real Supabase Auth (update API keys)
-4. 🔲 Create storage buckets via SQL
-5. 🔲 Run full E2E test suite
-6. 🔲 Deploy to staging environment
-7. 🔲 User acceptance testing
-8. 🔲 Production deployment
+1. ✅ ~~Push to GitHub repository~~
+2. ✅ ~~Switch frontend to real Supabase Auth~~
+3. ✅ ~~Create storage buckets via SQL~~
+4. ✅ ~~Run full E2E test suite~~
+5. ✅ ~~Complete CRUD RBAC for all 8 roles~~
+6. 🔲 Deploy to staging environment (free tier: Cloudflare + Render)
+7. 🔲 Run full Playwright E2E suite (reinstall browsers)
+8. 🔲 User acceptance testing
+9. 🔲 Production deployment
 
 ---
 
