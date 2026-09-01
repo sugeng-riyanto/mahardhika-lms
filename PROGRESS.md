@@ -1,6 +1,6 @@
 # AKADEMI Digital Campus — Progress Report
 
-**Last updated:** August 30, 2026
+**Last updated:** September 2, 2026
 **Project:** Mahardhika LMS
 **Repository:** https://github.com/sugeng-riyanto/mahardhika-lms
 
@@ -16,7 +16,7 @@
 | Milestone 4 — Native Activities | ✅ Complete | Day 60-75 |
 | Milestone 5 — Essay & Canvas | ✅ Complete | Day 75-90 |
 | Milestone 6 — Operations | ✅ Complete | Day 90+ |
-| Milestone 7 — Release | 🟡 In Progress (CRUD RBAC complete) | Dec 20, 2026 |
+| Milestone 7 — Release | 🟡 In Progress (all dashboards real API, 99.4% tests) | Dec 20, 2026 |
 
 ---
 
@@ -340,10 +340,13 @@ npx playwright test accessibility.spec.ts
 3. ✅ ~~Create storage buckets via SQL~~
 4. ✅ ~~Run full E2E test suite~~
 5. ✅ ~~Complete CRUD RBAC for all 8 roles~~
-6. 🔲 Deploy to staging environment (free tier: Cloudflare + Render)
-7. 🔲 Run full Playwright E2E suite (reinstall browsers)
-8. 🔲 User acceptance testing
-9. 🔲 Production deployment
+6. ✅ ~~Complete CRUD RBAC for all 8 roles~~
+7. ✅ ~~All dashboards wired to real API data~~
+8. ✅ ~~Backend test suite: 354/356 (99.4%)~~
+9. 🔲 Deploy to staging environment (free tier: Cloudflare + Render)
+10. 🔲 Run full Playwright E2E suite (reinstall browsers)
+11. 🔲 User acceptance testing
+12. 🔲 Production deployment
 
 ---
 

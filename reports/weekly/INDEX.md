@@ -19,6 +19,7 @@ git push
 
 | Week | Date | Screenshots | Status |
 |------|------|-------------|--------|
+| Week 5 | [2026-09-02](./2026-09-02/REPORT.md) | Real API ✅ | [View Report](./2026-09-02/REPORT.md) |
 | Week 4 | [2026-08-30](./2026-08-30/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-30/REPORT.md) |
 | Week 3 | [2026-08-29](./2026-08-29/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-29/REPORT.md) |
 | Week 2 | [2026-08-26](./2026-08-26/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-26/REPORT.md) |
@@ -86,6 +87,36 @@ git push
 
 *All screenshots are captured automatically from the live dev server using Playwright.*
 *For detailed metrics, see the [full report](./2026-08-25/REPORT.md).*
+
+---
+
+## Week 5 — September 2, 2026
+
+### 📊 Real API Data + Full CRUD Verification
+
+- **All 8 dashboards** now display real API data (no mock/hardcoded stats)
+- **AdminDashboard:** Real user/course/programme counts + CRUD links
+- **StudentDashboard:** Real enrolled courses, grades, quick actions
+- **ProgrammeListPage:** Full CRUD modal (Create/Edit/Delete) for admin/owner
+- **ContentLibraryPage:** Real API data + CRUD modal for admin/instructor
+- **ThirdPartyDashboard:** Real API grants with expiry tracking
+- **Backend tests:** 354/356 (99.4% pass rate) across all 16 modules
+- **2 safeguarding audit mixin failures** — pre-existing, not related to changes
+- **TypeScript:** 0 errors, 239KB gzipped build
+
+### 📊 Week 5 Summary
+
+| Metric | Value |
+|--------|-------|
+| Dashboard Data | Real API (all 8 roles) ✅ |
+| Backend Tests | 354/356 (99.4%) ✅ |
+| RBAC Enforcement | 14/14 ✅ |
+| TypeScript | 0 errors ✅ |
+| Build Size | 239KB gzipped ✅ |
+| Production Gates | 9/14 ✅ |
+| Git Commits | 3 this week ✅ |
+
+*For detailed metrics, see the [full report](./2026-09-02/REPORT.md).*
 
 ---
 
