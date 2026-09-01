@@ -1,10 +1,20 @@
 import { useState } from 'react'
-import { Users, Search, Plus, Shield, Mail, Calendar, CheckCircle, XCircle, Edit, Trash2, Eye } from 'lucide-react'
+import { Users, Search, Plus, Shield, Mail, Calendar, CheckCircle, XCircle, Edit, Trash2, Eye, Download } from 'lucide-react'
 import { useUsers } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { getRoleLabel, getRoleBadgeClass } from '@/auth/roles'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
+import { exportToCSV, formatDate, formatBoolean, type CSVColumn } from '@/utils/csvExport'
+
+const USER_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'email', label: 'Email' },
+  { key: 'full_name', label: 'Full Name' },
+  { key: 'roles', label: 'Roles', format: (v) => (v as string[] || []).map(r => getRoleLabel(r as import('@/types').UserRole)).join('; ') },
+  { key: 'is_active', label: 'Active', format: formatBoolean },
+  { key: 'mfa_enabled', label: 'MFA', format: formatBoolean },
+  { key: 'created_at', label: 'Joined', format: formatDate },
+]
 
 const USER_FIELDS: CrudField[] = [
   { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'user@example.com' },
@@ -82,10 +92,16 @@ export function UserListPage() {
           <Users className="text-purple-400" size={24} />
           <h1 className="page-title mb-0">User Management</h1>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-          <Plus size={16} />
-          Add User
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCSV(filteredUsers, USER_CSV_COLUMNS, 'users')} className="btn-secondary flex items-center gap-2">
+            <Download size={16} />
+            Export CSV
+          </button>
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+            <Plus size={16} />
+            Add User
+          </button>
+        </div>
       </div>
 
       {/* Stats bar */}

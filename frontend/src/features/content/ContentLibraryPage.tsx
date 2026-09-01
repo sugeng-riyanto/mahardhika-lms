@@ -3,11 +3,23 @@ import { useQuery } from '@tanstack/react-query'
 import {
   FileText, Search, Upload, Grid, List, Image, Package,
   Download, Trash2, Eye, Clock, HardDrive,
-  X, Film, Headphones, Layers, Edit
+  X, Film, Headphones, Layers, Edit, FileDown
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
+import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
+
+const CONTENT_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'title', label: 'Title' },
+  { key: 'description', label: 'Description' },
+  { key: 'content_type', label: 'Type' },
+  { key: 'course_title', label: 'Course' },
+  { key: 'file_size', label: 'Size', format: (v) => { const b = Number(v); if (!b) return '0 B'; const k = 1024; const s = ['B','KB','MB','GB']; const i = Math.floor(Math.log(b)/Math.log(k)); return (b/Math.pow(k,i)).toFixed(1)+' '+s[i]; } },
+  { key: 'tags', label: 'Tags', format: (v) => (v as string[] || []).join('; ') },
+  { key: 'uploaded_by_email', label: 'Uploaded By' },
+  { key: 'created_at', label: 'Created', format: formatDate },
+]
 
 interface ContentItem {
   id: string
@@ -171,12 +183,18 @@ export function ContentLibraryPage() {
           <FileText className="text-cyan-400" size={24} />
           <h1 className="page-title mb-0">Content Library</h1>
         </div>
-        {canEdit && (
-          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-            <Upload size={16} />
-            Upload File
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCSV(filteredContent, CONTENT_CSV_COLUMNS, 'content-library')} className="btn-secondary flex items-center gap-2">
+            <FileDown size={16} />
+            Export CSV
           </button>
-        )}
+          {canEdit && (
+            <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+              <Upload size={16} />
+              Upload File
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}

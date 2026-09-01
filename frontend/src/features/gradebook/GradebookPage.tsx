@@ -1,8 +1,20 @@
 import { useState } from 'react'
-import { BarChart3, Search, Award, Eye, EyeOff, Plus, Edit, Trash2, CheckCircle } from 'lucide-react'
+import { BarChart3, Search, Award, Eye, EyeOff, Plus, Edit, Trash2, CheckCircle, Download } from 'lucide-react'
 import { useGrades } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
+import { exportToCSV, formatBoolean, type CSVColumn } from '@/utils/csvExport'
+
+const GRADE_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'student_name', label: 'Student' },
+  { key: 'student_email', label: 'Email' },
+  { key: 'activity_title', label: 'Activity' },
+  { key: 'activity_type', label: 'Type' },
+  { key: 'score', label: 'Score' },
+  { key: 'max_score', label: 'Max Score' },
+  { key: 'percentage', label: 'Percentage', format: (v) => `${v}%` },
+  { key: 'released', label: 'Released', format: formatBoolean },
+]
 import { CrudModal, type CrudField } from '@/components/CrudModal'
 import type { GradeEntry } from '@/api/hooks'
 
@@ -237,7 +249,8 @@ export function GradebookPage() {
               </button>
             </>
           )}
-          <button className="btn-secondary flex items-center gap-2 text-sm">
+          <button onClick={() => exportToCSV(filteredGrades, GRADE_CSV_COLUMNS, 'grades')} className="btn-secondary flex items-center gap-2 text-sm">
+            <Download size={14} />
             Export CSV
           </button>
         </div>

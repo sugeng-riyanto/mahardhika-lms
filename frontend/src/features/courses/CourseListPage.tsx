@@ -1,8 +1,19 @@
 import { useState } from 'react'
-import { BookOpen, Search, Plus, Users, FileText, Eye, Edit, Trash2, GraduationCap } from 'lucide-react'
+import { BookOpen, Search, Plus, Users, FileText, Eye, Edit, Trash2, GraduationCap, Download } from 'lucide-react'
 import { useCourses } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
+import { exportToCSV, formatDate, formatBoolean, type CSVColumn } from '@/utils/csvExport'
+
+const COURSE_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'title', label: 'Title' },
+  { key: 'programme_name', label: 'Programme' },
+  { key: 'description', label: 'Description' },
+  { key: 'lesson_count', label: 'Lessons' },
+  { key: 'student_count', label: 'Students' },
+  { key: 'is_published', label: 'Published', format: formatBoolean },
+  { key: 'created_at', label: 'Created', format: formatDate },
+]
 import { CrudModal, type CrudField } from '@/components/CrudModal'
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -107,12 +118,18 @@ export function CourseListPage() {
           <BookOpen className="text-cyan-400" size={24} />
           <h1 className="page-title mb-0">Courses</h1>
         </div>
-        {(isAdmin || isInstructor) && (
-          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-            <Plus size={16} />
-            Create Course
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCSV(filteredCourses, COURSE_CSV_COLUMNS, 'courses')} className="btn-secondary flex items-center gap-2">
+            <Download size={16} />
+            Export CSV
           </button>
-        )}
+          {(isAdmin || isInstructor) && (
+            <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+              <Plus size={16} />
+              Create Course
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}

@@ -1,8 +1,19 @@
 import { useState } from 'react'
 import {
   CreditCard, FileText, Plus, Search, Send, CheckCircle,
-  XCircle, AlertCircle, Trash2, Eye,
+  XCircle, AlertCircle, Trash2, Eye, Download,
 } from 'lucide-react'
+import { exportToCSV, formatCurrency, formatDate, type CSVColumn } from '@/utils/csvExport'
+
+const INVOICE_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'invoice_number', label: 'Invoice' },
+  { key: 'user_email', label: 'User' },
+  { key: 'amount', label: 'Amount', format: formatCurrency },
+  { key: 'status', label: 'Status' },
+  { key: 'due_date', label: 'Due Date', format: formatDate },
+  { key: 'paid_at', label: 'Paid At', format: formatDate },
+  { key: 'notes', label: 'Notes' },
+]
 import {
   useInvoices, useFinanceSummary, useCreateInvoice, useUpdateInvoice,
   useDeleteInvoice, useSendInvoice, useMarkPaidInvoice, useCancelInvoice,
@@ -261,9 +272,14 @@ export function FinancePage() {
           <CreditCard className="text-yellow-400" size={24} />
           <h1 className="page-title mb-0">Finance</h1>
         </div>
-        <button onClick={() => setShowCreateForm(true)} className="btn-primary flex items-center gap-1.5">
-          <Plus size={16} /> New Invoice
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCSV(invoices, INVOICE_CSV_COLUMNS, 'invoices')} className="btn-secondary flex items-center gap-1.5">
+            <Download size={16} /> Export CSV
+          </button>
+          <button onClick={() => setShowCreateForm(true)} className="btn-primary flex items-center gap-1.5">
+            <Plus size={16} /> New Invoice
+          </button>
+        </div>
       </div>
 
       {/* Summary Stats */}
