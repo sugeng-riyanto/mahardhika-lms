@@ -1128,3 +1128,35 @@ export function useRevokeCertificate() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['certificates'] }) },
   })
 }
+
+// ================================================
+// Third Party Grants
+// ================================================
+
+export interface ThirdPartyGrant {
+  id: string
+  third_party_user: string
+  third_party_email: string
+  purpose: string
+  scope: string
+  is_active: boolean
+  expires_at: string | null
+  created_at: string
+}
+
+async function fetchThirdPartyGrants(): Promise<ThirdPartyGrant[]> {
+  try {
+    const data = await apiClient.list<ThirdPartyGrant>('/third-party-grants/')
+    return data.results
+  } catch {
+    return []
+  }
+}
+
+export function useThirdPartyGrants() {
+  return useQuery({
+    queryKey: ['third-party-grants'],
+    queryFn: fetchThirdPartyGrants,
+    staleTime: 30_000,
+  })
+}

@@ -1,6 +1,9 @@
 import { useState } from 'react'
-import { GraduationCap, Search, Plus, BookOpen, Edit, Archive } from 'lucide-react'
+import { GraduationCap, Search, Plus, BookOpen, Edit, Trash2, Eye, Archive } from 'lucide-react'
 import { useProgrammes } from '@/api/hooks'
+import { apiClient } from '@/api/client'
+import { useAuth } from '@/auth/AuthProvider'
+import { CrudModal, type CrudField } from '@/components/CrudModal'
 
 const LEVEL_META: Record<string, { label: string; color: string; gradient: string; icon: string }> = {
   jhs: { label: 'Junior High', color: 'text-blue-400', gradient: 'from-blue-500 to-blue-700', icon: '📚' },
@@ -13,10 +16,35 @@ const LEVEL_META: Record<string, { label: string; color: string; gradient: strin
   teacher_dev: { label: 'Teacher Dev', color: 'text-teal-400', gradient: 'from-teal-500 to-teal-700', icon: '👨‍🏫' },
 }
 
+const PROGRAMME_FIELDS: CrudField[] = [
+  { name: 'name', label: 'Programme Name', type: 'text', required: true, placeholder: 'Mathematics Programme' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Programme description...' },
+  { name: 'level', label: 'Level', type: 'select', required: true, options: [
+    { value: 'jhs', label: 'Junior High (JHS)' },
+    { value: 'shs', label: 'Senior High (SHS)' },
+    { value: 'pkbm', label: 'PKBM' },
+    { value: 'academy', label: 'Academy' },
+    { value: 'steam', label: 'STEAM' },
+    { value: 'arts', label: 'Arts' },
+    { value: 'ielts', label: 'IELTS' },
+    { value: 'teacher_dev', label: 'Teacher Development' },
+  ]},
+  { name: 'is_active', label: 'Active', type: 'toggle' },
+]
+
+interface ModalState {
+  isOpen: boolean
+  mode: 'create' | 'edit' | 'delete' | 'view'
+  data: Record<string, unknown>
+}
+
 export function ProgrammeListPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+  const { roles } = useAuth()
+  const isAdmin = roles.includes('admin') || roles.includes('owner')
 
-  const { data: programmes, isLoading } = useProgrammes()
+  const { data: programmes, isLoading, refetch } = useProgrammes()
 
   const filteredProgrammes = programmes?.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -26,6 +54,48 @@ export function ProgrammeListPage() {
   const activeCount = programmes?.filter(p => p.is_active).length || 0
   const totalCourses = programmes?.reduce((sum, p) => sum + p.course_count, 0) || 0
 
+  const openCreate = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { name: '', description: '', level: 'jhs', is_active: true },
+  })
+
+  const openEdit = (p: typeof filteredProgrammes[0]) => setModal({
+    isOpen: true,
+    mode: 'edit',
+    data: { id: p.id, name: p.name, description: p.description || '', level: p.level, is_active: p.is_active },
+  })
+
+  const openView = (p: typeof filteredProgrammes[0]) => setModal({
+    isOpen: true,
+    mode: 'view',
+    data: { ...p, level_label: LEVEL_META[p.level]?.label || p.level },
+  })
+
+  const openDelete = (p: typeof filteredProgrammes[0]) => setModal({
+    isOpen: true,
+    mode: 'delete',
+    data: { id: p.id, name: p.name },
+  })
+
+  const handleSave = async (data: Record<string, unknown>) => {
+    if (modal.mode === 'create') {
+      await apiClient.post('/programmes/', data)
+    } else if (modal.mode === 'edit' && data.id) {
+      await apiClient.patch(`/programmes/${data.id}/`, data)
+    }
+    await refetch()
+    setModal({ isOpen: false, mode: 'create', data: {} })
+  }
+
+  const handleDelete = async () => {
+    if (modal.data.id) {
+      await apiClient.delete(`/programmes/${modal.data.id}/`)
+      await refetch()
+      setModal({ isOpen: false, mode: 'create', data: {} })
+    }
+  }
+
   return (
     <div className="page-container">
       <div className="flex items-center justify-between mb-6">
@@ -33,10 +103,12 @@ export function ProgrammeListPage() {
           <GraduationCap className="text-green-400" size={24} />
           <h1 className="page-title mb-0">Programmes</h1>
         </div>
-        <button className="btn-primary flex items-center gap-2">
-          <Plus size={16} />
-          Create Programme
-        </button>
+        {isAdmin && (
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+            <Plus size={16} />
+            Create Programme
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -54,7 +126,7 @@ export function ProgrammeListPage() {
           <p className="text-sm text-navy-400">Total Courses</p>
         </div>
         <div className="card p-4">
-          <p className="text-2xl font-bold text-purple-400">{programmes?.length || 0}</p>
+          <p className="text-2xl font-bold text-purple-400">{Object.keys(LEVEL_META).length}</p>
           <p className="text-sm text-navy-400">Levels</p>
         </div>
       </div>
@@ -83,7 +155,6 @@ export function ProgrammeListPage() {
             const meta = LEVEL_META[programme.level] || LEVEL_META.academy
             return (
               <div key={programme.id} className="card hover:border-green-700/50 transition-all cursor-pointer group">
-                {/* Header gradient */}
                 <div className={`h-24 bg-gradient-to-br ${meta.gradient} rounded-t-xl flex items-center justify-center relative`}>
                   <span className="text-3xl">{meta.icon}</span>
                   {!programme.is_active && (
@@ -109,7 +180,6 @@ export function ProgrammeListPage() {
                     {programme.description || 'No description'}
                   </p>
 
-                  {/* Stats */}
                   <div className="flex items-center gap-4 text-xs text-navy-500 mb-4">
                     <span className="flex items-center gap-1">
                       <BookOpen size={12} />
@@ -118,13 +188,31 @@ export function ProgrammeListPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button className="flex-1 btn-secondary text-sm flex items-center justify-center gap-1">
-                      <BookOpen size={14} />
-                      View Courses
+                    <button
+                      onClick={() => openView(programme)}
+                      className="flex-1 btn-secondary text-sm flex items-center justify-center gap-1"
+                    >
+                      <Eye size={14} />
+                      View
                     </button>
-                    <button className="btn-ghost text-sm px-3">
-                      <Edit size={14} />
-                    </button>
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => openEdit(programme)}
+                          className="btn-ghost text-sm flex items-center gap-1 px-3"
+                          aria-label={`Edit ${programme.name}`}
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => openDelete(programme)}
+                          className="btn-ghost text-sm flex items-center gap-1 px-3 text-red-400 hover:text-red-300"
+                          aria-label={`Delete ${programme.name}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -139,6 +227,18 @@ export function ProgrammeListPage() {
           <p className="text-navy-400">No programmes found.</p>
         </div>
       )}
+
+      {/* CRUD Modal */}
+      <CrudModal
+        isOpen={modal.isOpen}
+        mode={modal.mode}
+        title="Programme"
+        fields={PROGRAMME_FIELDS}
+        data={modal.data}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
+      />
     </div>
   )
 }

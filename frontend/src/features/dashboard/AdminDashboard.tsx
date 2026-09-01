@@ -1,100 +1,102 @@
-import { Settings, Users, BookOpen, GraduationCap, ClipboardList, AlertCircle } from 'lucide-react'
+import { Settings, Users, BookOpen, GraduationCap, ClipboardList, AlertCircle, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useUsers, useCourses, useProgrammes } from '@/api/hooks'
 import { t } from '@/i18n/translations'
 
-const stats = [
-  { label: 'Active Users', value: '24', icon: <Users size={20} />, color: 'text-purple-400', bg: 'bg-purple-900/30' },
-  { label: 'Courses', value: '8', icon: <BookOpen size={20} />, color: 'text-cyan-400', bg: 'bg-cyan-900/30' },
-  { label: 'Programmes', value: '3', icon: <GraduationCap size={20} />, color: 'text-green-400', bg: 'bg-green-900/30' },
-  { label: 'Pending Enrolments', value: '5', icon: <ClipboardList size={20} />, color: 'text-yellow-400', bg: 'bg-yellow-900/30' },
-]
-
 export function AdminDashboard() {
+  const { data: users = [] } = useUsers()
+  const { data: courses = [] } = useCourses()
+  const { data: programmes = [] } = useProgrammes()
+
+  const activeUsers = users.filter(u => u.is_active).length
+  const publishedCourses = courses.filter(c => c.is_published).length
+
+  const stats = [
+    { label: 'Active Users', value: activeUsers, icon: <Users size={20} />, color: 'text-purple-400', bg: 'bg-purple-900/30', link: '/users' },
+    { label: 'Courses', value: courses.length, icon: <BookOpen size={20} />, color: 'text-cyan-400', bg: 'bg-cyan-900/30', link: '/courses' },
+    { label: 'Programmes', value: programmes.length, icon: <GraduationCap size={20} />, color: 'text-green-400', bg: 'bg-green-900/30', link: '/programmes' },
+    { label: 'Published', value: publishedCourses, icon: <ClipboardList size={20} />, color: 'text-yellow-400', bg: 'bg-yellow-900/30', link: '/courses' },
+  ]
+
   return (
     <div className="page-container">
-      <div className="flex items-center gap-3 mb-6">
-        <Settings className="text-purple-400" size={24} />
-        <h1 className="page-title mb-0">{t('dash.admin.title')}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Settings className="text-purple-400" size={24} />
+          <h1 className="page-title mb-0">{t('dash.admin.title')}</h1>
+        </div>
+        <Link to="/users" className="btn-primary flex items-center gap-2">
+          <Plus size={16} />
+          Add User
+        </Link>
       </div>
 
       <p className="page-subtitle">{t('dash.admin.subtitle')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
-          <div key={stat.label} className="card" role="group" aria-label={`${stat.label}: ${stat.value}`}>
+          <Link key={stat.label} to={stat.link} className="card hover:border-cyan-700/50 transition-colors" role="group" aria-label={`${stat.label}: ${stat.value}`}>
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${stat.bg}`} aria-hidden="true">
                 <span className={stat.color}>{stat.icon}</span>
               </div>
               <div>
-                <p className="text-2xl font-bold text-white" aria-hidden="true">{stat.value}</p>
+                <p className="text-2xl font-bold text-white">{stat.value}</p>
                 <p className="text-sm text-navy-400">{stat.label}</p>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card">
-          <h2 className="text-lg font-semibold text-white mb-4" id="user-mgmt-heading">User Management</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">User Management</h2>
           <div className="space-y-2">
             <Link to="/users" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
-              {t('dash.viewAllUsers')}
+              View & Manage Users ({users.length})
             </Link>
-            <div className="p-3 bg-navy-700/30 rounded-lg">
-              <p className="text-sm text-navy-300" id="invite-label">{t('dash.invite')}</p>
-              <div className="flex gap-2 mt-2">
-                <input
-                  type="email"
-                  placeholder={t('dash.invite.placeholder')}
-                  className="input-field flex-1 text-sm py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  aria-labelledby="invite-label"
-                  aria-label="Email address for quick invite"
-                />
-                <button className="btn-primary text-sm py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-400">{t('dash.invite.btn')}</button>
-              </div>
-            </div>
+            <Link to="/users" className="flex items-center gap-2 p-3 rounded-lg bg-cyan-900/20 hover:bg-cyan-900/30 transition-colors text-sm text-cyan-400">
+              <Plus size={14} />
+              Add New User
+            </Link>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="text-lg font-semibold text-white mb-4" id="programmes-heading">{t('dash.programmes')} & {t('dash.courses')}</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Programmes & Courses</h2>
           <div className="space-y-2">
             <Link to="/programmes" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
-              {t('dash.manageProgrammes')}
+              Manage Programmes ({programmes.length})
             </Link>
             <Link to="/courses" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
-              {t('dash.manageCourses')}
+              Manage Courses ({courses.length})
+            </Link>
+            <Link to="/content" className="block p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
+              Content Library
             </Link>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="text-lg font-semibold text-white mb-4" id="system-health-heading">{t('dash.systemHealth')}</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">{t('dash.apiStatus')}</span>
-              <span className="badge-success">{t('dash.operational')}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">{t('dash.database')}</span>
-              <span className="badge-success">{t('dash.operational')}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">{t('dash.storage')}</span>
-              <span className="badge-success">{t('dash.operational')}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-navy-300">{t('dash.workers')}</span>
-              <span className="badge-warning">{t('dash.starting')}</span>
-            </div>
-          </div>
-          <div className="mt-4 p-3 bg-red-900/20 border border-red-700/30 rounded-lg">
-            <div className="flex items-center gap-2 text-red-400 text-sm">
-              <AlertCircle size={14} />
-              <span className="text-xs">{t('dash.pendingApprovals')}</span>
-            </div>
+          <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="space-y-2">
+            <Link to="/users" className="flex items-center gap-2 p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
+              <Users size={14} className="text-purple-400" />
+              User & Role Management
+            </Link>
+            <Link to="/audit" className="flex items-center gap-2 p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
+              <AlertCircle size={14} className="text-yellow-400" />
+              Audit Log
+            </Link>
+            <Link to="/settings" className="flex items-center gap-2 p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
+              <Settings size={14} className="text-cyan-400" />
+              System Settings
+            </Link>
+            <Link to="/finance" className="flex items-center gap-2 p-3 rounded-lg hover:bg-navy-700 transition-colors text-sm text-navy-200">
+              <ClipboardList size={14} className="text-green-400" />
+              Finance Overview
+            </Link>
           </div>
         </div>
       </div>

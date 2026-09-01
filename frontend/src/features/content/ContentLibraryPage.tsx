@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import {
   FileText, Search, Upload, Grid, List, Image, Package,
   Download, Trash2, Eye, Clock, HardDrive,
-  X, Film, Headphones, Layers
+  X, Film, Headphones, Layers, Edit
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
+import { useAuth } from '@/auth/AuthProvider'
+import { CrudModal, type CrudField } from '@/components/CrudModal'
 
 interface ContentItem {
   id: string
@@ -26,17 +28,9 @@ interface ContentItem {
 
 const MOCK_CONTENT: ContentItem[] = [
   { id: 'ci1', title: 'Algebra Fundamentals slides', description: 'Lecture slides for algebra introduction', content_type: 'document', file_url: '/files/algebra-intro.pdf', mime_type: 'application/pdf', file_size: 2457600, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'algebra', 'jhs'], course: null, course_title: 'Mathematics 7A', created_at: '2026-08-24T10:00:00Z', updated_at: '2026-08-24T10:00:00Z' },
-  { id: 'ci2', title: 'Newton\'s Laws Animation', description: 'Interactive animation showing Newton\'s three laws of motion', content_type: 'video', file_url: '/files/newton-laws.mp4', mime_type: 'video/mp4', file_size: 15728640, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'newton', 'forces'], course: null, course_title: 'Physics 10', created_at: '2026-08-24T11:00:00Z', updated_at: '2026-08-24T11:00:00Z' },
+  { id: 'ci2', title: "Newton's Laws Animation", description: "Interactive animation showing Newton's three laws of motion", content_type: 'video', file_url: '/files/newton-laws.mp4', mime_type: 'video/mp4', file_size: 15728640, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'newton', 'forces'], course: null, course_title: 'Physics 10', created_at: '2026-08-24T11:00:00Z', updated_at: '2026-08-24T11:00:00Z' },
   { id: 'ci3', title: 'Periodic Table Reference', description: 'High-resolution periodic table with element details', content_type: 'image', file_url: '/files/periodic-table.png', mime_type: 'image/png', file_size: 1048576, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['chemistry', 'reference'], course: null, course_title: 'Science 7', created_at: '2026-08-24T12:00:00Z', updated_at: '2026-08-24T12:00:00Z' },
-  { id: 'ci4', title: 'Cell Division Timelapse', description: 'Video showing mitosis and cell division stages', content_type: 'video', file_url: '/files/cell-division.mp4', mime_type: 'video/mp4', file_size: 31457280, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['biology', 'cell', 'division'], course_title: 'Science 7', created_at: '2026-08-24T13:00:00Z', updated_at: '2026-08-24T13:00:00Z' },
-  { id: 'ci5', title: 'English Grammar Exercises', description: 'Interactive grammar worksheet with answers', content_type: 'document', file_url: '/files/grammar-exercises.pdf', mime_type: 'application/pdf', file_size: 524288, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['english', 'grammar', 'exercises'], course_title: null, created_at: '2026-08-24T14:00:00Z', updated_at: '2026-08-24T14:00:00Z' },
-  { id: 'ci6', title: 'Wave Interference Demo', description: 'Simulation of wave interference patterns', content_type: 'interactive', file_url: '/files/wave-sim', mime_type: 'text/html', file_size: 819200, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'waves', 'simulation'], course_title: 'Physics 10', created_at: '2026-08-24T15:00:00Z', updated_at: '2026-08-24T15:00:00Z' },
-  { id: 'ci7', title: 'IELTS Speaking Practice Audio', description: 'Sample speaking responses for IELTS preparation', content_type: 'audio', file_url: '/files/ielts-speaking.mp3', mime_type: 'audio/mpeg', file_size: 4194304, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['ielts', 'speaking', 'practice'], course_title: 'IELTS Academic Writing', created_at: '2026-08-24T16:00:00Z', updated_at: '2026-08-24T16:00:00Z' },
-  { id: 'ci8', title: 'Geometry Formula Sheet', description: 'Comprehensive formula reference for geometry', content_type: 'document', file_url: '/files/geometry-formulas.pdf', mime_type: 'application/pdf', file_size: 307200, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'geometry', 'reference'], course_title: 'Mathematics 7A', created_at: '2026-08-24T17:00:00Z', updated_at: '2026-08-24T17:00:00Z' },
-  { id: 'ci9', title: 'Robotics Kit Assembly Guide', description: 'Step-by-step guide for assembling the robotics kit', content_type: 'image', file_url: '/files/robotics-guide.png', mime_type: 'image/png', file_size: 5242880, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['robotics', 'guide', 'steam'], course_title: 'Robotics Workshop', created_at: '2026-08-24T18:00:00Z', updated_at: '2026-08-24T18:00:00Z' },
-  { id: 'ci10', title: 'Calculus Video Lecture 1', description: 'Introduction to limits and derivatives', content_type: 'video', file_url: '/files/calc-lecture-1.mp4', mime_type: 'video/mp4', file_size: 104857600, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'calculus', 'video'], course_title: 'Advanced Mathematics', created_at: '2026-08-24T19:00:00Z', updated_at: '2026-08-24T19:00:00Z' },
-  { id: 'ci11', title: 'Thermodynamics Lab Recording', description: 'Audio recording of thermodynamics lab procedure', content_type: 'audio', file_url: '/files/thermo-lab.mp3', mime_type: 'audio/mpeg', file_size: 8388608, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'lab', 'thermodynamics'], course_title: 'Physics 10', created_at: '2026-08-25T10:00:00Z', updated_at: '2026-08-25T10:00:00Z' },
-  { id: 'ci12', title: 'History Timeline Poster', description: 'Visual timeline of major historical events', content_type: 'image', file_url: '/files/history-timeline.jpg', mime_type: 'image/jpeg', file_size: 3145728, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['history', 'poster', 'reference'], course_title: null, created_at: '2026-08-25T11:00:00Z', updated_at: '2026-08-25T11:00:00Z' },
+  { id: 'ci4', title: 'Geometry Formula Sheet', description: 'Comprehensive formula reference for geometry', content_type: 'document', file_url: '/files/geometry-formulas.pdf', mime_type: 'application/pdf', file_size: 307200, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'geometry', 'reference'], course_title: 'Mathematics 7A', created_at: '2026-08-24T17:00:00Z', updated_at: '2026-08-24T17:00:00Z' },
 ]
 
 const TYPE_META: Record<string, { label: string; icon: typeof FileText; color: string; bg: string }> = {
@@ -47,6 +41,19 @@ const TYPE_META: Record<string, { label: string; icon: typeof FileText; color: s
   interactive: { label: 'Interactive', icon: Layers, color: 'text-orange-400', bg: 'bg-orange-900/30' },
   other: { label: 'Other', icon: Package, color: 'text-navy-400', bg: 'bg-navy-800' },
 }
+
+const CONTENT_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Content title' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description...' },
+  { name: 'content_type', label: 'Type', type: 'select', required: true, options: [
+    { value: 'document', label: 'Document' },
+    { value: 'video', label: 'Video' },
+    { value: 'image', label: 'Image' },
+    { value: 'audio', label: 'Audio' },
+    { value: 'interactive', label: 'Interactive' },
+  ]},
+  { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'math, physics, reference' },
+]
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'
@@ -65,14 +72,23 @@ async function fetchContent(): Promise<ContentItem[]> {
   }
 }
 
+interface ModalState {
+  isOpen: boolean
+  mode: 'create' | 'edit' | 'delete' | 'view'
+  data: Record<string, unknown>
+}
+
 export function ContentLibraryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [dragOver, setDragOver] = useState(false)
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
+  const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+  const { roles } = useAuth()
+  const canEdit = roles.includes('admin') || roles.includes('owner') || roles.includes('instructor')
 
-  const { data: content, isLoading } = useQuery({
+  const { data: content, isLoading, refetch } = useQuery({
     queryKey: ['content'],
     queryFn: fetchContent,
   })
@@ -106,8 +122,47 @@ export function ContentLibraryPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
-    // In a real app, this would upload the files
   }, [])
+
+  const openCreate = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', description: '', content_type: 'document', tags: '' },
+  })
+
+  const openEdit = (item: ContentItem) => setModal({
+    isOpen: true,
+    mode: 'edit',
+    data: { id: item.id, title: item.title, description: item.description, content_type: item.content_type, tags: item.tags.join(', ') },
+  })
+
+  const openDelete = (item: ContentItem) => setModal({
+    isOpen: true,
+    mode: 'delete',
+    data: { id: item.id, title: item.title },
+  })
+
+  const handleSave = async (data: Record<string, unknown>) => {
+    const payload = { ...data }
+    if (typeof payload.tags === 'string') {
+      payload.tags = (payload.tags as string).split(',').map((t: string) => t.trim()).filter(Boolean)
+    }
+    if (modal.mode === 'create') {
+      await apiClient.post('/content/', payload)
+    } else if (modal.mode === 'edit' && payload.id) {
+      await apiClient.patch(`/content/${payload.id}/`, payload)
+    }
+    await refetch()
+    setModal({ isOpen: false, mode: 'create', data: {} })
+  }
+
+  const handleDelete = async () => {
+    if (modal.data.id) {
+      await apiClient.delete(`/content/${modal.data.id}/`)
+      await refetch()
+      setModal({ isOpen: false, mode: 'create', data: {} })
+    }
+  }
 
   return (
     <div className="page-container">
@@ -116,10 +171,12 @@ export function ContentLibraryPage() {
           <FileText className="text-cyan-400" size={24} />
           <h1 className="page-title mb-0">Content Library</h1>
         </div>
-        <button className="btn-primary flex items-center gap-2">
-          <Upload size={16} />
-          Upload File
-        </button>
+        {canEdit && (
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+            <Upload size={16} />
+            Upload File
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -143,24 +200,26 @@ export function ContentLibraryPage() {
       </div>
 
       {/* Upload zone */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`mb-6 border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
-          dragOver
-            ? 'border-cyan-400 bg-cyan-900/10'
-            : 'border-navy-700 hover:border-navy-500 bg-navy-900/30'
-        }`}
-      >
-        <Upload className={`mx-auto mb-3 ${dragOver ? 'text-cyan-400' : 'text-navy-500'}`} size={32} />
-        <p className={`text-sm font-medium mb-1 ${dragOver ? 'text-cyan-300' : 'text-navy-300'}`}>
-          {dragOver ? 'Drop files here' : 'Drag & drop files here, or click to browse'}
-        </p>
-        <p className="text-xs text-navy-500">
-          Supports PDF, DOCX, MP4, PNG, JPG, MP3, HTML — Max 100 MB
-        </p>
-      </div>
+      {canEdit && (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`mb-6 border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+            dragOver
+              ? 'border-cyan-400 bg-cyan-900/10'
+              : 'border-navy-700 hover:border-navy-500 bg-navy-900/30'
+          }`}
+        >
+          <Upload className={`mx-auto mb-3 ${dragOver ? 'text-cyan-400' : 'text-navy-500'}`} size={32} />
+          <p className={`text-sm font-medium mb-1 ${dragOver ? 'text-cyan-300' : 'text-navy-300'}`}>
+            {dragOver ? 'Drop files here' : 'Drag & drop files here, or click to browse'}
+          </p>
+          <p className="text-xs text-navy-500">
+            Supports PDF, DOCX, MP4, PNG, JPG, MP3, HTML — Max 100 MB
+          </p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -175,7 +234,6 @@ export function ContentLibraryPage() {
           />
         </div>
 
-        {/* Type filter pills */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setTypeFilter('all')}
@@ -203,7 +261,6 @@ export function ContentLibraryPage() {
           ))}
         </div>
 
-        {/* View toggle */}
         <div className="flex items-center gap-1 bg-navy-800 rounded-lg p-1">
           <button
             onClick={() => setViewMode('grid')}
@@ -233,7 +290,6 @@ export function ContentLibraryPage() {
           <p className="text-navy-400">Loading content...</p>
         </div>
       ) : viewMode === 'grid' ? (
-        /* Grid view */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredContent.map((item) => {
             const meta = TYPE_META[item.content_type] || TYPE_META.other
@@ -244,7 +300,6 @@ export function ContentLibraryPage() {
                 onClick={() => setSelectedItem(item)}
                 className="card hover:border-cyan-700/50 transition-all cursor-pointer group"
               >
-                {/* Thumbnail */}
                 <div className={`h-32 ${meta.bg} rounded-t-xl flex items-center justify-center relative`}>
                   <Icon className={`${meta.color} opacity-40`} size={40} />
                   <span className={`absolute top-2 left-2 badge text-[10px] ${meta.color} ${meta.bg}`}>
@@ -260,7 +315,6 @@ export function ContentLibraryPage() {
                     {item.description}
                   </p>
 
-                  {/* Tags */}
                   <div className="flex flex-wrap gap-1 mb-3">
                     {item.tags.slice(0, 3).map((tag) => (
                       <span key={tag} className="badge text-[9px] bg-navy-800 text-navy-400">
@@ -274,7 +328,6 @@ export function ContentLibraryPage() {
                     )}
                   </div>
 
-                  {/* Meta */}
                   <div className="flex items-center justify-between text-[10px] text-navy-500">
                     <span className="flex items-center gap-1">
                       <HardDrive size={10} />
@@ -291,7 +344,6 @@ export function ContentLibraryPage() {
           })}
         </div>
       ) : (
-        /* List view */
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -347,12 +399,16 @@ export function ContentLibraryPage() {
                           <button className="p-1 text-navy-400 hover:text-white transition-colors" aria-label="View">
                             <Eye size={14} />
                           </button>
-                          <button className="p-1 text-navy-400 hover:text-white transition-colors" aria-label="Download">
-                            <Download size={14} />
-                          </button>
-                          <button className="p-1 text-navy-400 hover:text-red-400 transition-colors" aria-label="Delete">
-                            <Trash2 size={14} />
-                          </button>
+                          {canEdit && (
+                            <>
+                              <button onClick={(e) => { e.stopPropagation(); openEdit(item) }} className="p-1 text-navy-400 hover:text-yellow-400 transition-colors" aria-label="Edit">
+                                <Edit size={14} />
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); openDelete(item) }} className="p-1 text-navy-400 hover:text-red-400 transition-colors" aria-label="Delete">
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -431,17 +487,33 @@ export function ContentLibraryPage() {
                 <Download size={14} />
                 Download
               </button>
-              <button className="btn-secondary flex items-center gap-2">
-                <Eye size={14} />
-                Preview
-              </button>
-              <button className="btn-ghost text-red-400 flex items-center gap-2 px-3">
-                <Trash2 size={14} />
-              </button>
+              {canEdit && (
+                <>
+                  <button onClick={() => { setSelectedItem(null); openEdit(selectedItem) }} className="btn-secondary flex items-center gap-2">
+                    <Edit size={14} />
+                    Edit
+                  </button>
+                  <button onClick={() => { setSelectedItem(null); openDelete(selectedItem) }} className="btn-ghost text-red-400 flex items-center gap-2 px-3">
+                    <Trash2 size={14} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* CRUD Modal */}
+      <CrudModal
+        isOpen={modal.isOpen}
+        mode={modal.mode}
+        title="Content"
+        fields={CONTENT_FIELDS}
+        data={modal.data}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
+      />
     </div>
   )
 }
