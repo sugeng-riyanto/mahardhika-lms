@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
+import { useTheme } from '@/theme/ThemeProvider'
 import {
   getRoleLabel,
   getRoleBadgeClass,
@@ -25,6 +26,8 @@ import {
   MessageSquare,
   ChevronDown,
   Award,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { NotificationPanel } from '@/components/NotificationPanel'
 import { ConnectionStatus } from '@/components/ConnectionStatus'
@@ -58,6 +61,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, roles, signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -134,7 +138,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }))
 
   return (
-    <div className="min-h-screen flex bg-navy-950">
+    <div className="min-h-screen flex bg-navy-950 dark:bg-navy-950 light:bg-gray-50">
       {/* Skip to content link */}
       <a
         href="#main-content"
@@ -145,7 +149,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-navy-900 border-r border-navy-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-navy-900 dark:bg-navy-900 light:bg-white border-r border-navy-700 light:border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -158,7 +162,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-navy-400 hover:text-white"
+            className="lg:hidden text-navy-400 light:text-gray-500 hover:text-white light:hover:text-gray-900"
             aria-label="Close sidebar"
           >
             <X size={20} />
@@ -175,8 +179,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-cyan-900/30 text-cyan-400'
-                    : 'text-navy-300 hover:text-white hover:bg-navy-800'
+                    ? 'bg-cyan-900/30 text-cyan-400 light:bg-cyan-50 light:text-cyan-700'
+                    : 'text-navy-300 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-navy-800 light:hover:bg-gray-100'
                 }`}
                 aria-current={isActive ? 'page' : undefined}
               >
@@ -191,11 +195,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="sticky top-0 z-40 h-16 bg-navy-900/80 backdrop-blur-sm border-b border-navy-700 flex items-center justify-between px-4 lg:px-6">
+        <header className="sticky top-0 z-40 h-16 bg-navy-900/80 dark:bg-navy-900/80 light:bg-white/80 backdrop-blur-sm border-b border-navy-700 light:border-gray-200 flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-navy-400 hover:text-white"
+              className="lg:hidden text-navy-400 light:text-gray-500 hover:text-white light:hover:text-gray-900"
               aria-label="Open sidebar"
             >
               <Menu size={20} />
@@ -210,11 +214,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <span className="text-navy-600">/</span>
                     )}
                     {crumb.isLast ? (
-                      <span className="text-navy-300">{crumb.label}</span>
+                      <span className="text-navy-300 light:text-gray-500">{crumb.label}</span>
                     ) : (
                       <Link
                         to={crumb.path}
-                        className="text-navy-400 hover:text-white"
+                        className="text-navy-400 light:text-gray-500 hover:text-white light:hover:text-gray-900"
                       >
                         {crumb.label}
                       </Link>
@@ -226,6 +230,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-navy-400 light:text-gray-500 hover:text-white light:hover:text-gray-900 hover:bg-navy-800 light:hover:bg-gray-100 transition-colors"
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             {/* Connection status */}
             <ConnectionStatus />
 
@@ -236,7 +249,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="relative">
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 text-navy-300 hover:text-white p-1 rounded-lg hover:bg-navy-800"
+                className="flex items-center gap-2 text-navy-300 light:text-gray-600 hover:text-white light:hover:text-gray-900 p-1 rounded-lg hover:bg-navy-800 light:hover:bg-gray-100"
                 aria-expanded={profileOpen}
                 aria-haspopup="true"
               >
@@ -252,8 +265,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     className="fixed inset-0 z-40"
                     onClick={() => setProfileOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-64 bg-navy-800 border border-navy-700 rounded-xl shadow-xl z-50 py-2">
-                    <div className="px-4 py-3 border-b border-navy-700">
+                  <div className="absolute right-0 mt-2 w-64 bg-navy-800 light:bg-white border border-navy-700 light:border-gray-200 rounded-xl shadow-xl z-50 py-2">
+                    <div className="px-4 py-3 border-b border-navy-700 light:border-gray-200">
                       <p className="text-sm font-medium text-white">{user?.full_name}</p>
                       <p className="text-xs text-navy-400">{user?.email}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -271,22 +284,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <Link
                         to="/profile"
                         onClick={() => setProfileOpen(false)}
-                        className="block px-4 py-2 text-sm text-navy-300 hover:text-white hover:bg-navy-700"
+                        className="block px-4 py-2 text-sm text-navy-300 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-navy-700 light:hover:bg-gray-100"
                       >
                         Profile
                       </Link>
                       <Link
                         to="/settings"
                         onClick={() => setProfileOpen(false)}
-                        className="block px-4 py-2 text-sm text-navy-300 hover:text-white hover:bg-navy-700"
+                        className="block px-4 py-2 text-sm text-navy-300 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-navy-700 light:hover:bg-gray-100"
                       >
                         Settings
                       </Link>
                     </div>
-                    <div className="border-t border-navy-700 pt-1">
+                    <div className="border-t border-navy-700 light:border-gray-200 pt-1">
                       <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-navy-700"
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 light:text-red-600 hover:text-red-300 light:hover:text-red-700 hover:bg-navy-700 light:hover:bg-gray-100"
                       >
                         <LogOut size={16} />
                         Sign out
@@ -310,6 +323,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
     </div>

@@ -14,7 +14,17 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <title>AKADEMI Digital Campus</title>
   </head>
-  <body class="bg-navy-950 text-white">
+  <body>
+    <script>
+      // Prevent flash of unstyled content — apply theme class immediately
+      (function() {
+        var theme = localStorage.getItem('akademi-theme');
+        if (!theme) {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.classList.add(theme);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

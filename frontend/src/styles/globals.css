@@ -4,8 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-navy-950 text-white antialiased;
+    @apply antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-navy-950 text-white;
   }
 
   * {
@@ -16,12 +17,10 @@
     @apply outline-2 outline-offset-2 outline-cyan-500;
   }
 
-  /* WCAG 2.3.1: Ensure focus ring has sufficient contrast against dark background */
   .focus-visible-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-900;
   }
 
-  /* Ensure screen-reader-only class works for visually hidden labels */
   .sr-only {
     @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
     clip: rect(0, 0, 0, 0);

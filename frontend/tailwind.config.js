@@ -1,5 +1,12 @@
 /** @type {import('tailwindcss').Config} */
+
+// Custom plugin to add 'light' variant (mirrors dark variant behavior)
+function addLightVariant({ addVariant }) {
+  addVariant('light', 'html.light &')
+}
+
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -60,5 +67,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [addLightVariant],
 }

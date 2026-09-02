@@ -3,9 +3,11 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '@/auth/AuthProvider'
+import { ThemeProvider } from '@/theme/ThemeProvider'
 import { AppRouter } from '@/app/AppRouter'
 import { registerServiceWorker } from '@/lib/pwa'
 import '@/styles/globals.css'
+import '@/styles/light-mode.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,9 +26,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <AppRouter />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppRouter />
+          </AuthProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,
