@@ -178,6 +178,18 @@ SELECT public._create_policy_if_needed('pi_treasurer', 'payment_intents', 'ALL',
 SELECT public._create_policy_if_needed('pt_treasurer', 'payment_transactions', 'ALL', 'public.user_is_treasurer()');
 SELECT public._create_policy_if_needed('prf_treasurer', 'payment_refunds', 'ALL', 'public.user_is_treasurer()');
 
+-- Student: own invoice payments only (read)
+SELECT public._create_policy_if_needed('pi_stud', 'payment_intents', 'SELECT',
+  'public.user_is_student() AND student_id = public.get_user_id()');
+SELECT public._create_policy_if_needed('pt_stud', 'payment_transactions', 'SELECT',
+  'public.user_is_student() AND EXISTS (SELECT 1 FROM public.payment_intents pi WHERE pi.id = intent_id AND pi.student_id = public.get_user_id())');
+
+-- Parent: child invoice payments only (read)
+SELECT public._create_policy_if_needed('pi_par', 'payment_intents', 'SELECT',
+  'public.user_is_parent() AND public.is_verified_parent_of(student_id)');
+SELECT public._create_policy_if_needed('pt_par', 'payment_transactions', 'SELECT',
+  'public.user_is_parent() AND EXISTS (SELECT 1 FROM public.payment_intents pi WHERE pi.id = intent_id AND public.is_verified_parent_of(pi.student_id))');
+
 
 -- ================================================
 -- 6. ESSAYS — mirror IsEssayRole (IsAcademicRole)
@@ -197,6 +209,10 @@ SELECT public._create_policy_if_needed('eq_admin', 'essay_questions', 'ALL', 'pu
 -- Instructor: full access (own courses)
 SELECT public._create_policy_if_needed('eq_inst', 'essay_questions', 'ALL',
   'public.user_is_instructor() AND public.is_instructor_of_course(course_id)');
+
+-- Student: read-only (enrolled courses)
+SELECT public._create_policy_if_needed('eq_stud', 'essay_questions', 'SELECT',
+  'public.user_is_student() AND public.student_enrolled_in_course(course_id)');
 
 -- Student: submit own responses
 SELECT public._create_policy_if_needed('er_stud', 'essay_responses', 'ALL',
@@ -374,4 +390,4 @@ DROP FUNCTION IF EXISTS public._create_policy_if_needed(TEXT, TEXT, TEXT, TEXT, 
 -- ================================================
 -- Summary
 -- ================================================
-DO $$ BEGIN RAISE NOTICE 'AKADEXI RLS 008: RBAC mirror policies applied'; END $$;
+DO $$ BEGIN RAISE NOTICE 'AKADEMI RLS 008: RBAC mirror policies applied'; END $$;
