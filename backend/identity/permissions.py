@@ -154,7 +154,8 @@ def is_parent_of(user, student_id: str) -> bool:
 
 class IsAcademicRole(BasePermission):
     """Deny treasurer, sponsor, and third_party from academic endpoints.
-    Allows: owner, admin, instructor, student, parent."""
+    Allows: owner, admin, instructor, student, parent.
+    Student/parent: read-only on courses/grades (GET/HEAD/OPTIONS only for write endpoints)."""
     DENIED_ROLES = {'treasurer', 'sponsorship', 'third_party'}
 
     def has_permission(self, request, view):
@@ -217,6 +218,19 @@ class IsSponsorshipRole(BasePermission):
         return _has_any_role(request.user, ['owner', 'admin', 'sponsorship'])
 
 
+class IsThirdPartyGrantRole(BasePermission):
+    """Third-party grants: admin/owner full access, third_party read-only own grants."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        roles = get_user_roles(request.user)
+        if 'admin' in roles or 'owner' in roles:
+            return True
+        if 'third_party' in roles and request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return True
+        return False
+
+
 class IsPaymentRole(BasePermission):
     """Payments: owner, treasurer (manage), student (own invoice), parent (child invoice)."""
     def has_permission(self, request, view):
@@ -227,18 +241,25 @@ class IsPaymentRole(BasePermission):
 
 class IsAcademicReadOrSponsorRole(BasePermission):
     """Academic read-only + sponsor read-only.
-    Allows: owner, admin, instructor, student, parent (full).
+    Allows: owner, admin, instructor (full).
+    Allows student/parent on GET/HEAD/OPTIONS only (read-only).
     Allows sponsor on GET/HEAD/OPTIONS only (read-only programmes/courses).
     Denies: treasurer, third_party."""
     DENIED_ROLES = {'treasurer', 'third_party'}
+    READ_ROLES = {'student', 'parent'}
     SPONSOR_READ = {'sponsorship'}
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
         roles = set(get_user_roles(request.user))
-        if not roles.intersection(self.DENIED_ROLES):
-            return True  # owner, admin, instructor, student, parent
-        if roles.intersection(self.SPONSOR_READ) and request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return True  # sponsor can read
-        return False
+        if roles.intersection(self.DENIED_ROLES):
+            return False
+        # Sponsor: read-only only
+        if roles.intersection(self.SPONSOR_READ):
+            return request.method in ('GET', 'HEAD', 'OPTIONS')
+        # Student/parent: read-only only
+        if roles.intersection(self.READ_ROLES):
+            return request.method in ('GET', 'HEAD', 'OPTIONS')
+        # Owner, admin, instructor: full access
+        return True

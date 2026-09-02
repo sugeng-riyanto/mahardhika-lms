@@ -18,7 +18,7 @@ from identity.serializers import (
 )
 from core.audit_mixin import AuditLogMixin
 from identity.permissions import (
-    IsAdminOrOwner, IsConsentRole, _has_role, _has_any_role, get_user_roles, get_user_organisation
+    IsAdminOrOwner, IsConsentRole, IsThirdPartyGrantRole, _has_role, _has_any_role, get_user_roles, get_user_organisation
 )
 
 logger = logging.getLogger('audit')
@@ -152,10 +152,10 @@ class ParentChildLinkViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
 
 class ThirdPartyGrantViewSet(AuditLogMixin, viewsets.ModelViewSet):
-    """Manage third-party access grants — admin/owner only, org-scoped."""
+    """Manage third-party access grants — admin/owner CRUD, third_party read-only own grants."""
     audit_resource_type = 'third_party_grant'
     serializer_class = ThirdPartyGrantSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+    permission_classes = [IsAuthenticated, IsThirdPartyGrantRole]
     filterset_fields = ['third_party_user', 'organisation', 'is_active']
 
     def get_queryset(self):
