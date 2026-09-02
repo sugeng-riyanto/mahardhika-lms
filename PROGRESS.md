@@ -1,6 +1,6 @@
 # AKADEMI Digital Campus — Progress Report
 
-**Last updated:** September 2, 2026
+**Last updated:** September 2, 2026 (safeguarding audit mixin fixed)
 **Project:** Mahardhika LMS
 **Repository:** https://github.com/sugeng-riyanto/mahardhika-lms
 
@@ -16,7 +16,7 @@
 | Milestone 4 — Native Activities | ✅ Complete | Day 60-75 |
 | Milestone 5 — Essay & Canvas | ✅ Complete | Day 75-90 |
 | Milestone 6 — Operations | ✅ Complete | Day 90+ |
-| Milestone 7 — Release | 🟡 In Progress (all dashboards real API, 99.4% tests) | Dec 20, 2026 |
+| Milestone 7 — Release | 🟡 In Progress (all dashboards real API, 352/352 tests pass) | Dec 20, 2026 |
 
 ---
 
@@ -280,7 +280,7 @@ npx playwright test accessibility.spec.ts
 | TypeScript compile | 0 errors | ✅ |
 | Vitest unit tests | 28/28 | ✅ |
 | Playwright E2E | 68/68 | ✅ |
-| Build size | 238KB gzipped | ✅ |
+| Build size | 240KB gzipped | ✅ |
 
 ### Backend
 
@@ -289,22 +289,20 @@ npx playwright test accessibility.spec.ts
 | security.rbac_enforcement | 14/14 | ✅ |
 | progress | 8/8 | ✅ |
 | consent.uudp | 23/23 | ✅ |
-| activities.branching | 7/7 | ✅ |
+| activities | 13/13 | ✅ |
 | canvas | 22/22 | ✅ |
 | content.lifecycle | 27/27 | ✅ |
-| notifications | 77/77 | ✅ |
+| notifications | 51/51 | ✅ |
 | audit.mixin | 10/10 | ✅ |
 | sponsorship.access | 7/7 | ✅ |
 | assignments | 38/38 | ✅ |
 | payments | 16/16 | ✅ |
 | certificates | 10/10 | ✅ |
-| activities.scoring | 15/15 | ✅ |
 | finance | 32/32 | ✅ |
-| gradebook.api | 21/21 | ✅ |
-| essays.api | 22/22 | ✅ |
-| safeguarding | 28/28 | ✅ |
-| identity | 36/36 | ✅ |
-| **Total** | **456** | **✅** |
+| gradebook | 30/30 | ✅ |
+| essays | 42/42 | ✅ |
+| safeguarding | 29/29 | ✅ |
+| **Total** | **352** | **✅** |
 
 ---
 
