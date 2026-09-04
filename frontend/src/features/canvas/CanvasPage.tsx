@@ -4,7 +4,8 @@ import {
   Star, ChevronDown, ChevronUp, RefreshCw, AlertTriangle
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { AnnotationCanvas } from './AnnotationCanvas'
+import { AnnotationCanvas, type AnnotationCanvasHandle } from './AnnotationCanvas'
+import { useRef } from 'react'
 import type { RubricCriterion, CanvasStroke, LayerType } from './types'
 
 // Rubric template for Math-Physics
@@ -89,6 +90,7 @@ interface VersionHistoryEntry {
 }
 
 export function CanvasPage() {
+  const annotationRef = useRef<AnnotationCanvasHandle>(null)
   const [isTeacher, setIsTeacher] = useState(true)
   const [showRubric, setShowRubric] = useState(true)
   const [showHistory, setShowHistory] = useState(false)
@@ -183,7 +185,10 @@ export function CanvasPage() {
             <StatusIcon size={10} />
             {statusMeta.label}
           </span>
-          <button className="btn-secondary text-sm flex items-center gap-1">
+          <button
+            onClick={() => annotationRef.current?.exportPdf()}
+            className="btn-secondary text-sm flex items-center gap-1"
+          >
             <Download size={14} />
             Export PDF
           </button>
@@ -220,6 +225,7 @@ export function CanvasPage() {
         <div className="xl:col-span-3">
           <div className="card p-4">
             <AnnotationCanvas
+              ref={annotationRef}
               isTeacher={isTeacher}
               isLocked={canvasStatus === 'submitted' || canvasStatus === 'finalised'}
               onSave={handleSave}

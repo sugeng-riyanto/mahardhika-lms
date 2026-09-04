@@ -11,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   getToken: () => Promise<string | null>
+  refreshMe: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -294,6 +295,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return localStorage.getItem('akademi_access_token')
   }
 
+  // Re-fetch the current user from the backend (works for Supabase and mock
+  // tokens alike). Used after self-service changes so the sidebar/profile
+  // reflect the freshly persisted name, MFA flag, etc.
+  const refreshMe = useCallback(async () => {
+    try {
+      const token = await getToken()
+      if (!token) return
+      const response = await fetch('/api/v1/auth/me/', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) return
+      const data = await response.json()
+      const me = data.user
+      if (!me?.email) return
+      const fresh: User = {
+        id: me.id,
+        email: me.email,
+        full_name: me.full_name || me.email,
+        avatar_url: me.avatar_url || null,
+        is_active: me.is_active,
+        mfa_enabled: me.mfa_enabled,
+        created_at: me.created_at,
+        updated_at: me.updated_at,
+      }
+      setUser(fresh)
+      setRoles(data.roles || [])
+      setOrganisationId(data.organisation_id || null)
+    } catch {
+      // Keep the current session state on transient failures.
+    }
+  }, [getToken])
+
   return (
     <AuthContext.Provider
       value={{
@@ -305,6 +338,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         getToken,
+        refreshMe,
       }}
     >
       {children}

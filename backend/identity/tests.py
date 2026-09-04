@@ -232,3 +232,123 @@ class TestCourseAccess:
     def test_student_no_global_course_access(self, student_user):
         from uuid import uuid4
         assert not has_course_access(student_user, uuid4())
+
+
+@pytest.mark.django_db
+class TestAuthSelfServiceEndpoints:
+    """/auth/profile, /auth/change-password, /auth/mfa, /auth/delete-account."""
+
+    def _client(self, user):
+        from rest_framework.test import APIClient
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    def test_profile_get_creates_and_returns_own_profile(self, student_user, organisation):
+        client = self._client(student_user)
+        res = client.get('/api/v1/auth/profile/')
+        assert res.status_code == 200
+        body = res.json()
+        assert body['user_email'] == student_user.email
+        assert body['preferred_language'] == 'en'
+
+    def test_profile_put_updates_fields_and_syncs_full_name(self, student_user):
+        client = self._client(student_user)
+        res = client.put('/api/v1/auth/profile/', {
+            'full_name': 'Updated Student Name',
+            'phone': '+62 812 3456 7890',
+            'preferred_language': 'id',
+        }, format='json')
+        assert res.status_code == 200
+        body = res.json()
+        assert body['full_name'] == 'Updated Student Name'
+        assert body['phone'] == '+62 812 3456 7890'
+        assert body['preferred_language'] == 'id'
+
+        student_user.refresh_from_db()
+        assert student_user.full_name == 'Updated Student Name'
+
+    def test_profile_put_rejects_invalid_date_of_birth(self, student_user):
+        client = self._client(student_user)
+        res = client.put('/api/v1/auth/profile/', {
+            'date_of_birth': 'not-a-date',
+        }, format='json')
+        assert res.status_code == 400
+
+    def test_any_role_can_manage_own_profile(self, organisation, roles):
+        """Regression: ProfileViewSet restricted non-academic roles; /auth/profile is for everyone."""
+        from identity.models import User, RoleAssignment
+        treasurer = User.objects.create_user(
+            email='treasurer@test.com', password='testpass123', supabase_uid='t-uid',
+        )
+        RoleAssignment.objects.create(
+            user=treasurer, role=roles['treasurer'], organisation=organisation, status='active',
+        )
+        client = self._client(treasurer)
+        res = client.put('/api/v1/auth/profile/', {'phone': '0811'}, format='json')
+        assert res.status_code == 200
+        assert res.json()['phone'] == '0811'
+
+    def test_change_password_requires_current_when_set(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/change-password/', {
+            'new_password': 'brand-new-pass-123',
+        }, format='json')
+        assert res.status_code == 400  # current password required
+
+    def test_change_password_wrong_current_rejected(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/change-password/', {
+            'current_password': 'wrong-password',
+            'new_password': 'brand-new-pass-123',
+        }, format='json')
+        assert res.status_code == 400
+
+    def test_change_password_success(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/change-password/', {
+            'current_password': 'testpass123',
+            'new_password': 'brand-new-pass-123',
+        }, format='json')
+        assert res.status_code == 200
+        student_user.refresh_from_db()
+        assert student_user.check_password('brand-new-pass-123')
+
+    def test_change_password_too_short(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/change-password/', {
+            'current_password': 'testpass123',
+            'new_password': 'short',
+        }, format='json')
+        assert res.status_code == 400
+
+    def test_mfa_toggle(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/mfa/', {'enabled': True}, format='json')
+        assert res.status_code == 200
+        assert res.json()['mfa_enabled'] is True
+        student_user.refresh_from_db()
+        assert student_user.mfa_enabled is True
+
+    def test_mfa_toggle_requires_bool(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/mfa/', {'enabled': 'yes'}, format='json')
+        assert res.status_code == 400
+
+    def test_delete_account_requires_matching_email(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/delete-account/', {
+            'confirm': 'someone-else@test.com',
+        }, format='json')
+        assert res.status_code == 400
+        student_user.refresh_from_db()
+        assert student_user.is_active is True
+
+    def test_delete_account_deactivates(self, student_user):
+        client = self._client(student_user)
+        res = client.post('/api/v1/auth/delete-account/', {
+            'confirm': student_user.email,
+        }, format='json')
+        assert res.status_code == 204
+        student_user.refresh_from_db()
+        assert student_user.is_active is False

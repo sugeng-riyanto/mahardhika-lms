@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import {
   Pen, Highlighter, Eraser, Type, Minus, ArrowRight, Square, Circle,
   Grid3X3, ArrowUpRight, Compass, RotateCcw, RotateCw, ZoomIn, ZoomOut,
@@ -79,13 +79,18 @@ interface AnnotationCanvasProps {
   serverVersion?: number
 }
 
-export function AnnotationCanvas({
+export interface AnnotationCanvasHandle {
+  /** Export the current canvas content as a PDF download. */
+  exportPdf: () => Promise<void>
+}
+
+export const AnnotationCanvas = forwardRef<AnnotationCanvasHandle, AnnotationCanvasProps>(function AnnotationCanvas({
   isTeacher = false,
   isLocked = false,
   onSave,
   documentVersion = 1,
   serverVersion,
-}: AnnotationCanvasProps) {
+}: AnnotationCanvasProps, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -764,6 +769,10 @@ export function AnnotationCanvas({
     setShowExportMenu(false)
   }
 
+  useImperativeHandle(ref, () => ({
+    exportPdf: handleExportPdf,
+  }))
+
   // Keyboard shortcut display
   const shortcuts = [
     { key: 'P', label: 'Pen' },
@@ -1133,4 +1142,4 @@ export function AnnotationCanvas({
       </div>
     </div>
   )
-}
+})

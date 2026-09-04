@@ -119,8 +119,9 @@ export function AttendancePage() {
 
   const handleExport = () => {
     const monthSchedules = (schedules ?? []).filter((s) => inViewedMonth(s.date, currentYear, currentMonth))
-    const monthRecords = (records ?? []).filter((r) => inViewedMonth(r.schedule_date, currentYear, currentMonth))
-    exportAttendanceFiles(monthSchedules, monthRecords)
+    // Records CSV mirrors the right-hand panel exactly: the selected date
+    // (or "All Records" when no date is chosen), status filter and search.
+    exportAttendanceFiles(monthSchedules, selectedRecords)
   }
 
   const isLoading = schedulesLoading || recordsLoading

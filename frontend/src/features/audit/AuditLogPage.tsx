@@ -2,8 +2,20 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Shield, Search, Download, User, BookOpen, Settings, CreditCard, LogIn, LogOut, Edit, Eye, Trash2 } from 'lucide-react'
 import { apiClient } from '@/api/client'
+import { exportToCSV, type CSVColumn } from '@/utils/csvExport'
 import { isSupabaseConfigured } from '@/api/supabase'
 import type { AuditEvent } from '@/types'
+
+const AUDIT_CSV_COLUMNS: CSVColumn<AuditEvent>[] = [
+  { key: 'created_at', label: 'Timestamp' },
+  { key: 'actor_email', label: 'Actor' },
+  { key: 'action', label: 'Action' },
+  { key: 'resource_type', label: 'Resource Type' },
+  { key: 'resource_id', label: 'Resource ID' },
+  { key: 'scope', label: 'Scope' },
+  { key: 'details', label: 'Details', format: (v) => JSON.stringify(v ?? {}) },
+  { key: 'ip_address', label: 'IP Address' },
+]
 
 const MOCK_AUDIT_EVENTS: AuditEvent[] = [
   { id: 'ae1', actor_id: '1', actor_email: 'owner@mahardhika.id', action: 'user.login', resource_type: 'auth', resource_id: '0', scope: 'global', details: { method: 'email' }, ip_address: '192.168.1.100', user_agent: 'Mozilla/5.0', created_at: '2026-08-24T10:00:00Z' },
@@ -73,7 +85,11 @@ export function AuditLogPage() {
           <Shield className="text-orange-400" size={24} />
           <h1 className="page-title mb-0">Audit Log</h1>
         </div>
-        <button className="btn-secondary flex items-center gap-2">
+        <button
+          onClick={() => exportToCSV(filteredEvents, AUDIT_CSV_COLUMNS, 'audit-events')}
+          className="btn-secondary flex items-center gap-2"
+          disabled={filteredEvents.length === 0}
+        >
           <Download size={16} />
           Export
         </button>
