@@ -564,6 +564,52 @@ export function useAttendanceSummary() {
   })
 }
 
+export interface RosterStudent {
+  student: string
+  student_email: string
+  student_name: string
+  status: 'present' | 'late' | 'absent' | 'excused' | null
+  notes: string
+}
+
+export interface ScheduleRoster {
+  schedule_id: string
+  lesson_title: string
+  course_title: string
+  date: string
+  students: RosterStudent[]
+}
+
+async function fetchScheduleRoster(scheduleId: string): Promise<ScheduleRoster | null> {
+  try {
+    return await apiClient.get<ScheduleRoster>(`/attendance/schedules/${scheduleId}/roster/`)
+  } catch {
+    return null
+  }
+}
+
+export function useScheduleRoster(scheduleId: string | null) {
+  return useQuery({
+    queryKey: ['scheduleRoster', scheduleId],
+    queryFn: () => fetchScheduleRoster(scheduleId as string),
+    enabled: !!scheduleId,
+    staleTime: 15_000,
+  })
+}
+
+export function useBulkUpdateAttendance() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { schedule_id: string; records: { student: string; status: string; notes: string }[] }) =>
+      apiClient.post<{ count: number }>('/attendance/records/bulk-update/', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['schedules'] })
+      qc.invalidateQueries({ queryKey: ['attendanceRecords'] })
+      qc.invalidateQueries({ queryKey: ['attendanceSummary'] })
+    },
+  })
+}
+
 // ================================================
 // Sponsorship hooks
 // ================================================

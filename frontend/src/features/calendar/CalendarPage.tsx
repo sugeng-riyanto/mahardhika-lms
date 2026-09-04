@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
+import { RollCallModal } from '@/features/calendar/RollCallModal'
 
 interface CalendarEvent {
   id: string
@@ -58,6 +59,7 @@ export function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(formatDateKey(today.getFullYear(), today.getMonth(), today.getDate()))
   const [showAttendance, setShowAttendance] = useState(false)
   const [attendanceFilter, setAttendanceFilter] = useState<string>('all')
+  const [rollOpen, setRollOpen] = useState(false)
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
@@ -112,6 +114,11 @@ export function CalendarPage() {
   }, [schedules])
 
   const selectedEvents = selectedDate ? eventsByDate[selectedDate] || [] : []
+
+  const selectedDateSchedules = useMemo(
+    () => (schedules ?? []).filter((s) => s.date === selectedDate && !s.is_cancelled),
+    [schedules, selectedDate],
+  )
 
   const filteredAttendance = (records ?? []).filter((a) => {
     const matchesDate = !selectedDate || a.schedule_date === selectedDate
@@ -358,8 +365,13 @@ export function CalendarPage() {
               <div className="p-4 border-b border-navy-700">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-white">Attendance</h3>
-                  {canTakeRoll && (
-                    <button className="text-xs text-cyan-400 hover:text-cyan-300">Take Roll</button>
+                  {canTakeRoll && selectedDateSchedules.length > 0 && (
+                    <button
+                      onClick={() => setRollOpen(true)}
+                      className="text-xs text-cyan-400 hover:text-cyan-300"
+                    >
+                      Take Roll
+                    </button>
                   )}
                 </div>
 
@@ -451,6 +463,13 @@ export function CalendarPage() {
           </div>
         )}
       </div>
+
+      {rollOpen && selectedDateSchedules.length > 0 && (
+        <RollCallModal
+          schedules={selectedDateSchedules}
+          onClose={() => setRollOpen(false)}
+        />
+      )}
     </div>
   )
 }

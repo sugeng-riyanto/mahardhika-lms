@@ -90,6 +90,39 @@ class LessonScheduleViewSet(AuditLogMixin, viewsets.ModelViewSet):
             raise PermissionDenied('Only owners and admins can delete schedules.')
         instance.delete()
 
+    @action(detail=True, methods=['get'], url_path='roster')
+    def roster(self, request, pk=None):
+        """Active students enrolled in this schedule's course, with current statuses."""
+        user = request.user
+        schedule = self.get_object()
+
+        if not (_has_any_role(user, ['owner', 'admin']) or
+                ('instructor' in get_user_roles(user) and
+                 schedule.course.instructor_id == user.id)):
+            raise PermissionDenied('You do not have permission to take roll for this schedule.')
+
+        records = {r.student_id: r for r in AttendanceRecord.objects.filter(schedule=schedule)}
+        students = Enrolment.objects.filter(
+            course=schedule.course, status='active',
+        ).select_related('student').order_by('student__full_name')
+
+        return DRFResponse({
+            'schedule_id': str(schedule.id),
+            'lesson_title': schedule.lesson.title,
+            'course_title': schedule.course.title,
+            'date': schedule.date,
+            'students': [
+                {
+                    'student': str(enrol.student_id),
+                    'student_email': enrol.student.email,
+                    'student_name': enrol.student.full_name,
+                    'status': records[enrol.student_id].status if enrol.student_id in records else None,
+                    'notes': records[enrol.student_id].notes if enrol.student_id in records else '',
+                }
+                for enrol in students
+            ],
+        })
+
 
 # ─── Attendance Record ViewSet ───────────────────────────────────────────
 

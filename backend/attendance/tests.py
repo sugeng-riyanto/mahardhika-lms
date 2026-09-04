@@ -166,3 +166,97 @@ class TestAttendanceRBAC:
             student=student_user, course=sample_course, status='active',
         )
         assert Enrolment.objects.filter(student=student_user, course=sample_course).exists()
+
+
+@pytest.mark.django_db
+class TestTakeRollAPI:
+    """Schedule roster + bulk attendance marking via the API."""
+
+    def _client(self, user):
+        from rest_framework.test import APIClient
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
+    def _enrol(self, student_user, course):
+        Enrolment.objects.create(student=student_user, course=course, status='active')
+
+    def test_instructor_roster_lists_enrolled_students(
+        self, schedule, sample_course, instructor_user, student_user, student_user2,
+    ):
+        self._enrol(student_user, sample_course)
+        self._enrol(student_user2, sample_course)
+        response = self._client(instructor_user).get(
+            f'/api/v1/attendance/schedules/{schedule.id}/roster/'
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload['schedule_id'] == str(schedule.id)
+        emails = {s['student_email'] for s in payload['students']}
+        assert emails == {'student@test.com', 'student2@test.com'}
+        assert all(s['status'] is None for s in payload['students'])
+
+    def test_instructor_bulk_update_creates_and_updates_records(
+        self, schedule, sample_course, instructor_user, student_user, student_user2,
+    ):
+        self._enrol(student_user, sample_course)
+        self._enrol(student_user2, sample_course)
+        client = self._client(instructor_user)
+
+        response = client.post(
+            '/api/v1/attendance/records/bulk-update/',
+            {
+                'schedule_id': str(schedule.id),
+                'records': [
+                    {'student': str(student_user.id), 'status': 'present', 'notes': ''},
+                    {'student': str(student_user2.id), 'status': 'late', 'notes': 'Bus delay'},
+                ],
+            },
+            format='json',
+        )
+        assert response.status_code == 200
+        assert response.json()['count'] == 2
+        assert AttendanceRecord.objects.filter(schedule=schedule).count() == 2
+
+        # Changing a status updates the existing record in place
+        response = client.post(
+            '/api/v1/attendance/records/bulk-update/',
+            {
+                'schedule_id': str(schedule.id),
+                'records': [
+                    {'student': str(student_user.id), 'status': 'absent', 'notes': 'No notice'},
+                ],
+            },
+            format='json',
+        )
+        assert response.status_code == 200
+        record = AttendanceRecord.objects.get(schedule=schedule, student=student_user)
+        assert record.status == 'absent'
+        assert record.notes == 'No notice'
+        assert AttendanceRecord.objects.filter(schedule=schedule).count() == 2
+
+    def test_roster_reports_existing_status(
+        self, schedule, sample_course, instructor_user, student_user,
+    ):
+        self._enrol(student_user, sample_course)
+        AttendanceRecord.objects.create(schedule=schedule, student=student_user, status='excused')
+        response = self._client(instructor_user).get(
+            f'/api/v1/attendance/schedules/{schedule.id}/roster/'
+        )
+        assert response.status_code == 200
+        assert response.json()['students'][0]['status'] == 'excused'
+
+    def test_student_cannot_view_roster_or_bulk_update(
+        self, schedule, sample_course, student_user,
+    ):
+        self._enrol(student_user, sample_course)
+        client = self._client(student_user)
+        assert client.get(f'/api/v1/attendance/schedules/{schedule.id}/roster/').status_code == 403
+        assert client.post(
+            '/api/v1/attendance/records/bulk-update/',
+            {
+                'schedule_id': str(schedule.id),
+                'records': [{'student': str(student_user.id), 'status': 'present', 'notes': ''}],
+            },
+            format='json',
+        ).status_code == 403
