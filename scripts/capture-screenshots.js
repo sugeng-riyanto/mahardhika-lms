@@ -59,6 +59,36 @@ async function openAttendanceRollModal(page) {
   await page.getByRole('button', { name: 'Save Attendance' }).waitFor({ state: 'visible', timeout: 5000 });
 }
 
+// Click Export and show the downloaded CSV's contents in the page so it can be
+// screenshotted. The Export button starts two downloads (schedules then, 500ms
+// later, records), but Chromium's download pipeline is flaky under headless
+// Playwright — a second in-flight download is sometimes dropped or misreported.
+// Instead of matching browser download events, intercept the app's own anchor
+// clicks and read the CSV text from the Blob it created. Deterministic.
+async function showExportedCsv(page, which) {
+  const csv = await page.evaluate(async (wanted) => {
+    const blobs = new Map(); // object URL -> Blob
+    const origCreate = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (b) => { const u = origCreate(b); blobs.set(u, b); return u; };
+    const clicked = [];
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.download) clicked.push({ download: this.download, url: this.href });
+      return origClick.apply(this, arguments);
+    };
+    const btn = [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Export'));
+    if (!btn) return null;
+    btn.click();
+    await new Promise((r) => setTimeout(r, 1200)); // records export is deferred ~500ms
+    const hit = clicked.find((c) => c.download.includes('attendance-' + wanted));
+    if (!hit || !blobs.has(hit.url)) return null;
+    return await blobs.get(hit.url).text();
+  }, which);
+  if (!csv) throw new Error(`export not found: attendance-${which}`);
+  await page.goto('data:text/plain;charset=utf-8,' + encodeURIComponent(csv), { waitUntil: 'load', timeout: 10000 });
+  await page.waitForTimeout(300);
+}
+
 // Pages to capture: [route, filename, label, roles, prepStep?]
 const PAGES = [
   ['/login',                        '01-login',                       'Login Page',                  'public'],
@@ -95,6 +125,9 @@ const PAGES = [
   // Roll-call flow — Attendance page (instructor)
   ['/attendance',                   '31-attendance-roll',             'Attendance — Take Roll ready','instructor', openAttendanceRollState],
   ['/attendance',                   '32-attendance-roll-modal',       'Attendance — Take Roll modal','instructor', openAttendanceRollModal],
+  // CSV export flow — actual downloaded file contents (Attendance page)
+  ['/attendance',                   '33-attendance-export-schedules', 'Attendance Export — schedules CSV','instructor', async (page) => showExportedCsv(page, 'schedules')],
+  ['/attendance',                   '34-attendance-export-records',   'Attendance Export — records CSV','instructor', async (page) => showExportedCsv(page, 'records')],
 ];
 
 // Role-to-email mapping for mock auth
@@ -146,6 +179,7 @@ async function captureAll() {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2,
+    acceptDownloads: true,
   });
   const page = await context.newPage();
 

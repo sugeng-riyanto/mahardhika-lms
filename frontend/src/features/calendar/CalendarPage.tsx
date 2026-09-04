@@ -6,7 +6,7 @@ import {
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { RollCallModal } from '@/features/calendar/RollCallModal'
-import { exportAttendanceSchedules, exportAttendanceRecords } from '@/utils/attendanceExport'
+import { exportAttendanceFiles, inViewedMonth } from '@/utils/attendanceExport'
 
 interface CalendarEvent {
   id: string
@@ -130,18 +130,12 @@ export function CalendarPage() {
   const attendanceStats = summary ?? { total: 0, present: 0, late: 0, absent: 0, excused: 0, rate: 0 }
 
   const monthSchedules = useMemo(
-    () => (schedules ?? []).filter((s) => {
-      const d = new Date(s.date + 'T12:00:00')
-      return !s.is_cancelled && d.getFullYear() === currentYear && d.getMonth() === currentMonth
-    }),
+    () => (schedules ?? []).filter((s) => !s.is_cancelled && inViewedMonth(s.date, currentYear, currentMonth)),
     [schedules, currentYear, currentMonth],
   )
 
   const monthRecords = useMemo(
-    () => (records ?? []).filter((r) => {
-      const d = new Date(r.schedule_date + 'T12:00:00')
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth
-    }),
+    () => (records ?? []).filter((r) => inViewedMonth(r.schedule_date, currentYear, currentMonth)),
     [records, currentYear, currentMonth],
   )
 
@@ -193,10 +187,7 @@ export function CalendarPage() {
             Attendance
           </button>
           <button
-            onClick={() => {
-              exportAttendanceSchedules(monthSchedules)
-              exportAttendanceRecords(monthRecords)
-            }}
+            onClick={() => exportAttendanceFiles(monthSchedules, monthRecords)}
             className="btn-secondary text-sm flex items-center gap-1"
           >
             <Download size={14} />

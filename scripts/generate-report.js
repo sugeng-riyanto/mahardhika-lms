@@ -99,7 +99,7 @@ report += `---
 | Notifications Tests | ✅ 51/51 tests |
 | Security Tests | ✅ Passed |
 | Frontend TypeScript | ✅ 0 errors |
-| Frontend Unit Tests | ✅ 28/28 |
+| Frontend Unit Tests | ✅ 39/39 |
 | E2E Playwright Tests | ✅ 254/254 tests |
 
 ---

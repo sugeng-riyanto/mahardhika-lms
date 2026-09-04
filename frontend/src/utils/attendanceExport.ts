@@ -7,7 +7,7 @@
 import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
 import type { LessonSchedule, AttendanceRecord } from '@/types'
 
-const SCHEDULE_CSV_COLUMNS: CSVColumn[] = [
+export const SCHEDULE_CSV_COLUMNS: CSVColumn[] = [
   { key: 'date', label: 'Date', format: formatDate },
   { key: 'start_time', label: 'Start', format: (v) => (v ? String(v).slice(0, 5) : 'All day') },
   { key: 'end_time', label: 'End', format: (v) => (v ? String(v).slice(0, 5) : 'All day') },
@@ -22,7 +22,7 @@ const SCHEDULE_CSV_COLUMNS: CSVColumn[] = [
   { key: 'notes', label: 'Notes' },
 ]
 
-const RECORD_CSV_COLUMNS: CSVColumn[] = [
+export const RECORD_CSV_COLUMNS: CSVColumn[] = [
   { key: 'schedule_date', label: 'Date', format: formatDate },
   { key: 'lesson_title', label: 'Lesson' },
   { key: 'course_title', label: 'Course' },
@@ -40,4 +40,23 @@ export function exportAttendanceSchedules(schedules: LessonSchedule[]): void {
 
 export function exportAttendanceRecords(records: AttendanceRecord[]): void {
   exportToCSV(records, RECORD_CSV_COLUMNS, 'attendance-records')
+}
+
+/**
+ * Download both files from one Export click. The second download is deferred
+ * briefly: Chromium drops a second programmatic anchor click that happens in
+ * the same task as the first, so the records file never downloads otherwise.
+ */
+export function exportAttendanceFiles(schedules: LessonSchedule[], records: AttendanceRecord[]): void {
+  exportAttendanceSchedules(schedules)
+  setTimeout(() => exportAttendanceRecords(records), 500)
+}
+
+/**
+ * Whether an ISO date key (YYYY-MM-DD) falls inside the given month.
+ */
+export function inViewedMonth(dateKey: string, year: number, month: number): boolean {
+  if (!dateKey) return false
+  const d = new Date(dateKey + 'T12:00:00')
+  return !Number.isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month
 }

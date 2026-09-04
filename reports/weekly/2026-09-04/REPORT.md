@@ -1,8 +1,8 @@
 # AKADEMI Digital Campus — Weekly Progress Report
 
 **Week of:** 2026-09-04
-**Git Commit:** fda637f (2026-09-04 19:30:04 +0700)
-**Commit Message:** feat: Take Roll + CSV export on Calendar and Attendance pages
+**Git Commit:** e9e158e (2026-09-04 19:33:54 +0700)
+**Commit Message:** docs: weekly report — roll-call flow screenshots (2026-09-04)
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Screenshots Captured | 32/32 |
+| Screenshots Captured | 34/34 |
 | Screenshot Failures | 0 |
-| Git Commit | fda637f |
-| Report Generated | 2026-09-04 12:33:49 |
+| Git Commit | e9e158e |
+| Report Generated | 2026-09-04 12:55:04 |
 
 ---
 
@@ -30,11 +30,11 @@
 
 ### Login Page
 ![Login Page](01-login.png)
-- Role: `public` | Size: 176KB
+- Role: `public` | Size: 172KB
 
 ### Admin Dashboard
 ![Admin Dashboard](02-admin-dashboard.png)
-- Role: `admin` | Size: 176KB
+- Role: `admin` | Size: 172KB
 
 ### Owner Dashboard
 ![Owner Dashboard](03-owner-dashboard.png)
@@ -66,35 +66,35 @@
 
 ### Course List
 ![Course List](10-courses.png)
-- Role: `all` | Size: 438KB
+- Role: `all` | Size: 417KB
 
 ### User Management
 ![User Management](11-users.png)
-- Role: `admin` | Size: 231KB
+- Role: `admin` | Size: 209KB
 
 ### Programme Management
 ![Programme Management](12-programmes.png)
-- Role: `admin` | Size: 290KB
+- Role: `admin` | Size: 288KB
 
 ### Gradebook
 ![Gradebook](13-gradebook.png)
-- Role: `all` | Size: 150KB
+- Role: `all` | Size: 149KB
 
 ### Essay List
 ![Essay List](14-essays.png)
-- Role: `all` | Size: 164KB
+- Role: `all` | Size: 131KB
 
 ### Annotation Canvas
 ![Annotation Canvas](15-canvas.png)
-- Role: `all` | Size: 279KB
+- Role: `all` | Size: 278KB
 
 ### Attendance
 ![Attendance](16-attendance.png)
-- Role: `all` | Size: 224KB
+- Role: `all` | Size: 159KB
 
 ### Calendar
 ![Calendar](17-calendar.png)
-- Role: `all` | Size: 160KB
+- Role: `all` | Size: 141KB
 
 ### Content Library
 ![Content Library](18-content-library.png)
@@ -102,7 +102,7 @@
 
 ### Assignments
 ![Assignments](19-assignments.png)
-- Role: `all` | Size: 127KB
+- Role: `all` | Size: 126KB
 
 ### Finance
 ![Finance](20-finance.png)
@@ -110,31 +110,31 @@
 
 ### Notifications
 ![Notifications](21-notifications.png)
-- Role: `all` | Size: 173KB
+- Role: `all` | Size: 109KB
 
 ### Reports & Analytics
 ![Reports & Analytics](22-reports.png)
-- Role: `admin` | Size: 179KB
+- Role: `admin` | Size: 167KB
 
 ### Audit Log
 ![Audit Log](23-audit-log.png)
-- Role: `admin` | Size: 133KB
+- Role: `admin` | Size: 209KB
 
 ### Certificates
 ![Certificates](24-certificates.png)
-- Role: `all` | Size: 108KB
+- Role: `all` | Size: 107KB
 
 ### Settings
 ![Settings](25-settings.png)
-- Role: `admin` | Size: 162KB
+- Role: `admin` | Size: 161KB
 
 ### Profile
 ![Profile](26-profile.png)
-- Role: `all` | Size: 168KB
+- Role: `all` | Size: 167KB
 
 ### Privacy Notice
 ![Privacy Notice](27-privacy.png)
-- Role: `all` | Size: 326KB
+- Role: `all` | Size: 98KB
 
 ### Consent Management
 ![Consent Management](28-consent.png)
@@ -156,6 +156,14 @@
 ![Attendance — Take Roll modal](32-attendance-roll-modal.png)
 - Role: `instructor` | Size: 363KB
 
+### Attendance Export — schedules CSV
+![Attendance Export — schedules CSV](33-attendance-export-schedules.png)
+- Role: `instructor` | Size: 170KB
+
+### Attendance Export — records CSV
+![Attendance Export — records CSV](34-attendance-export-records.png)
+- Role: `instructor` | Size: 115KB
+
 ---
 
 ## 🔧 Backend Status
@@ -169,7 +177,7 @@
 | Notifications Tests | ✅ 51/51 tests |
 | Security Tests | ✅ Passed |
 | Frontend TypeScript | ✅ 0 errors |
-| Frontend Unit Tests | ✅ 28/28 |
+| Frontend Unit Tests | ✅ 39/39 |
 | E2E Playwright Tests | ✅ 254/254 tests |
 
 ---

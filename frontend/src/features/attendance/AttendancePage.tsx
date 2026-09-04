@@ -7,7 +7,7 @@ import {
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { RollCallModal } from '@/features/calendar/RollCallModal'
-import { exportAttendanceSchedules, exportAttendanceRecords } from '@/utils/attendanceExport'
+import { exportAttendanceFiles, inViewedMonth } from '@/utils/attendanceExport'
 
 const STATUS_META = {
   present: { label: 'Present', icon: CheckCircle, colour: 'text-green-400', bg: 'bg-green-900/30', border: 'border-green-700/50' },
@@ -117,16 +117,10 @@ export function AttendancePage() {
     return cells
   }, [currentYear, currentMonth, firstDay, daysInMonth, todayKey, selectedDate, schedulesByDate])
 
-  const inViewedMonth = (dateKey: string) => {
-    const d = new Date(dateKey + 'T12:00:00')
-    return d.getFullYear() === currentYear && d.getMonth() === currentMonth
-  }
-
   const handleExport = () => {
-    const monthSchedules = (schedules ?? []).filter((s) => inViewedMonth(s.date))
-    const monthRecords = (records ?? []).filter((r) => inViewedMonth(r.schedule_date))
-    exportAttendanceSchedules(monthSchedules)
-    exportAttendanceRecords(monthRecords)
+    const monthSchedules = (schedules ?? []).filter((s) => inViewedMonth(s.date, currentYear, currentMonth))
+    const monthRecords = (records ?? []).filter((r) => inViewedMonth(r.schedule_date, currentYear, currentMonth))
+    exportAttendanceFiles(monthSchedules, monthRecords)
   }
 
   const isLoading = schedulesLoading || recordsLoading

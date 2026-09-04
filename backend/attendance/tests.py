@@ -25,7 +25,7 @@ def roles(db):
     result = {}
     for name, display in [
         ('owner', 'Owner'), ('admin', 'Admin'), ('instructor', 'Instructor'),
-        ('student', 'Student'), ('parent', 'Parent'),
+        ('student', 'Student'), ('parent', 'Parent'), ('treasurer', 'Treasurer'),
     ]:
         role, _ = Role.objects.get_or_create(
             name=name, defaults={'display_name': display, 'description': f'{display} role'},
@@ -58,6 +58,43 @@ def student_user2(db, organisation, roles):
         email='student2@test.com', password='pass', supabase_uid='stu2-uid',
     )
     RoleAssignment.objects.create(user=user, role=roles['student'], organisation=organisation, status='active')
+    return user
+
+
+@pytest.fixture
+def owner_user(db, organisation, roles):
+    user = User.objects.create_user(
+        email='owner@test.com', password='pass', supabase_uid='owner-uid',
+    )
+    RoleAssignment.objects.create(user=user, role=roles['owner'], organisation=organisation, status='active')
+    return user
+
+
+@pytest.fixture
+def admin_user(db, organisation, roles):
+    user = User.objects.create_user(
+        email='admin@test.com', password='pass', supabase_uid='admin-uid',
+    )
+    RoleAssignment.objects.create(user=user, role=roles['admin'], organisation=organisation, status='active')
+    return user
+
+
+@pytest.fixture
+def treasurer_user(db, organisation, roles):
+    user = User.objects.create_user(
+        email='treasurer@test.com', password='pass', supabase_uid='treasurer-uid',
+    )
+    RoleAssignment.objects.create(user=user, role=roles['treasurer'], organisation=organisation, status='active')
+    return user
+
+
+@pytest.fixture
+def other_instructor_user(db, organisation, roles):
+    """Instructor who teaches no course in this organisation."""
+    user = User.objects.create_user(
+        email='other-instructor@test.com', password='pass', supabase_uid='other-inst-uid',
+    )
+    RoleAssignment.objects.create(user=user, role=roles['instructor'], organisation=organisation, status='active')
     return user
 
 
@@ -181,6 +218,24 @@ class TestTakeRollAPI:
     def _enrol(self, student_user, course):
         Enrolment.objects.create(student=student_user, course=course, status='active')
 
+    def _roster_status(self, user, schedule):
+        return self._client(user).get(
+            f'/api/v1/attendance/schedules/{schedule.id}/roster/'
+        ).status_code
+
+    def _bulk_status(self, user, schedule, students):
+        return self._client(user).post(
+            '/api/v1/attendance/records/bulk-update/',
+            {
+                'schedule_id': str(schedule.id),
+                'records': [
+                    {'student': str(s.student.id), 'status': 'present', 'notes': ''}
+                    for s in students
+                ],
+            },
+            format='json',
+        ).status_code
+
     def test_instructor_roster_lists_enrolled_students(
         self, schedule, sample_course, instructor_user, student_user, student_user2,
     ):
@@ -260,3 +315,38 @@ class TestTakeRollAPI:
             },
             format='json',
         ).status_code == 403
+
+    def test_owner_and_admin_can_view_roster_and_bulk_update(
+        self, schedule, sample_course, owner_user, admin_user, student_user,
+    ):
+        self._enrol(student_user, sample_course)
+        for user in (owner_user, admin_user):
+            assert self._roster_status(user, schedule) == 200
+            assert self._bulk_status(user, schedule, sample_course.enrolments.all()) == 200
+
+    def test_parent_cannot_view_roster_or_bulk_update(
+        self, schedule, sample_course, parent_user, student_user,
+    ):
+        # Parent's child is enrolled, so the schedule is in the parent's
+        # queryset and the role wall must still deny roster/bulk marking.
+        self._enrol(student_user, sample_course)
+        assert self._roster_status(parent_user, schedule) == 403
+        assert self._bulk_status(parent_user, schedule, sample_course.enrolments.all()) == 403
+
+    def test_treasurer_cannot_view_roster_or_bulk_update(
+        self, schedule, sample_course, treasurer_user, student_user,
+    ):
+        self._enrol(student_user, sample_course)
+        # Treasurer is outside the academic roles -> blocked at the
+        # permission class for both reads and writes (403)
+        assert self._roster_status(treasurer_user, schedule) == 403
+        assert self._bulk_status(treasurer_user, schedule, sample_course.enrolments.all()) == 403
+
+    def test_instructor_without_the_course_is_denied(
+        self, schedule, sample_course, other_instructor_user, student_user,
+    ):
+        self._enrol(student_user, sample_course)
+        # Schedule belongs to another instructor's course -> hidden (404),
+        # and bulk marking without ownership is denied (403)
+        assert self._roster_status(other_instructor_user, schedule) == 404
+        assert self._bulk_status(other_instructor_user, schedule, sample_course.enrolments.all()) == 403
