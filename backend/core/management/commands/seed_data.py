@@ -13,6 +13,7 @@ Seeds the complete development dataset in one command:
   - 8 courses with lessons
   - Enrolments (students in courses)
   - Sample content items and activity definitions
+  - Lesson schedules + attendance records (calendar demo)
 
 Usage:
   python manage.py seed_data                      # Seed with defaults
@@ -94,6 +95,7 @@ class Command(BaseCommand):
             courses = self._seed_courses(programmes, users, org)
             self._seed_lessons(courses)
             self._seed_enrolments(users, courses, org)
+            self._seed_schedules(users)
 
             if not skip_content:
                 self._seed_content(org, users)
@@ -556,6 +558,85 @@ class Command(BaseCommand):
                     count += 1
 
         self.stdout.write(f'  Enrolled student in {count} courses.')
+
+    def _seed_schedules(self, users):
+        """Create lesson schedules + sample attendance so the calendar has real data."""
+        try:
+            from datetime import time as dtime
+            from attendance.models import LessonSchedule, AttendanceRecord
+        except ImportError:
+            self.stdout.write('  Skipping schedules (attendance app not available)')
+            return
+
+        student = users['student']
+        instructor = users['instructor']
+        enrolled_course_ids = set(
+            Enrolment.objects.filter(student=student, status='active')
+            .values_list('course_id', flat=True)
+        )
+
+        # A weekly timetable per course (lesson order -> date, time, room)
+        course_slots = {
+            'math-7a': {'start': dtime(8, 0), 'end': dtime(9, 30), 'location': 'Room 201'},
+            'phys-10-mech': {'start': dtime(10, 0), 'end': dtime(11, 30), 'location': 'Lab 3'},
+            'ielts-writing': {'start': dtime(13, 0), 'end': dtime(14, 30), 'location': 'Room 105'},
+            'robotics-fund': {'start': dtime(15, 0), 'end': dtime(16, 30), 'location': 'Maker Space'},
+        }
+
+        start = timezone.localdate()
+        days_until_monday = (7 - start.weekday()) % 7
+        if days_until_monday == 0:
+            days_until_monday = 7
+        first_day = start + timedelta(days=days_until_monday)
+
+        schedule_count = 0
+        for slug, slot in course_slots.items():
+            course = Course.objects.filter(slug=slug, is_published=True).first()
+            if course is None:
+                continue
+            lessons = course.lessons.filter(is_published=True).order_by('order')[:4]
+            for i, lesson in enumerate(lessons):
+                _, created = LessonSchedule.objects.get_or_create(
+                    lesson=lesson,
+                    date=first_day + timedelta(days=i),
+                    defaults={
+                        'course': course,
+                        'start_time': slot['start'],
+                        'end_time': slot['end'],
+                        'location': slot['location'],
+                    },
+                )
+                if created:
+                    schedule_count += 1
+
+        # Mark attendance on the first two days for the enrolled student
+        statuses = ['present', 'present', 'late', 'absent', 'excused']
+        notes = {1: 'Arrived 10 minutes late', 3: 'No prior notification', 4: 'Medical appointment'}
+        record_count = 0
+        marked_dates = list(
+            LessonSchedule.objects.order_by('date').values_list('date', flat=True).distinct()[:2]
+        )
+        idx = 0
+        for schedule in LessonSchedule.objects.filter(date__in=marked_dates).order_by('date', 'start_time'):
+            if schedule.course_id not in enrolled_course_ids:
+                continue
+            status = statuses[idx % len(statuses)]
+            _, created = AttendanceRecord.objects.get_or_create(
+                schedule=schedule,
+                student=student,
+                defaults={
+                    'status': status,
+                    'notes': notes.get(idx % len(statuses), ''),
+                    'marked_by': instructor,
+                },
+            )
+            if created:
+                record_count += 1
+            idx += 1
+
+        self.stdout.write(
+            f'  Created {schedule_count} lesson schedules and {record_count} attendance records.'
+        )
 
     def _seed_content(self, org, users):
         """Create sample content library items."""
