@@ -104,12 +104,6 @@ html.light .page-title {
   color: rgb(17 24 39) !important;
 }
 
-html.light p,
-html.light span,
-html.light div {
-  color: inherit;
-}
-
 /* Override Tailwind text-navy-* utilities */
 html.light [class*="text-navy-300"],
 html.light [class*="text-navy-400"] {

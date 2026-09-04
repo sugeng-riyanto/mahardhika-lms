@@ -195,7 +195,8 @@ class IsSafeguardingRole(BasePermission):
 
 
 class IsSponsorAggregateOnly(BasePermission):
-    """Sponsor: only aggregate/programme endpoints, not individual data."""
+    """Sponsor: only aggregate/programme endpoints, not individual data.
+    NOTE: Currently unused — no ViewSet references this class."""
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
