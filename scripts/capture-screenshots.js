@@ -26,7 +26,40 @@ const OUTPUT_DIR = outputIdx >= 0
   ? path.resolve(args[outputIdx + 1])
   : path.resolve(__dirname, '..', 'reports', 'weekly', today);
 
-// Pages to capture: [route, filename, label, roles that can see it]
+// Interactive prep steps reused by the roll-call entries below.
+// The capture loop screenshots the page AFTER the step function runs.
+
+async function openCalendarRollState(page) {
+  // Open the Attendance panel so Take Roll is reachable
+  const toggle = page.locator('button', { hasText: 'Attendance' }).first();
+  await toggle.click();
+  await page.waitForTimeout(400);
+  // Select Monday Sep 7 in the current month grid (day cell '7')
+  await page.locator('main').getByText('7', { exact: true }).first().click();
+  await page.waitForTimeout(400);
+  await page.getByRole('button', { name: 'Take Roll' }).waitFor({ state: 'visible', timeout: 5000 });
+}
+
+async function openCalendarRollModal(page) {
+  await openCalendarRollState(page);
+  await page.getByRole('button', { name: 'Take Roll' }).click();
+  await page.getByRole('button', { name: 'Save Attendance' }).waitFor({ state: 'visible', timeout: 5000 });
+}
+
+async function openAttendanceRollState(page) {
+  // Select the first schedule row (Algebraic Expressions, Mon Sep 7)
+  await page.locator('div.cursor-pointer', { hasText: 'Algebraic Expressions' }).first().click();
+  await page.waitForTimeout(400);
+  await page.getByRole('button', { name: 'Take Roll' }).waitFor({ state: 'visible', timeout: 5000 });
+}
+
+async function openAttendanceRollModal(page) {
+  await openAttendanceRollState(page);
+  await page.getByRole('button', { name: 'Take Roll' }).click();
+  await page.getByRole('button', { name: 'Save Attendance' }).waitFor({ state: 'visible', timeout: 5000 });
+}
+
+// Pages to capture: [route, filename, label, roles, prepStep?]
 const PAGES = [
   ['/login',                        '01-login',                       'Login Page',                  'public'],
   ['/dashboard/admin',              '02-admin-dashboard',             'Admin Dashboard',             'admin'],
@@ -56,6 +89,12 @@ const PAGES = [
   ['/profile',                      '26-profile',                     'Profile',                     'all'],
   ['/privacy',                      '27-privacy',                     'Privacy Notice',              'all'],
   ['/consent',                      '28-consent',                     'Consent Management',          'parent'],
+  // Roll-call flow — Calendar page (instructor)
+  ['/calendar',                     '29-calendar-roll',               'Calendar — Take Roll ready',  'instructor', openCalendarRollState],
+  ['/calendar',                     '30-calendar-roll-modal',         'Calendar — Take Roll modal',  'instructor', openCalendarRollModal],
+  // Roll-call flow — Attendance page (instructor)
+  ['/attendance',                   '31-attendance-roll',             'Attendance — Take Roll ready','instructor', openAttendanceRollState],
+  ['/attendance',                   '32-attendance-roll-modal',       'Attendance — Take Roll modal','instructor', openAttendanceRollModal],
 ];
 
 // Role-to-email mapping for mock auth
@@ -113,7 +152,8 @@ async function captureAll() {
   const results = [];
   let lastRole = null;
 
-  for (const [route, filename, label, roles] of PAGES) {
+  for (const pageSpec of PAGES) {
+    const [route, filename, label, roles, prepStep] = pageSpec;
     const outPath = path.join(OUTPUT_DIR, `${filename}.png`);
     try {
       // Login as the required role (skip if same role as previous page)
@@ -134,6 +174,12 @@ async function captureAll() {
           await page.waitForTimeout(200);
         }
       } catch {}
+
+      // Run an interactive prep step (e.g. open a modal) before capturing
+      if (prepStep) {
+        await prepStep(page);
+        await page.waitForTimeout(300);
+      }
 
       await page.screenshot({ path: outPath, fullPage: false });
       const size = fs.statSync(outPath).size;
