@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
+import { RollCallModal } from '@/features/calendar/RollCallModal'
+import { exportAttendanceSchedules, exportAttendanceRecords } from '@/utils/attendanceExport'
 
 const STATUS_META = {
   present: { label: 'Present', icon: CheckCircle, colour: 'text-green-400', bg: 'bg-green-900/30', border: 'border-green-700/50' },
@@ -45,6 +47,7 @@ export function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'schedule' | 'calendar'>('schedule')
+  const [rollOpen, setRollOpen] = useState(false)
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
@@ -75,6 +78,9 @@ export function AttendancePage() {
 
   // Selected date schedules
   const selectedSchedules = selectedDate ? (schedulesByDate[selectedDate] || []) : []
+
+  // Schedules that can still be marked (cancelled lessons are excluded)
+  const rollSchedules = selectedSchedules.filter((s) => !s.is_cancelled)
 
   // Records for selected date
   const selectedRecords = useMemo(() => {
@@ -110,6 +116,18 @@ export function AttendancePage() {
     }
     return cells
   }, [currentYear, currentMonth, firstDay, daysInMonth, todayKey, selectedDate, schedulesByDate])
+
+  const inViewedMonth = (dateKey: string) => {
+    const d = new Date(dateKey + 'T12:00:00')
+    return d.getFullYear() === currentYear && d.getMonth() === currentMonth
+  }
+
+  const handleExport = () => {
+    const monthSchedules = (schedules ?? []).filter((s) => inViewedMonth(s.date))
+    const monthRecords = (records ?? []).filter((r) => inViewedMonth(r.schedule_date))
+    exportAttendanceSchedules(monthSchedules)
+    exportAttendanceRecords(monthRecords)
+  }
 
   const isLoading = schedulesLoading || recordsLoading
 
@@ -159,7 +177,7 @@ export function AttendancePage() {
             <Calendar size={12} className="inline mr-1" />
             Calendar
           </button>
-          <button className="btn-secondary text-sm flex items-center gap-1">
+          <button onClick={handleExport} className="btn-secondary text-sm flex items-center gap-1">
             <Download size={14} />
             Export
           </button>
@@ -364,8 +382,13 @@ export function AttendancePage() {
                     ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
                     : 'All Records'}
                 </h3>
-                {isInstructor && selectedSchedules.length > 0 && (
-                  <button className="text-xs text-cyan-400 hover:text-cyan-300">Take Roll</button>
+                {isInstructor && rollSchedules.length > 0 && (
+                  <button
+                    onClick={() => setRollOpen(true)}
+                    className="text-xs text-cyan-400 hover:text-cyan-300"
+                  >
+                    Take Roll
+                  </button>
                 )}
               </div>
 
@@ -455,6 +478,13 @@ export function AttendancePage() {
           </div>
         </div>
       </div>
+
+      {rollOpen && rollSchedules.length > 0 && (
+        <RollCallModal
+          schedules={rollSchedules}
+          onClose={() => setRollOpen(false)}
+        />
+      )}
     </div>
   )
 }

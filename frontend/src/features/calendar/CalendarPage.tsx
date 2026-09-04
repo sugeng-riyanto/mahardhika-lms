@@ -6,6 +6,7 @@ import {
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { RollCallModal } from '@/features/calendar/RollCallModal'
+import { exportAttendanceSchedules, exportAttendanceRecords } from '@/utils/attendanceExport'
 
 interface CalendarEvent {
   id: string
@@ -136,6 +137,14 @@ export function CalendarPage() {
     [schedules, currentYear, currentMonth],
   )
 
+  const monthRecords = useMemo(
+    () => (records ?? []).filter((r) => {
+      const d = new Date(r.schedule_date + 'T12:00:00')
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth
+    }),
+    [records, currentYear, currentMonth],
+  )
+
   const calendarCells = useMemo(() => {
     const cells: { day: number | null; key: string | null; isToday: boolean; isSelected: boolean; events: CalendarEvent[] }[] = []
     for (let i = 0; i < firstDay; i++) {
@@ -183,7 +192,13 @@ export function CalendarPage() {
             <Users size={14} className="inline mr-1" />
             Attendance
           </button>
-          <button className="btn-secondary text-sm flex items-center gap-1">
+          <button
+            onClick={() => {
+              exportAttendanceSchedules(monthSchedules)
+              exportAttendanceRecords(monthRecords)
+            }}
+            className="btn-secondary text-sm flex items-center gap-1"
+          >
             <Download size={14} />
             Export
           </button>
