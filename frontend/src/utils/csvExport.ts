@@ -26,11 +26,16 @@ function getNestedValue(obj: unknown, path: string): unknown {
   }, obj)
 }
 
-export function exportToCSV<T>(
+/**
+ * Build the CSV text (header + data rows) for the given columns.
+ *
+ * Pure — exposed separately from exportToCSV so tests can assert the exact
+ * rows and header without triggering a browser download.
+ */
+export function buildCSV<T>(
   data: T[],
-  columns: CSVColumn<T>[],
-  filename: string
-): void {
+  columns: CSVColumn<T>[]
+): string {
   // Build header row
   const header = columns.map(col => escapeCSV(col.label)).join(',')
 
@@ -43,8 +48,15 @@ export function exportToCSV<T>(
     }).join(',')
   })
 
-  // Combine and create download
-  const csv = [header, ...rows].join('\n')
+  return [header, ...rows].join('\n')
+}
+
+export function exportToCSV<T>(
+  data: T[],
+  columns: CSVColumn<T>[],
+  filename: string
+): void {
+  const csv = buildCSV(data, columns)
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }) // BOM for Excel
   const url = URL.createObjectURL(blob)
 
