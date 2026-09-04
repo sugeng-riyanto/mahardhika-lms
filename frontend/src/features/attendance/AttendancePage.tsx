@@ -7,7 +7,7 @@ import {
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { RollCallModal } from '@/features/calendar/RollCallModal'
-import { exportAttendanceFiles, inViewedMonth } from '@/utils/attendanceExport'
+import { exportAttendanceFiles, filterAttendanceRecords, inViewedMonth } from '@/utils/attendanceExport'
 
 const STATUS_META = {
   present: { label: 'Present', icon: CheckCircle, colour: 'text-green-400', bg: 'bg-green-900/30', border: 'border-green-700/50' },
@@ -82,16 +82,15 @@ export function AttendancePage() {
   // Schedules that can still be marked (cancelled lessons are excluded)
   const rollSchedules = selectedSchedules.filter((s) => !s.is_cancelled)
 
-  // Records for selected date
-  const selectedRecords = useMemo(() => {
-    if (!records) return []
-    return records.filter((r) => {
-      const dateMatch = !selectedDate || r.schedule_date === selectedDate
-      const statusMatch = statusFilter === 'all' || r.status === statusFilter
-      const searchMatch = !searchQuery || r.student_name.toLowerCase().includes(searchQuery.toLowerCase()) || r.student_email.toLowerCase().includes(searchQuery.toLowerCase())
-      return dateMatch && statusMatch && searchMatch
-    })
-  }, [records, selectedDate, statusFilter, searchQuery])
+  // Records for selected date — the exact set the panel renders and the CSV exports
+  const selectedRecords = useMemo(
+    () => filterAttendanceRecords(records ?? [], {
+      selectedDate,
+      status: statusFilter,
+      search: searchQuery,
+    }),
+    [records, selectedDate, statusFilter, searchQuery],
+  )
 
   // Stats for selected date
   const dateStats = useMemo(() => {

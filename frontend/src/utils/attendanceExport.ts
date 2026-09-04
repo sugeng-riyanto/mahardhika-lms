@@ -43,6 +43,38 @@ export function exportAttendanceRecords(records: AttendanceRecord[]): void {
 }
 
 /**
+ * Filter attendance records the way the attendance panel renders them.
+ *
+ * This is the exact filter both the Attendance and Calendar pages apply to
+ * decide what rows are visible — and therefore what the records CSV exports.
+ * Extracted so the panel/export wiring is unit-testable as one source of truth.
+ *
+ * - selectedDate: only records on that day; null/undefined keeps all dates
+ *   (the panel's "All Records" view)
+ * - status: 'all' (default) or one of present/late/absent/excused
+ * - search: case-insensitive match on student name or email; '' disables
+ */
+export function filterAttendanceRecords(
+  records: AttendanceRecord[],
+  { selectedDate, status = 'all', search = '' }: {
+    selectedDate?: string | null
+    status?: string
+    search?: string
+  },
+): AttendanceRecord[] {
+  const q = search.trim().toLowerCase()
+  return records.filter((r) => {
+    const matchesDate = !selectedDate || r.schedule_date === selectedDate
+    const matchesStatus = status === 'all' || r.status === status
+    const matchesSearch =
+      !q ||
+      r.student_name.toLowerCase().includes(q) ||
+      r.student_email.toLowerCase().includes(q)
+    return matchesDate && matchesStatus && matchesSearch
+  })
+}
+
+/**
  * Download both files from one Export click. The second download is deferred
  * briefly: Chromium drops a second programmatic anchor click that happens in
  * the same task as the first, so the records file never downloads otherwise.

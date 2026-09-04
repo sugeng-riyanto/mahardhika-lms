@@ -6,7 +6,7 @@ import {
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { RollCallModal } from '@/features/calendar/RollCallModal'
-import { exportAttendanceFiles, inViewedMonth } from '@/utils/attendanceExport'
+import { exportAttendanceFiles, filterAttendanceRecords, inViewedMonth } from '@/utils/attendanceExport'
 
 interface CalendarEvent {
   id: string
@@ -121,22 +121,19 @@ export function CalendarPage() {
     [schedules, selectedDate],
   )
 
-  const filteredAttendance = (records ?? []).filter((a) => {
-    const matchesDate = !selectedDate || a.schedule_date === selectedDate
-    const matchesFilter = attendanceFilter === 'all' || a.status === attendanceFilter
-    return matchesDate && matchesFilter
-  })
+  const filteredAttendance = useMemo(
+    () => filterAttendanceRecords(records ?? [], {
+      selectedDate,
+      status: attendanceFilter,
+    }),
+    [records, selectedDate, attendanceFilter],
+  )
 
   const attendanceStats = summary ?? { total: 0, present: 0, late: 0, absent: 0, excused: 0, rate: 0 }
 
   const monthSchedules = useMemo(
     () => (schedules ?? []).filter((s) => !s.is_cancelled && inViewedMonth(s.date, currentYear, currentMonth)),
     [schedules, currentYear, currentMonth],
-  )
-
-  const monthRecords = useMemo(
-    () => (records ?? []).filter((r) => inViewedMonth(r.schedule_date, currentYear, currentMonth)),
-    [records, currentYear, currentMonth],
   )
 
   const calendarCells = useMemo(() => {
@@ -187,7 +184,8 @@ export function CalendarPage() {
             Attendance
           </button>
           <button
-            onClick={() => exportAttendanceFiles(monthSchedules, monthRecords)}
+            // Records CSV mirrors the attendance panel: selected date + status filter.
+            onClick={() => exportAttendanceFiles(monthSchedules, filteredAttendance)}
             className="btn-secondary text-sm flex items-center gap-1"
           >
             <Download size={14} />
