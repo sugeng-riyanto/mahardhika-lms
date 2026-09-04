@@ -113,9 +113,11 @@ DROP POLICY IF EXISTS g_par ON public.grades;
 -- Admin/Owner: full CRUD
 SELECT public._create_policy_if_needed('g_admin', 'grades', 'ALL', 'public.is_admin_or_owner()');
 
--- Instructor: full access (own courses via activity lookup)
+-- Instructor: full access (own organisation via activity lookup)
+-- grades.activity_id -> activity_definitions (no direct course_id);
+-- backend scopes instructors by activity__organisation
 SELECT public._create_policy_if_needed('g_inst', 'grades', 'ALL',
-  'public.user_is_instructor() AND public.is_instructor_of_course(activity_id)');
+  'public.user_is_instructor() AND EXISTS (SELECT 1 FROM public.activity_definitions ad WHERE ad.id = activity_id AND public.user_in_org(ad.organisation_id))');
 
 -- Student: own released grades only
 SELECT public._create_policy_if_needed('g_stud', 'grades', 'SELECT',
@@ -298,7 +300,7 @@ SELECT public._create_policy_if_needed('tpg_admin', 'third_party_grants', 'ALL',
 
 -- Third Party: read-only own grants (active, non-expired)
 SELECT public._create_policy_if_needed('tpg_read', 'third_party_grants', 'SELECT',
-  'public.user_is_third_party() AND third_party_user_id = public.get_user_id() AND is_active = true AND (expires_at IS NULL OR expires_at > now())');
+  'public.user_is_third_party() AND third_party_user_id = public.get_user_id() AND is_active = true AND (valid_until IS NULL OR valid_until > now())');
 
 
 -- ================================================
