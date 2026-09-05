@@ -1,8 +1,8 @@
 # AKADEMI Digital Campus — Weekly Progress Report
 
 **Week of:** 2026-09-04
-**Git Commit:** e9e158e (2026-09-04 19:33:54 +0700)
-**Commit Message:** docs: weekly report — roll-call flow screenshots (2026-09-04)
+**Git Commit:** 6757c51 (2026-09-04 19:56:39 +0700)
+**Commit Message:** fix: attendance CSV export drops records file; tests + weekly report refresh
 
 ---
 
@@ -12,8 +12,8 @@
 |--------|-------|
 | Screenshots Captured | 34/34 |
 | Screenshot Failures | 0 |
-| Git Commit | e9e158e |
-| Report Generated | 2026-09-04 12:55:04 |
+| Git Commit | 6757c51 |
+| Report Generated | 2026-09-04 13:27:06 |
 
 ---
 
@@ -30,11 +30,11 @@
 
 ### Login Page
 ![Login Page](01-login.png)
-- Role: `public` | Size: 172KB
+- Role: `public` | Size: 176KB
 
 ### Admin Dashboard
 ![Admin Dashboard](02-admin-dashboard.png)
-- Role: `admin` | Size: 172KB
+- Role: `admin` | Size: 176KB
 
 ### Owner Dashboard
 ![Owner Dashboard](03-owner-dashboard.png)
@@ -66,35 +66,35 @@
 
 ### Course List
 ![Course List](10-courses.png)
-- Role: `all` | Size: 417KB
+- Role: `all` | Size: 438KB
 
 ### User Management
 ![User Management](11-users.png)
-- Role: `admin` | Size: 209KB
+- Role: `admin` | Size: 231KB
 
 ### Programme Management
 ![Programme Management](12-programmes.png)
-- Role: `admin` | Size: 288KB
+- Role: `admin` | Size: 290KB
 
 ### Gradebook
 ![Gradebook](13-gradebook.png)
-- Role: `all` | Size: 149KB
+- Role: `all` | Size: 150KB
 
 ### Essay List
 ![Essay List](14-essays.png)
-- Role: `all` | Size: 131KB
+- Role: `all` | Size: 164KB
 
 ### Annotation Canvas
 ![Annotation Canvas](15-canvas.png)
-- Role: `all` | Size: 278KB
+- Role: `all` | Size: 279KB
 
 ### Attendance
 ![Attendance](16-attendance.png)
-- Role: `all` | Size: 159KB
+- Role: `all` | Size: 224KB
 
 ### Calendar
 ![Calendar](17-calendar.png)
-- Role: `all` | Size: 141KB
+- Role: `all` | Size: 160KB
 
 ### Content Library
 ![Content Library](18-content-library.png)
@@ -102,7 +102,7 @@
 
 ### Assignments
 ![Assignments](19-assignments.png)
-- Role: `all` | Size: 126KB
+- Role: `all` | Size: 127KB
 
 ### Finance
 ![Finance](20-finance.png)
@@ -110,31 +110,31 @@
 
 ### Notifications
 ![Notifications](21-notifications.png)
-- Role: `all` | Size: 109KB
+- Role: `all` | Size: 173KB
 
 ### Reports & Analytics
 ![Reports & Analytics](22-reports.png)
-- Role: `admin` | Size: 167KB
+- Role: `admin` | Size: 179KB
 
 ### Audit Log
 ![Audit Log](23-audit-log.png)
-- Role: `admin` | Size: 209KB
+- Role: `admin` | Size: 244KB
 
 ### Certificates
 ![Certificates](24-certificates.png)
-- Role: `all` | Size: 107KB
+- Role: `all` | Size: 108KB
 
 ### Settings
 ![Settings](25-settings.png)
-- Role: `admin` | Size: 161KB
+- Role: `admin` | Size: 162KB
 
 ### Profile
 ![Profile](26-profile.png)
-- Role: `all` | Size: 167KB
+- Role: `all` | Size: 166KB
 
 ### Privacy Notice
 ![Privacy Notice](27-privacy.png)
-- Role: `all` | Size: 98KB
+- Role: `all` | Size: 326KB
 
 ### Consent Management
 ![Consent Management](28-consent.png)
@@ -162,7 +162,7 @@
 
 ### Attendance Export — records CSV
 ![Attendance Export — records CSV](34-attendance-export-records.png)
-- Role: `instructor` | Size: 115KB
+- Role: `instructor` | Size: 68KB
 
 ---
 
@@ -172,13 +172,15 @@
 |-------|--------|
 | Django System Check | ✅ (verified at commit time) |
 | RBAC Enforcement | ✅ 14/14 tests |
-| Admin RBAC (incl. invoices) | ✅ 6/6 tests |
+| RBAC Comprehensive (all roles) | ✅ 75/75 tests |
 | Consent Tests | ✅ 23/23 tests |
 | Notifications Tests | ✅ 51/51 tests |
+| Attendance API (roster + roll) | ✅ 16/16 tests |
+| Profile Self-Service API | ✅ 12/12 tests |
 | Security Tests | ✅ Passed |
 | Frontend TypeScript | ✅ 0 errors |
-| Frontend Unit Tests | ✅ 39/39 |
-| E2E Playwright Tests | ✅ 254/254 tests |
+| Frontend Unit Tests | ✅ 44/44 |
+| E2E Playwright (chromium, collected) | ✅ 266 test cases |
 
 ---
 
@@ -199,8 +201,8 @@
 ## 🔐 RBAC & Security
 
 - **Tables with RLS:** 59
-- **RLS Policies:** 142 (134 public + 8 storage)
-- **Helper Functions:** 14
+- **RLS Policies:** 151 (143 public + 8 storage)
+- **Helper Functions:** 16
 - **Auth Users:** 8
 - **Roles:** Owner, Admin, Treasurer, Instructor, Student, Parent, Sponsor, Third Party
 - **ViewSets with RBAC permissions:** 34/34 ✅
@@ -226,9 +228,10 @@
 - All pages render correctly with real API data
 - RBAC enforced on both frontend (route guards) and backend (queryset filtering)
 - Database connected to Supabase PostgreSQL with full RLS
-- IsFinanceRole fix: admin can now list invoices (was blocked before)
-- Safeguarding RBAC fix: admin org isolation + audit mixin fire on create
-- 254 E2E tests covering login, CRUD, RBAC, storage, accessibility, responsive
+- Attendance: Take Roll wired on Calendar + Attendance pages; Export CSVs reflect the viewed month and the records panel's date/status/search filters
+- Profile self-service: save, MFA toggle, change password and account deletion all call real endpoints (any role can edit own profile)
+- Audit log and Canvas exports wired; PDF export from the annotation canvas
+- 266 E2E test cases per browser project (chromium/firefox/tablet) covering login, CRUD, RBAC, storage, accessibility, responsive
 
 ---
 

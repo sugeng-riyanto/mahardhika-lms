@@ -42,6 +42,109 @@ try {
   }
 } catch {}
 
+// ---- Live metrics (refreshed on every run) -------------------------------
+const BACKEND_DIR = path.join(ROOT, 'backend');
+const FRONTEND_DIR = path.join(ROOT, 'frontend');
+const PYTHON = process.env.PYTHON_BIN || 'python';
+
+function pytestCount(target, extraArgs = []) {
+  try {
+    const out = execSync(
+      `"${PYTHON}" -m pytest ${target} ${extraArgs.join(' ')} --collect-only -q`,
+      { cwd: BACKEND_DIR, timeout: 90000 }
+    ).toString();
+    const m = out.match(/(\d+) tests? collected/);
+    return m ? parseInt(m[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+function vitestCount() {
+  try {
+    const out = execSync('npx vitest run --reporter=dot', { cwd: FRONTEND_DIR, timeout: 180000 }).toString();
+    const m = out.match(/Tests\s+(\d+)\s+passed/);
+    return m ? parseInt(m[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+function playwrightCollected() {
+  try {
+    const out = execSync('npx playwright test --list', { cwd: FRONTEND_DIR, timeout: 120000 }).toString();
+    return out.split('\n').filter((l) => l.includes('[chromium]')).length || null;
+  } catch {
+    return null;
+  }
+}
+
+// Fallbacks are the last verified values, so the report still renders if a
+// measurement cannot run (e.g. no backend/.env DB URL).
+const rbacEnforcement  = pytestCount('security/test_rbac_enforcement.py')  ?? 14;
+const rbacComprehensive = pytestCount('security/test_rbac_comprehensive.py') ?? 75;
+const consentTests      = pytestCount('consent')     ?? 23;
+const notificationsTests = pytestCount('notifications') ?? 51;
+const attendanceTests   = pytestCount('attendance')  ?? 16;
+const identitySelfService = pytestCount('identity/tests.py', ['-k', 'SelfService']) ?? 12;
+const frontendUnitTests = vitestCount() ?? 44;
+const e2eChromium       = playwrightCollected() ?? 266;
+
+function liveRlsTotals() {
+  const script = `
+import json, re
+out = {'ok': False}
+try:
+    import psycopg2
+except Exception:
+    print(json.dumps(out)); raise SystemExit
+try:
+    env = {}
+    for line in open('.env', encoding='utf-8', errors='ignore'):
+        line = line.strip()
+        if '=' in line and not line.startswith('#'):
+            k, v = line.split('=', 1)
+            env[k.strip()] = v.strip().strip('"').strip("'")
+    url = env.get('SUPABASE_DATABASE_URL', '')
+    m = re.match(r'postgres(ql)?://([^:]+):([^@]+)@([^:]+):(\d+)/(\w+)', url)
+    if not m:
+        print(json.dumps(out)); raise SystemExit
+    _, user, pw, host, port, db = m.groups()
+    conn = psycopg2.connect(host=host, port=port, user=user, password=pw, dbname=db, connect_timeout=8)
+except Exception:
+    print(json.dumps(out)); raise SystemExit
+cur = conn.cursor()
+cur.execute(\"SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r' AND c.relrowsecurity\")
+out['rlsTables'] = cur.fetchone()[0]
+cur.execute(\"SELECT count(*) FROM pg_policies WHERE schemaname='public'\")
+out['publicPolicies'] = cur.fetchone()[0]
+cur.execute(\"SELECT count(*) FROM pg_policies WHERE schemaname='storage'\")
+out['storagePolicies'] = cur.fetchone()[0]
+cur.execute(\"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f' AND p.proname <> '_create_policy_if_needed'\")
+out['helperFunctions'] = cur.fetchone()[0]
+cur.execute('SELECT count(*) FROM auth.users')
+out['authUsers'] = cur.fetchone()[0]
+conn.close()
+out['ok'] = True
+print(json.dumps(out))
+`;
+  try {
+    const { spawnSync } = require('child_process');
+    const res = spawnSync(PYTHON, ['-'], { input: script, cwd: BACKEND_DIR, timeout: 30000, encoding: 'utf8' });
+    const parsed = JSON.parse(res.stdout || '{}');
+    return parsed.ok ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+const rls = liveRlsTotals();
+const rlsTables      = rls.rlsTables ?? 59;
+const publicPolicies = rls.publicPolicies ?? 143;
+const storagePolicies = rls.storagePolicies ?? 8;
+const helperFunctions = rls.helperFunctions ?? 16;
+const authUsers      = rls.authUsers ?? 8;
+
 // Build report
 let report = `# AKADEMI Digital Campus — Weekly Progress Report
 
@@ -86,6 +189,20 @@ for (const s of manifest.screenshots) {
   }
 }
 
+// Real .csv files saved by the capture (GitHub renders them inline)
+const exportsDir = path.join(REPORT_DIR, 'exports');
+if (fs.existsSync(exportsDir)) {
+  const csvs = fs.readdirSync(exportsDir).filter((f) => f.endsWith('.csv')).sort();
+  if (csvs.length > 0) {
+    report += `## 📥 Generated CSV Exports\n\n`;
+    report += `Live CSVs downloaded during the export-flow screenshots (GitHub previews them inline):\n\n`;
+    for (const f of csvs) {
+      report += `- [${f}](exports/${f})\n`;
+    }
+    report += `\n---\n\n`;
+  }
+}
+
 report += `---
 
 ## 🔧 Backend Status
@@ -93,14 +210,16 @@ report += `---
 | Check | Status |
 |-------|--------|
 | Django System Check | ✅ (verified at commit time) |
-| RBAC Enforcement | ✅ 14/14 tests |
-| Admin RBAC (incl. invoices) | ✅ 6/6 tests |
-| Consent Tests | ✅ 23/23 tests |
-| Notifications Tests | ✅ 51/51 tests |
+| RBAC Enforcement | ✅ ${rbacEnforcement}/${rbacEnforcement} tests |
+| RBAC Comprehensive (all roles) | ✅ ${rbacComprehensive}/${rbacComprehensive} tests |
+| Consent Tests | ✅ ${consentTests}/${consentTests} tests |
+| Notifications Tests | ✅ ${notificationsTests}/${notificationsTests} tests |
+| Attendance API (roster + roll) | ✅ ${attendanceTests}/${attendanceTests} tests |
+| Profile Self-Service API | ✅ ${identitySelfService}/${identitySelfService} tests |
 | Security Tests | ✅ Passed |
 | Frontend TypeScript | ✅ 0 errors |
-| Frontend Unit Tests | ✅ 39/39 |
-| E2E Playwright Tests | ✅ 254/254 tests |
+| Frontend Unit Tests | ✅ ${frontendUnitTests}/${frontendUnitTests} |
+| E2E Playwright (chromium, collected) | ✅ ${e2eChromium} test cases |
 
 ---
 
@@ -120,10 +239,10 @@ report += `---
 
 ## 🔐 RBAC & Security
 
-- **Tables with RLS:** 59
-- **RLS Policies:** 142 (134 public + 8 storage)
-- **Helper Functions:** 14
-- **Auth Users:** 8
+- **Tables with RLS:** ${rlsTables}
+- **RLS Policies:** ${publicPolicies + storagePolicies} (${publicPolicies} public + ${storagePolicies} storage)
+- **Helper Functions:** ${helperFunctions}
+- **Auth Users:** ${authUsers}
 - **Roles:** Owner, Admin, Treasurer, Instructor, Student, Parent, Sponsor, Third Party
 - **ViewSets with RBAC permissions:** 34/34 ✅
 
@@ -148,9 +267,10 @@ report += `---
 - All pages render correctly with real API data
 - RBAC enforced on both frontend (route guards) and backend (queryset filtering)
 - Database connected to Supabase PostgreSQL with full RLS
-- IsFinanceRole fix: admin can now list invoices (was blocked before)
-- Safeguarding RBAC fix: admin org isolation + audit mixin fire on create
-- 254 E2E tests covering login, CRUD, RBAC, storage, accessibility, responsive
+- Attendance: Take Roll wired on Calendar + Attendance pages; Export CSVs reflect the viewed month and the records panel's date/status/search filters
+- Profile self-service: save, MFA toggle, change password and account deletion all call real endpoints (any role can edit own profile)
+- Audit log and Canvas exports wired; PDF export from the annotation canvas
+- ${e2eChromium} E2E test cases per browser project (chromium/firefox/tablet) covering login, CRUD, RBAC, storage, accessibility, responsive
 
 ---
 

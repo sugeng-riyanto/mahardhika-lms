@@ -59,33 +59,49 @@ async function openAttendanceRollModal(page) {
   await page.getByRole('button', { name: 'Save Attendance' }).waitFor({ state: 'visible', timeout: 5000 });
 }
 
-// Click Export and show the downloaded CSV's contents in the page so it can be
-// screenshotted. The Export button starts two downloads (schedules then, 500ms
-// later, records), but Chromium's download pipeline is flaky under headless
+// Click Export, screenshot the chosen CSV's contents, and save the real
+// generated .csv files into <report>/exports/ so the report can link them.
+// The Export button starts two downloads (schedules then, 500ms later,
+// records), but Chromium's download pipeline is flaky under headless
 // Playwright — a second in-flight download is sometimes dropped or misreported.
 // Instead of matching browser download events, intercept the app's own anchor
-// clicks and read the CSV text from the Blob it created. Deterministic.
+// clicks and read the CSV text from the Blob it created. Deterministic, and
+// the captured text is byte-identical to what the browser would download
+// (plus the BOM exportToCSV prepends).
 async function showExportedCsv(page, which) {
-  const csv = await page.evaluate(async (wanted) => {
-    const blobs = new Map(); // object URL -> Blob
+  const result = await page.evaluate(async (wanted) => {
+    const blobs = []; // [{ url, blob }] in click order
     const origCreate = URL.createObjectURL.bind(URL);
-    URL.createObjectURL = (b) => { const u = origCreate(b); blobs.set(u, b); return u; };
+    URL.createObjectURL = (b) => { const u = origCreate(b); blobs.push({ url: u, blob: b }); return u; };
     const clicked = [];
     const origClick = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function () {
-      if (this.download) clicked.push({ download: this.download, url: this.href });
+      if (this.download) clicked.push(this.download);
       return origClick.apply(this, arguments);
     };
     const btn = [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Export'));
     if (!btn) return null;
     btn.click();
     await new Promise((r) => setTimeout(r, 1200)); // records export is deferred ~500ms
-    const hit = clicked.find((c) => c.download.includes('attendance-' + wanted));
-    if (!hit || !blobs.has(hit.url)) return null;
-    return await blobs.get(hit.url).text();
+    const files = clicked.map((name, i) => ({ name, text: '' }));
+    for (let i = 0; i < files.length; i++) {
+      if (blobs[i]) files[i].text = await blobs[i].blob.text();
+    }
+    const hit = files.find((f) => f.name.includes('attendance-' + wanted));
+    if (!hit) return null;
+    return { files, wantedText: hit.text };
   }, which);
-  if (!csv) throw new Error(`export not found: attendance-${which}`);
-  await page.goto('data:text/plain;charset=utf-8,' + encodeURIComponent(csv), { waitUntil: 'load', timeout: 10000 });
+  if (!result) throw new Error(`export not found: attendance-${which}`);
+
+  // Persist the real generated files next to the screenshots.
+  const exportsDir = path.join(OUTPUT_DIR, 'exports');
+  fs.mkdirSync(exportsDir, { recursive: true });
+  for (const f of result.files) {
+    if (!f.name) continue;
+    fs.writeFileSync(path.join(exportsDir, f.name), '\uFEFF' + f.text); // BOM for Excel
+  }
+
+  await page.goto('data:text/plain;charset=utf-8,' + encodeURIComponent(result.wantedText), { waitUntil: 'load', timeout: 10000 });
   await page.waitForTimeout(300);
 }
 
@@ -125,9 +141,11 @@ const PAGES = [
   // Roll-call flow — Attendance page (instructor)
   ['/attendance',                   '31-attendance-roll',             'Attendance — Take Roll ready','instructor', openAttendanceRollState],
   ['/attendance',                   '32-attendance-roll-modal',       'Attendance — Take Roll modal','instructor', openAttendanceRollModal],
-  // CSV export flow — actual downloaded file contents (Attendance page)
+  // CSV export flow — actual downloaded file contents (Attendance page).
+  // The records export mirrors the panel's filters, so select Mon Sep 7 first
+  // to capture a date-scoped file with real rows.
   ['/attendance',                   '33-attendance-export-schedules', 'Attendance Export — schedules CSV','instructor', async (page) => showExportedCsv(page, 'schedules')],
-  ['/attendance',                   '34-attendance-export-records',   'Attendance Export — records CSV','instructor', async (page) => showExportedCsv(page, 'records')],
+  ['/attendance',                   '34-attendance-export-records',   'Attendance Export — records CSV','instructor', async (page) => { await openAttendanceRollState(page); await showExportedCsv(page, 'records') }],
 ];
 
 // Role-to-email mapping for mock auth
