@@ -368,6 +368,7 @@ export interface Assignment {
   created_by_email: string;
   allowed_file_types: string[];
   max_file_size_mb: number;
+  video_url: string;
   submission_count: number;
   graded_count: number;
   created_at: string;

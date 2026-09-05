@@ -4,6 +4,8 @@ import {
   ClipboardList, Clock, FileText, Users, CheckCircle, Send,
   ArrowLeft, Star, MessageSquare, AlertCircle, Upload, X, Loader2,
 } from 'lucide-react'
+import { VideoEmbed } from '@/components/VideoEmbed'
+import { videoEmbedUrl } from '@/utils/videoEmbed'
 import { useAssignment, useAssignmentSubmissions } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { apiClient } from '@/api/client'
@@ -259,6 +261,12 @@ export function AssignmentDetailPage() {
             {assignment.status}
           </span>
         </div>
+
+        {assignment.video_url && videoEmbedUrl(assignment.video_url) && (
+          <div className="mb-4 rounded-lg overflow-hidden">
+            <VideoEmbed url={assignment.video_url} title={`${assignment.title} video brief`} />
+          </div>
+        )}
 
         {assignment.description && (
           <p className="text-navy-200 mb-4 whitespace-pre-wrap">{assignment.description}</p>

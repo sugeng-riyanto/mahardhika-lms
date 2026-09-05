@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardList, Clock, CheckCircle, FileText, Users, Search, Plus, Send, Edit, Trash2 } from 'lucide-react'
+import { ClipboardList, Clock, CheckCircle, FileText, Users, Search, Plus, Send, Edit, Trash2, Video } from 'lucide-react'
+import { VideoEmbed } from '@/components/VideoEmbed'
+import { videoEmbedUrl } from '@/utils/videoEmbed'
 import { useAssignments } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
@@ -31,6 +33,7 @@ const ASSIGNMENT_FIELDS: CrudField[] = [
   { name: 'course', label: 'Course ID', type: 'text', required: true, placeholder: 'Course UUID' },
   { name: 'max_score', label: 'Max Score', type: 'number', required: true, placeholder: '100' },
   { name: 'due_date', label: 'Due Date', type: 'text', placeholder: 'YYYY-MM-DD' },
+  { name: 'video_url', label: 'Video Brief (YouTube / Google Drive)', type: 'text', placeholder: 'https://youtube.com/watch?v=... or https://drive.google.com/file/d/.../preview' },
   { name: 'status', label: 'Status', type: 'select', options: [
     { value: 'draft', label: 'Draft' },
     { value: 'published', label: 'Published' },
@@ -72,13 +75,22 @@ function AssignmentCard({
     <div className="card hover:border-cyan-500/30 transition-colors">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="text-white font-semibold text-lg">{assignment.title}</h3>
+          <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+            {assignment.title}
+            {assignment.video_url && <Video size={14} className="text-red-400 shrink-0" aria-label="Has video brief" />}
+          </h3>
           <p className="text-navy-400 text-sm mt-1">{assignment.course_title}</p>
         </div>
         <span className={`px-2 py-1 rounded text-xs font-medium ${statusCfg.bg} ${statusCfg.color}`}>
           {statusCfg.label}
         </span>
       </div>
+
+      {assignment.video_url && videoEmbedUrl(assignment.video_url) && (
+        <div className="mb-3 rounded-lg overflow-hidden">
+          <VideoEmbed url={assignment.video_url} title={`${assignment.title} video brief`} />
+        </div>
+      )}
 
       {assignment.description && (
         <p className="text-navy-300 text-sm mb-3 line-clamp-2">{assignment.description}</p>
@@ -160,12 +172,12 @@ export function AssignmentListPage() {
 
   const openCreate = () => setModal({
     isOpen: true, mode: 'create',
-    data: { title: '', description: '', max_score: 100, due_date: '', status: 'draft' },
+    data: { title: '', description: '', max_score: 100, due_date: '', video_url: '', status: 'draft' },
   })
 
   const openEdit = (a: Assignment) => setModal({
     isOpen: true, mode: 'edit',
-    data: { id: a.id, title: a.title, description: a.description || '', max_score: a.max_score, due_date: a.due_date || '', status: a.status },
+    data: { id: a.id, title: a.title, description: a.description || '', max_score: a.max_score, due_date: a.due_date || '', video_url: a.video_url || '', status: a.status },
   })
 
   const openSubmit = (a: Assignment) => setModal({

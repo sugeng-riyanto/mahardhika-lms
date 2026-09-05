@@ -39,6 +39,10 @@ class Assignment(TimestampedModel):
         help_text='List of allowed file extensions, e.g. [".pdf", ".docx"]',
     )
     max_file_size_mb = models.PositiveIntegerField(default=10)
+    video_url = models.URLField(
+        max_length=500, blank=True, default='',
+        help_text='YouTube or Google Drive embed URL for a video brief',
+    )
 
     class Meta:
         db_table = 'assignments'
