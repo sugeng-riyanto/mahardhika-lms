@@ -176,6 +176,48 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
             raise PermissionDenied('Only owners and admins can delete grades.')
         instance.delete()
 
+    def _build_grade_digest_html(self, grade, recipient_name):
+        """Render the rich grade-digest email for a released grade + recent grades."""
+        from django.template.loader import render_to_string
+
+        activity = grade.activity
+        activity_title = activity.title if activity else 'Activity'
+        course_name = (activity.lesson.course.title
+                       if activity and activity.lesson and activity.lesson.course
+                       else 'course')
+        score = float(grade.score)
+        max_score = float(grade.max_score)
+        percentage = round(score / max_score * 100, 1) if max_score else 0
+        letter = GradeSerializer().get_letter_grade(grade)
+
+        # Recent released grades for the digest table (exclude this one, newest first)
+        recent = Grade.objects.filter(
+            student=grade.student, released=True,
+        ).exclude(id=grade.id).select_related('activity__lesson__course')[:5]
+        recent_grades = []
+        for g in recent:
+            act = g.activity
+            g_max = float(g.max_score)
+            recent_grades.append({
+                'title': f'{act.title} · {act.lesson.course.title}' if act and act.lesson and act.lesson.course else (act.title if act else 'Activity'),
+                'score': g.score,
+                'max_score': g.max_score,
+                'letter': GradeSerializer().get_letter_grade(g),
+            })
+
+        return render_to_string('notifications/grade_released.html', {
+            'student_name': recipient_name,
+            'course_name': course_name,
+            'activity_title': activity_title,
+            'score': grade.score,
+            'max_score': grade.max_score,
+            'percentage': percentage,
+            'letter_grade': letter,
+            'released_date': grade.released_at or grade.updated_at or grade.created_at,
+            'recent_grades': recent_grades,
+            'site_url': 'https://akademi.id',
+        })
+
     def _notify_grade_released(self, grade, actor):
         """Notify the student and their linked parents that a grade was released."""
         from notifications.dispatcher import dispatch_notification
@@ -189,18 +231,22 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
             'score': grade.score,
             'max_score': grade.max_score,
         }
+        email_html = self._build_grade_digest_html(grade, grade.student.full_name)
 
-        # Student (template text fits: "Your grade...")
+        # Student — rich digest email + in-app
         dispatch_notification(
             recipient=grade.student,
             title='Grade Released',
             message=f'Your grade for {course_name} has been released. Score: {grade.score}/{grade.max_score}',
+            channels=['in_app', 'email'],
+            email_subject=f'Your grade for {course_name} is ready',
+            email_html=email_html,
             metadata={'grade_id': str(grade.id), 'type': 'grade_released'},
             template_key='grade_released',
             template_vars=ctx,
         )
 
-        # Linked parents (custom message; no template_key so our text is kept)
+        # Linked parents — same digest, child-named subject/message
         parents = ParentChildLink.objects.filter(
             student_user=grade.student, is_verified=True, is_active=True, consent_given=True,
         ).select_related('parent_user')
@@ -209,7 +255,9 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
                 recipient=link.parent_user,
                 title='Grade Released',
                 message=f'{grade.student.full_name}\'s grade for {course_name} has been released. Score: {grade.score}/{grade.max_score}',
+                channels=['in_app', 'email'],
                 email_subject=f'{grade.student.full_name}\'s grade for {course_name} has been released',
+                email_html=email_html,
                 metadata={'grade_id': str(grade.id), 'type': 'grade_released'},
             )
 

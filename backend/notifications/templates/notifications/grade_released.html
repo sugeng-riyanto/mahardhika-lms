@@ -1,0 +1,47 @@
+{% extends 'notifications/base_email.html' %}
+{% block content %}
+  <h2>Your grade has been released</h2>
+  <p>Hello {{ student_name }},</p>
+  <p>Your instructor has released a new grade. Here is the summary:</p>
+
+  <div class="card" style="text-align: center; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 24px; margin: 16px 0;">
+    <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">{{ course_name }}</p>
+    <p style="margin: 0 0 4px 0; color: #ffffff; font-size: 16px; font-weight: 600;">{{ activity_title }}</p>
+    <p style="margin: 16px 0 0 0; color: #06b6d4; font-size: 32px; font-weight: 700;">
+      {{ score }} / {{ max_score }}
+    </p>
+    <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 13px;">
+      {{ percentage }}% &middot; Grade: <strong style="color: #ffffff;">{{ letter_grade }}</strong>
+    </p>
+  </div>
+
+  <a href="{{ site_url }}/gradebook" class="btn">View your gradebook</a>
+
+  {% if recent_grades %}
+    <div class="card" style="background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0 0 12px 0; color: #ffffff; font-weight: 600; font-size: 14px;">Your recent grades</p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="text-align: left; color: #9ca3af; border-bottom: 1px solid #374151;">
+            <th style="padding: 6px 8px;">Activity</th>
+            <th style="padding: 6px 8px; text-align: right;">Score</th>
+            <th style="padding: 6px 8px; text-align: right;">Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in recent_grades %}
+          <tr style="border-bottom: 1px solid #1f2937; color: #e5e7eb;">
+            <td style="padding: 6px 8px;">{{ g.title }}</td>
+            <td style="padding: 6px 8px; text-align: right;">{{ g.score }} / {{ g.max_score }}</td>
+            <td style="padding: 6px 8px; text-align: right; color: #06b6d4; font-weight: 600;">{{ g.letter }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <p style="color: #9ca3af; font-size: 12px; margin-top: 16px;">
+    Released on {{ released_date }}. Questions? Contact your instructor through the LMS.
+  </p>
+{% endblock %}

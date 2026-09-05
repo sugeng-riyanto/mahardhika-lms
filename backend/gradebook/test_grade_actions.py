@@ -7,7 +7,7 @@ from decimal import Decimal
 from gradebook.models import Grade, GradeEvent
 from activities.models import ActivityDefinition
 from courses.models import Programme, Course, Lesson, Enrolment
-from identity.models import Role, RoleAssignment
+from identity.models import Role, RoleAssignment, ParentChildLink
 from organisations.models import Organisation
 
 User = get_user_model()
@@ -165,3 +165,72 @@ class TestGradeRBAC:
         qs = view.get_queryset()
         assert qs.filter(id=g1.id).exists()
         assert not qs.filter(id=g2.id).exists()
+
+
+@pytest.mark.django_db
+class TestGradeDigestEmail:
+    """The released-grade email renders the rich HTML digest and is dispatched."""
+
+    def test_digest_html_renders_grade_and_recent(self, grade, organisation, activity):
+        from gradebook.views import GradeViewSet
+        grade.released = True
+        grade.released_at = timezone.now()
+        grade.save(update_fields=['released', 'released_at'])
+
+        # A second recent released grade for the digest table
+        activity2 = ActivityDefinition.objects.create(
+            organisation=organisation, title='Quiz 2', activity_type='multiple_choice', status='published',
+        )
+        recent = Grade.objects.create(
+            student=grade.student, activity=activity2,
+            score=Decimal('90'), max_score=Decimal('100'), released=True, released_at=timezone.now(),
+        )
+
+        view = GradeViewSet()
+        html = view._build_grade_digest_html(grade, grade.student.full_name)
+
+        assert 'Your grade has been released' in html
+        assert 'Quiz 1' in html
+        assert '85.00' in html
+        assert '100.00' in html
+        assert '<table' in html
+        assert 'Quiz 2' in html  # recent grade row present
+
+    def test_release_dispatches_email_to_student_and_parent(self, grade, student_user, organisation, roles):
+        from gradebook.views import GradeViewSet
+        from notifications.adapters.email import get_email_provider
+
+        # Link a parent
+        parent_user = User.objects.create_user(email='parent@test.com', password='pass', supabase_uid='par-uid')
+        RoleAssignment.objects.create(user=parent_user, role=roles['student'], organisation=organisation, status='active')
+        ParentChildLink.objects.create(
+            parent_user=parent_user, student_user=student_user,
+            is_verified=True, is_active=True, consent_given=True,
+        )
+
+        view = GradeViewSet()
+        view._notify_grade_released(grade, grade.student)
+
+        # In-app notifications
+        from notifications.models import Notification
+        n_student = Notification.objects.filter(recipient=student_user, channel='in_app').latest('created_at')
+        n_parent = Notification.objects.filter(recipient=parent_user, channel='in_app').latest('created_at')
+        assert n_student.message and n_parent.message
+
+        # Email-channel queue records exist
+        from notifications.models import NotificationQueue
+        q_student = NotificationQueue.objects.filter(
+            notification__recipient=student_user, channel='email',
+        ).latest('created_at')
+        q_parent = NotificationQueue.objects.filter(
+            notification__recipient=parent_user, channel='email',
+        ).latest('created_at')
+        assert q_student.status == 'sent'
+        assert q_parent.status == 'sent'
+
+        # Mock provider received the rich HTML body
+        sent = get_email_provider().get_sent_emails()
+        htmls = [e['html_body'] for e in sent if e['to'] in ('student@test.com', 'parent@test.com')]
+        assert len(htmls) >= 2
+        for h in htmls:
+            assert 'Your grade has been released' in h
