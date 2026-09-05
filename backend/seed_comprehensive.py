@@ -249,14 +249,42 @@ print(f"  + {pc} progress records")
 
 # 8. CONTENT
 print("\n=== Content Items ===")
+YT_URL = 'https://www.youtube.com/watch?v=Q7twwJbocDM&t=1362s'
+DRV_VIDEO = 'https://drive.google.com/file/d/1-kSKW-B3mji1aZL8ptuTew1yi5G26osj/view'
+DRV_PDF = 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view'
+
 REAL_CONTENT = [
-    ('Algebra Fundamentals Slides', 'document', 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view', 'application/pdf'),
-    ("Newton's Laws Animation", 'video', 'https://www.youtube.com/watch?v=Q7twwJbocDM&t=1362s', 'video/youtube'),
-    ('Physics Lab Demonstration', 'video', 'https://drive.google.com/file/d/1-kSKW-B3mji1aZL8ptuTew1yi5G26osj/view', 'video/mp4'),
-    ('Periodic Table Reference', 'document', 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view', 'application/pdf'),
+    ('Algebra Fundamentals Slides', 'document', DRV_PDF, 'application/pdf'),
+    ("Newton's Laws Animation", 'video', YT_URL, 'video/youtube'),
+    ('Physics Lab Demonstration', 'video', DRV_VIDEO, 'video/mp4'),
+    ('Periodic Table Reference', 'document', DRV_PDF, 'application/pdf'),
+    ('IELTS Vocabulary Builder', 'document', DRV_PDF, 'application/pdf'),
+    ('Physics 10 Kinematics Formulas', 'document', DRV_PDF, 'application/pdf'),
+    ('Python Data Analysis Starter', 'document', DRV_PDF, 'application/pdf'),
+    ('Arduino Circuit Tutorial', 'video', YT_URL, 'video/youtube'),
+    ('IELTS Writing Task 2 Guide', 'document', DRV_PDF, 'application/pdf'),
+    ('Geometry Formula Sheet', 'document', DRV_PDF, 'application/pdf'),
+    ('STEAM Robotics Project Guide', 'document', DRV_PDF, 'application/pdf'),
+    ('Math 7B Statistics Video Lecture', 'video', YT_URL, 'video/youtube'),
+    ('Physics Electricity Lab Manual', 'document', DRV_PDF, 'application/pdf'),
+    ('IELTS Writing Templates', 'document', DRV_PDF, 'application/pdf'),
+    # Slides
+    ('Algebra 7A Lecture Slides', 'document', DRV_PDF, 'application/pdf'),
+    ('Physics 10 Electricity Slides', 'document', DRV_PDF, 'application/pdf'),
+    ('IELTS Speaking Part 2 Slides', 'document', DRV_PDF, 'application/pdf'),
+    # Audio
+    ('Physics 10 Kinematics Audio Lecture', 'audio', DRV_VIDEO, 'audio/mpeg'),
+    ('IELTS Listening Practice Test 1', 'audio', DRV_VIDEO, 'audio/mpeg'),
+    ('Math 7A Algebra Audio Summary', 'audio', DRV_VIDEO, 'audio/mpeg'),
+    # Image
+    ('Periodic Table High-Res Poster', 'image', DRV_PDF, 'image/jpeg'),
+    ('Physics 10 Electricity Diagram', 'image', DRV_PDF, 'image/jpeg'),
+    ('IELTS Writing Task 2 Structure', 'image', DRV_PDF, 'image/jpeg'),
+    ('Math 7A Geometry Formula Card', 'image', DRV_PDF, 'image/jpeg'),
 ]
 cc = 0
-for i, (course, (title, ctype, url, mime)) in enumerate(zip(courses[:4], REAL_CONTENT)):
+for i, (title, ctype, url, mime) in enumerate(REAL_CONTENT):
+    course = courses[i % len(courses)]
     ci, created = ContentItem.objects.get_or_create(
         title=f'{course.title} - {title}',
         organisation=org,

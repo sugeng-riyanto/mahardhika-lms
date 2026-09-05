@@ -76,8 +76,8 @@ const CONTENT_FIELDS: CrudField[] = [
   { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'math, physics, reference' },
 ]
 
-const PDF_FIELDS: CrudField[] = [
-  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'PDF title' },
+const DRIVE_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Content title' },
   { name: 'drive_url', label: 'Google Drive Link', type: 'text', required: true, placeholder: 'https://drive.google.com/file/d/.../view' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description...' },
   { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'math, physics, reference' },
@@ -241,6 +241,24 @@ export function ContentLibraryPage() {
     data: { title: '', drive_url: '', description: '', tags: '', content_type: 'document' },
   })
 
+  const openCreateSlides = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'document', _driveType: 'slides' },
+  })
+
+  const openCreateAudio = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'audio' },
+  })
+
+  const openCreateImage = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'image' },
+  })
+
   const openEdit = (item: ContentItem) => setModal({
     isOpen: true,
     mode: 'edit',
@@ -271,18 +289,24 @@ export function ContentLibraryPage() {
           mime_type: parsed ? `video/${parsed.provider}` : 'video/url',
           metadata: parsed ? { provider: parsed.provider, file_id: parsed.file_id } : {},
         })
-      } else if (modal.data.content_type === 'document' && data.drive_url) {
+      } else if (data.drive_url) {
+        // All Drive-link types: document (PDF/slides), audio, image
         const url = String(data.drive_url).trim()
-        const parsed = parseVideoUrl(url)
+        const ct = modal.data.content_type as string
+        const mimeMap: Record<string, string> = {
+          document: modal.data._driveType === 'slides' ? 'application/vnd.ms-powerpoint' : 'application/pdf',
+          audio: 'audio/mpeg',
+          image: 'image/jpeg',
+        }
         await apiClient.post('/content/', {
           title: data.title,
           description: data.description || '',
-          content_type: 'document',
+          content_type: ct,
           tags: Array.isArray(payload.tags) ? payload.tags : [],
           file_url: url,
-          mime_type: 'application/pdf',
+          mime_type: mimeMap[ct] || 'application/octet-stream',
           file_size: 0,
-          metadata: parsed ? { provider: 'gdrive', file_id: parsed.file_id } : {},
+          metadata: { provider: 'gdrive', url },
         })
       } else {
         await apiClient.post('/content/', payload)
@@ -323,6 +347,18 @@ export function ContentLibraryPage() {
               <button onClick={openCreatePdf} className="btn-primary flex items-center gap-2">
                 <FileText size={16} />
                 Add PDF (Drive)
+              </button>
+              <button onClick={openCreateSlides} className="btn-primary flex items-center gap-2">
+                <Layers size={16} />
+                Add Slides (Drive)
+              </button>
+              <button onClick={openCreateAudio} className="btn-primary flex items-center gap-2">
+                <Headphones size={16} />
+                Add Audio (Drive)
+              </button>
+              <button onClick={openCreateImage} className="btn-primary flex items-center gap-2">
+                <Image size={16} />
+                Add Image (Drive)
               </button>
               <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary flex items-center gap-2">
                 <Upload size={16} />
@@ -626,18 +662,32 @@ export function ContentLibraryPage() {
               {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) && (
                 <VideoEmbed url={selectedItem.file_url} title={selectedItem.title} />
               )}
-              {selectedItem.content_type === 'document' && isGoogleDriveUrl(selectedItem.file_url) && driveEmbedUrl(selectedItem.file_url) && (
+              {selectedItem.content_type === 'video' && isGoogleDriveUrl(selectedItem.file_url) && driveEmbedUrl(selectedItem.file_url) && (
                 <div className="w-full rounded-lg overflow-hidden border border-navy-700 bg-navy-900">
                   <div className="flex items-center justify-between px-4 py-2 bg-navy-800 border-b border-navy-700">
                     <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-red-400" />
+                      <Film size={16} className="text-red-400" />
                       <span className="text-sm text-navy-200 font-medium truncate max-w-xs">{selectedItem.title}</span>
                     </div>
                     <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
                       Open <ExternalLink size={12} />
                     </a>
                   </div>
-                  <iframe src={driveEmbedUrl(selectedItem.file_url)!} title={selectedItem.title} className="w-full border-0" style={{ height: '600px' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" />
+                  <iframe src={driveEmbedUrl(selectedItem.file_url)!} title={selectedItem.title} className="w-full border-0" style={{ height: '480px' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" />
+                </div>
+              )}
+              {selectedItem.content_type !== 'video' && isGoogleDriveUrl(selectedItem.file_url) && driveEmbedUrl(selectedItem.file_url) && (
+                <div className="w-full rounded-lg overflow-hidden border border-navy-700 bg-navy-900">
+                  <div className="flex items-center justify-between px-4 py-2 bg-navy-800 border-b border-navy-700">
+                    <div className="flex items-center gap-2">
+                      {(() => { const Ic = TYPE_META[selectedItem.content_type]?.icon || FileText; return <Ic size={16} className={TYPE_META[selectedItem.content_type]?.color || 'text-blue-400'} /> })()}
+                      <span className="text-sm text-navy-200 font-medium truncate max-w-xs">{selectedItem.title}</span>
+                    </div>
+                    <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                      Open <ExternalLink size={12} />
+                    </a>
+                  </div>
+                  <iframe src={driveEmbedUrl(selectedItem.file_url)!} title={selectedItem.title} className="w-full border-0" style={{ height: selectedItem.content_type === 'image' ? '500px' : selectedItem.content_type === 'audio' ? '160px' : '600px' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" />
                 </div>
               )}
 
@@ -681,15 +731,10 @@ export function ContentLibraryPage() {
             </div>
 
             <div className="flex items-center gap-2 p-5 border-t border-navy-700">
-              {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) ? (
+              {isGoogleDriveUrl(selectedItem.file_url) || videoEmbedUrl(selectedItem.file_url) ? (
                 <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 flex items-center justify-center gap-2">
                   <ExternalLink size={14} />
-                  Open Video
-                </a>
-              ) : selectedItem.content_type === 'document' && isGoogleDriveUrl(selectedItem.file_url) ? (
-                <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 flex items-center justify-center gap-2">
-                  <ExternalLink size={14} />
-                  Open PDF
+                  Open {TYPE_META[selectedItem.content_type]?.label || 'File'}
                 </a>
               ) : (
                 <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2">
@@ -717,8 +762,8 @@ export function ContentLibraryPage() {
       <CrudModal
         isOpen={modal.isOpen}
         mode={modal.mode}
-        title={modal.data.content_type === 'video' ? 'Video' : 'Content'}
-        fields={modal.data.content_type === 'video' ? VIDEO_FIELDS : (modal.mode === 'create' && modal.data.content_type === 'document' && modal.data.drive_url !== undefined ? PDF_FIELDS : CONTENT_FIELDS)}
+        title={modal.data.content_type === 'video' ? 'Video' : modal.data._driveType === 'slides' ? 'Slides' : modal.data.content_type === 'audio' ? 'Audio' : modal.data.content_type === 'image' ? 'Image' : 'Content'}
+        fields={modal.data.content_type === 'video' ? VIDEO_FIELDS : (modal.mode === 'create' && modal.data.drive_url !== undefined) ? DRIVE_FIELDS : CONTENT_FIELDS}
         data={modal.data}
         onSave={handleSave}
         onDelete={handleDelete}
