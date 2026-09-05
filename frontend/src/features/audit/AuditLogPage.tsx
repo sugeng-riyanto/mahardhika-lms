@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Shield, Search, Download, User, BookOpen, Settings, CreditCard, LogIn, LogOut, Edit, Eye, Trash2 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { exportToCSV, type CSVColumn } from '@/utils/csvExport'
-import { isSupabaseConfigured } from '@/api/supabase'
 import type { AuditEvent } from '@/types'
 
 const AUDIT_CSV_COLUMNS: CSVColumn<AuditEvent>[] = [
@@ -47,9 +46,6 @@ const ACTION_META: Record<string, { label: string; icon: typeof User; color: str
 }
 
 async function fetchAuditEvents(): Promise<AuditEvent[]> {
-  if (!isSupabaseConfigured) {
-    return MOCK_AUDIT_EVENTS
-  }
   try {
     const data = await apiClient.list<AuditEvent>('/audit-events/')
     return data.results

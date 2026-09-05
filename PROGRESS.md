@@ -1,6 +1,6 @@
 # AKADEMI Digital Campus — Progress Report
 
-**Last updated:** September 2, 2026 (RBAC hardened, RLS 008, dark/light mode)
+**Last updated:** September 5, 2026 (essay feedback loop, video embeds, audit log wired to real API, 582 tests)
 **Project:** Mahardhika LMS
 **Repository:** https://github.com/sugeng-riyanto/mahardhika-lms
 
@@ -16,7 +16,7 @@
 | Milestone 4 — Native Activities | ✅ Complete | Day 60-75 |
 | Milestone 5 — Essay & Canvas | ✅ Complete | Day 75-90 |
 | Milestone 6 — Operations | ✅ Complete | Day 90+ |
-| Milestone 7 — Release | 🟡 In Progress (RBAC 53/54, RLS 008, dark/light, 352/352 tests) | Dec 20, 2026 |
+| Milestone 7 — Release | 🟡 In Progress (RBAC 53/54, RLS 008, dark/light, 582 tests, feedback loop complete, video embeds, CSV export) | Dec 20, 2026 |
 
 ---
 
@@ -278,7 +278,7 @@ npx playwright test accessibility.spec.ts
 | Suite | Tests | Status |
 |-------|-------|--------|
 | TypeScript compile | 0 errors | ✅ |
-| Vitest unit tests | 28/28 | ✅ |
+| Vitest unit tests | 50/50 | ✅ |
 | Playwright E2E | 68/68 | ✅ |
 | Build size | 240KB gzipped | ✅ |
 
@@ -302,7 +302,7 @@ npx playwright test accessibility.spec.ts
 | gradebook | 30/30 | ✅ |
 | essays | 42/42 | ✅ |
 | safeguarding | 29/29 | ✅ |
-| **Total** | **352** | **✅** |
+| **Total** | **582** | **✅** |
 
 ---
 
@@ -340,11 +340,14 @@ npx playwright test accessibility.spec.ts
 5. ✅ ~~Complete CRUD RBAC for all 8 roles~~
 6. ✅ ~~Complete CRUD RBAC for all 8 roles~~
 7. ✅ ~~All dashboards wired to real API data~~
-8. ✅ ~~Backend test suite: 354/356 (99.4%)~~
-9. 🔲 Deploy to staging environment (free tier: Cloudflare + Render)
-10. 🔲 Run full Playwright E2E suite (reinstall browsers)
-11. 🔲 User acceptance testing
-12. 🔲 Production deployment
+8. ✅ ~~Backend test suite: 582 tests~~
+9. ✅ ~~Essay feedback loop complete (create → submit → grade → release)~~
+10. ✅ ~~Video embeds (YouTube/Google Drive) on essays, assignments, lessons~~
+11. ✅ ~~Audit log wired to real API (was using mock data)~~
+12. 🔲 Deploy to staging environment (free tier: Cloudflare + Render)
+13. 🔲 Run full Playwright E2E suite (reinstall browsers)
+14. 🔲 User acceptance testing
+15. 🔲 Production deployment
 
 ---
 
