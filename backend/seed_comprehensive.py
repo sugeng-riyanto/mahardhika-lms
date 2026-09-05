@@ -12,7 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 from identity.models import User, RoleAssignment, Role
 from organisations.models import Organisation
-from courses.models import Programme, Course, Lesson
+from courses.models import Programme, Course, Lesson, Enrolment
 from activities.models import ActivityDefinition, ActivityQuestion
 from assignments.models import Assignment, AssignmentSubmission
 from essays.models import EssayQuestion, EssayResponse, RubricCriterion
@@ -74,6 +74,19 @@ for prog, title, slug, desc in [
     courses.append(c)
     print(f"  + {title}")
 
+# 1b. ENROLMENTS
+print("\n=== Enrolments ===")
+ec = 0
+for course in courses[:5]:  # Enrol student in first 5 courses
+    _, created = Enrolment.objects.get_or_create(
+        student=student, course=course,
+        defaults={'status': 'active', 'enrolled_by': instructor},
+    )
+    if created:
+        ec += 1
+        print(f"  + {student.email} -> {course.title}")
+print(f"  = {ec} new enrolments")
+
 # 2. LESSONS
 print("\n=== Lessons ===")
 lc = 0
@@ -87,6 +100,22 @@ for course in courses[:4]:
         })
         if created: lc += 1
 print(f"  + {lc} lessons")
+
+# 2b. LESSON SCHEDULES (attendance slots)
+print("\n=== Lesson Schedules ===")
+from attendance.models import LessonSchedule
+from datetime import date, timedelta
+sc = 0
+base_date = date.today() - timedelta(days=7)
+for course in courses[:4]:
+    for i, lesson in enumerate(Lesson.objects.filter(course=course).order_by('order')):
+        sched_date = base_date + timedelta(days=i * 2)
+        _, created = LessonSchedule.objects.get_or_create(
+            lesson=lesson, date=sched_date,
+            defaults={'course': course, 'start_time': '09:00', 'end_time': '10:30'},
+        )
+        if created: sc += 1
+print(f"  + {sc} schedules")
 
 # 3. ACTIVITIES
 print("\n=== Activities ===")
