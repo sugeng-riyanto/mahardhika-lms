@@ -47,12 +47,18 @@ const BACKEND_DIR = path.join(ROOT, 'backend');
 const FRONTEND_DIR = path.join(ROOT, 'frontend');
 const PYTHON = process.env.PYTHON_BIN || 'python';
 
+// Vitest/pytest colorize numbers with ANSI escapes when not on a TTY, which
+// breaks plain \d regexes — strip them before matching.
+function stripAnsi(s) {
+  return String(s).replace(/\u001b\[[0-9;]*m/g, '');
+}
+
 function pytestCount(target, extraArgs = []) {
   try {
-    const out = execSync(
+    const out = stripAnsi(execSync(
       `"${PYTHON}" -m pytest ${target} ${extraArgs.join(' ')} --collect-only -q`,
       { cwd: BACKEND_DIR, timeout: 90000 }
-    ).toString();
+    ).toString());
     const m = out.match(/(\d+) tests? collected/);
     return m ? parseInt(m[1], 10) : null;
   } catch {
@@ -62,7 +68,7 @@ function pytestCount(target, extraArgs = []) {
 
 function vitestCount() {
   try {
-    const out = execSync('npx vitest run --reporter=dot', { cwd: FRONTEND_DIR, timeout: 180000 }).toString();
+    const out = stripAnsi(execSync('npx vitest run --reporter=dot', { cwd: FRONTEND_DIR, timeout: 180000 }).toString());
     const m = out.match(/Tests\s+(\d+)\s+passed/);
     return m ? parseInt(m[1], 10) : null;
   } catch {
@@ -72,7 +78,7 @@ function vitestCount() {
 
 function playwrightCollected() {
   try {
-    const out = execSync('npx playwright test --list', { cwd: FRONTEND_DIR, timeout: 120000 }).toString();
+    const out = stripAnsi(execSync('npx playwright test --list', { cwd: FRONTEND_DIR, timeout: 120000 }).toString());
     return out.split('\n').filter((l) => l.includes('[chromium]')).length || null;
   } catch {
     return null;
@@ -270,6 +276,8 @@ report += `---
 - Attendance: Take Roll wired on Calendar + Attendance pages; Export CSVs reflect the viewed month and the records panel's date/status/search filters
 - Profile self-service: save, MFA toggle, change password and account deletion all call real endpoints (any role can edit own profile)
 - Audit log and Canvas exports wired; PDF export from the annotation canvas
+- File uploads: Content Library, assignment submissions and essay responses upload to Supabase Storage via signed URLs (PDF/DOCX/image); Content Library has drag-drop + multi-file
+- Video embeds: YouTube/Google Drive links render inline (Content Library items and video-based essay prompts) instead of uploading large media files
 - ${e2eChromium} E2E test cases per browser project (chromium/firefox/tablet) covering login, CRUD, RBAC, storage, accessibility, responsive
 
 ---

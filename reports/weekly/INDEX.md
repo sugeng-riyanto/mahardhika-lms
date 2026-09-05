@@ -19,6 +19,8 @@ git push
 
 | Week | Date | Screenshots | Status |
 |------|------|-------------|--------|
+| Week 7 | [2026-09-05](./2026-09-05/REPORT.md) | 37/37 shots ✅ File uploads ✅ Video embeds ✅ Take Roll + CSV exports ✅ | [View Report](./2026-09-05/REPORT.md) |
+| Week 6 | [2026-09-04](./2026-09-04/REPORT.md) | Take Roll + CSV export flows ✅ | [View Report](./2026-09-04/REPORT.md) |
 | Week 5 | [2026-09-02](./2026-09-02/REPORT.md) | 352/352 tests ✅ RBAC 53/54 ✅ RLS 008 ✅ Dark/Light ✅ | [View Report](./2026-09-02/REPORT.md) |
 | Week 4 | [2026-08-30](./2026-08-30/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-30/REPORT.md) |
 | Week 3 | [2026-08-29](./2026-08-29/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-29/REPORT.md) |

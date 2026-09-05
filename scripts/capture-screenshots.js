@@ -59,6 +59,73 @@ async function openAttendanceRollModal(page) {
   await page.getByRole('button', { name: 'Save Attendance' }).waitFor({ state: 'visible', timeout: 5000 });
 }
 
+// ---- File-upload and video-embed flows (Content Library + essays) ----
+
+// Upload a real (tiny, valid) PDF through the library's file input, wait for
+// the green success message and list refresh, then scroll the new card into
+// view so the screenshot shows both the feedback and the uploaded item.
+async function showContentUploadResult(page) {
+  const os = require('os');
+  const tmpPdf = path.join(os.tmpdir(), 'upload-demo-notes.pdf');
+  // Minimal valid PDF (~330 bytes) — enough for the real upload pipeline.
+  fs.writeFileSync(tmpPdf, Buffer.from(
+    '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\ntrailer<</Size 4/Root 1 0 R>>\n%%EOF'
+  ));
+  await page.locator('input[type=file]').setInputFiles(tmpPdf);
+  await page.getByText(/Uploaded upload-demo-notes\.pdf/).waitFor({ state: 'visible', timeout: 20000 });
+  await page.waitForTimeout(1500); // list refetch after confirm
+  const card = page.locator('.card', { hasText: 'upload-demo-notes.pdf' }).first();
+  await card.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  fs.unlinkSync(tmpPdf);
+}
+
+// Open the Add Video modal and fill title + a valid YouTube link so the live
+// embed preview renders inside the modal before the screenshot.
+async function openContentVideoModal(page) {
+  await page.getByRole('button', { name: 'Add Video' }).click();
+  await page.getByText('YouTube / Google Drive Link').waitFor({ state: 'visible', timeout: 5000 });
+  // CrudModal labels don't wrap their inputs, so target the placeholders.
+  await page.getByPlaceholder('Video title').fill('Video Demo — Motion Basics');
+  await page.getByPlaceholder(/youtube\.com\/watch/).fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  await page.waitForTimeout(1500); // iframe loads
+}
+
+// Create a published video essay (instructor token) on the student's first
+// enrolled course, then navigate to the student workspace so the screenshot
+// shows the embedded YouTube player inside the essay question.
+async function createVideoEssayAndOpen(page) {
+  const id = await page.evaluate(async () => {
+    const base = 'http://localhost:8000';
+    const coursesRes = await fetch(`${base}/api/v1/courses/`, {
+      headers: { Authorization: 'Bearer mock-token-student@mahardhika.id' },
+    });
+    const courses = await coursesRes.json();
+    const rows = courses.results || courses;
+    const courseId = Array.isArray(rows) ? rows[0]?.id : null;
+    if (!courseId) return null;
+    const res = await fetch(`${base}/api/v1/essays/questions/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer mock-token-instructor@mahardhika.id',
+      },
+      body: JSON.stringify({
+        title: 'Video-Based Essay Demo',
+        description: 'Watch the video, then answer in your own words.',
+        video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        marks: 50, difficulty: 'medium', status: 'published',
+        allow_typed_response: true, course: courseId,
+      }),
+    });
+    const q = await res.json();
+    return q.id || null;
+  });
+  if (!id) throw new Error('failed to create video essay');
+  await page.goto(`${BASE_URL}/essays/${id}`, { waitUntil: 'networkidle', timeout: 15000 });
+  await page.waitForTimeout(1500); // embed renders
+}
+
 // Click Export, screenshot the chosen CSV's contents, and save the real
 // generated .csv files into <report>/exports/ so the report can link them.
 // The Export button starts two downloads (schedules then, 500ms later,
@@ -146,6 +213,11 @@ const PAGES = [
   // to capture a date-scoped file with real rows.
   ['/attendance',                   '33-attendance-export-schedules', 'Attendance Export — schedules CSV','instructor', async (page) => showExportedCsv(page, 'schedules')],
   ['/attendance',                   '34-attendance-export-records',   'Attendance Export — records CSV','instructor', async (page) => { await openAttendanceRollState(page); await showExportedCsv(page, 'records') }],
+  // File-upload + video-embed flows (Content Library, instructor)
+  ['/content',                      '35-content-upload-result',       'Content Library — file upload result','instructor', showContentUploadResult],
+  ['/content',                      '36-content-video-modal',         'Content Library — Add Video embed','instructor', openContentVideoModal],
+  // Video-based essay prompt (student workspace)
+  ['/essays',                       '37-essay-video-workspace',       'Essay — video prompt workspace','student', createVideoEssayAndOpen],
 ];
 
 // Role-to-email mapping for mock auth
