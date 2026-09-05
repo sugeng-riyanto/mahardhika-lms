@@ -249,14 +249,21 @@ print(f"  + {pc} progress records")
 
 # 8. CONTENT
 print("\n=== Content Items ===")
+REAL_CONTENT = [
+    ('Algebra Fundamentals Slides', 'document', 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view', 'application/pdf'),
+    ("Newton's Laws Animation", 'video', 'https://www.youtube.com/watch?v=Q7twwJbocDM&t=1362s', 'video/youtube'),
+    ('Physics Lab Demonstration', 'video', 'https://drive.google.com/file/d/1-kSKW-B3mji1aZL8ptuTew1yi5G26osj/view', 'video/mp4'),
+    ('Periodic Table Reference', 'document', 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view', 'application/pdf'),
+]
 cc = 0
-for i, course in enumerate(courses[:4]):
+for i, (course, (title, ctype, url, mime)) in enumerate(zip(courses[:4], REAL_CONTENT)):
     ci, created = ContentItem.objects.get_or_create(
-        title=f'{course.title} - Resource {i+1}',
+        title=f'{course.title} - {title}',
         organisation=org,
         defaults={
-            'content_type': ['document', 'video', 'link', 'image'][i % 4],
-            'file_url': f'https://example.com/resource-{i+1}',
+            'content_type': ctype,
+            'file_url': url,
+            'mime_type': mime,
             'description': f'Resource for {course.title}',
             'uploaded_by': instructor or admin,
             'status': 'published',

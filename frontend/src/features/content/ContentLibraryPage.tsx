@@ -9,8 +9,7 @@ import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
 import { VideoEmbed } from '@/components/VideoEmbed'
-import { DrivePdfEmbed } from '@/components/DrivePdfEmbed'
-import { parseVideoUrl, videoEmbedUrl, isGoogleDriveUrl } from '@/utils/videoEmbed'
+import { parseVideoUrl, videoEmbedUrl, isGoogleDriveUrl, driveEmbedUrl } from '@/utils/videoEmbed'
 import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
 
 const CONTENT_CSV_COLUMNS: CSVColumn[] = [
@@ -42,10 +41,10 @@ interface ContentItem {
 }
 
 const MOCK_CONTENT: ContentItem[] = [
-  { id: 'ci1', title: 'Algebra Fundamentals slides', description: 'Lecture slides for algebra introduction', content_type: 'document', file_url: '/files/algebra-intro.pdf', mime_type: 'application/pdf', file_size: 2457600, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'algebra', 'jhs'], course: null, course_title: 'Mathematics 7A', created_at: '2026-08-24T10:00:00Z', updated_at: '2026-08-24T10:00:00Z' },
-  { id: 'ci2', title: "Newton's Laws Animation", description: "Interactive animation showing Newton's three laws of motion", content_type: 'video', file_url: '/files/newton-laws.mp4', mime_type: 'video/mp4', file_size: 15728640, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'newton', 'forces'], course: null, course_title: 'Physics 10', created_at: '2026-08-24T11:00:00Z', updated_at: '2026-08-24T11:00:00Z' },
-  { id: 'ci3', title: 'Periodic Table Reference', description: 'High-resolution periodic table with element details', content_type: 'image', file_url: '/files/periodic-table.png', mime_type: 'image/png', file_size: 1048576, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['chemistry', 'reference'], course: null, course_title: 'Science 7', created_at: '2026-08-24T12:00:00Z', updated_at: '2026-08-24T12:00:00Z' },
-  { id: 'ci4', title: 'Geometry Formula Sheet', description: 'Comprehensive formula reference for geometry', content_type: 'document', file_url: '/files/geometry-formulas.pdf', mime_type: 'application/pdf', file_size: 307200, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'geometry', 'reference'], course_title: 'Mathematics 7A', created_at: '2026-08-24T17:00:00Z', updated_at: '2026-08-24T17:00:00Z' },
+  { id: 'ci1', title: 'Algebra Fundamentals Slides', description: 'Lecture slides for algebra introduction', content_type: 'document', file_url: 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view', mime_type: 'application/pdf', file_size: 0, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['math', 'algebra', 'jhs'], course: null, course_title: 'Mathematics 7A', created_at: '2026-08-24T10:00:00Z', updated_at: '2026-08-24T10:00:00Z' },
+  { id: 'ci2', title: "Newton's Laws Animation", description: "Interactive animation showing Newton's three laws of motion", content_type: 'video', file_url: 'https://www.youtube.com/watch?v=Q7twwJbocDM&t=1362s', mime_type: 'video/youtube', file_size: 0, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'newton', 'forces'], course: null, course_title: 'Physics 10', created_at: '2026-08-24T11:00:00Z', updated_at: '2026-08-24T11:00:00Z' },
+  { id: 'ci3', title: 'Physics Lab Demonstration', description: 'Video demonstration of physics lab experiments', content_type: 'video', file_url: 'https://drive.google.com/file/d/1-kSKW-B3mji1aZL8ptuTew1yi5G26osj/view', mime_type: 'video/mp4', file_size: 0, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['physics', 'lab', 'demonstration'], course: null, course_title: 'Physics 10', created_at: '2026-08-24T12:00:00Z', updated_at: '2026-08-24T12:00:00Z' },
+  { id: 'ci4', title: 'Periodic Table Reference', description: 'High-resolution periodic table with element details', content_type: 'document', file_url: 'https://drive.google.com/file/d/1ZL2I4CiAATDwh5vVxtU2cpDwxOoegBsl/view', mime_type: 'application/pdf', file_size: 0, uploaded_by: '4', uploaded_by_email: 'Instructor Mahardhika', tags: ['chemistry', 'reference'], course: null, course_title: 'Science 7', created_at: '2026-08-24T17:00:00Z', updated_at: '2026-08-24T17:00:00Z' },
 ]
 
 const TYPE_META: Record<string, { label: string; icon: typeof FileText; color: string; bg: string }> = {
@@ -627,8 +626,19 @@ export function ContentLibraryPage() {
               {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) && (
                 <VideoEmbed url={selectedItem.file_url} title={selectedItem.title} />
               )}
-              {selectedItem.content_type === 'document' && isGoogleDriveUrl(selectedItem.file_url) && (
-                <DrivePdfEmbed url={selectedItem.file_url} title={selectedItem.title} />
+              {selectedItem.content_type === 'document' && isGoogleDriveUrl(selectedItem.file_url) && driveEmbedUrl(selectedItem.file_url) && (
+                <div className="w-full rounded-lg overflow-hidden border border-navy-700 bg-navy-900">
+                  <div className="flex items-center justify-between px-4 py-2 bg-navy-800 border-b border-navy-700">
+                    <div className="flex items-center gap-2">
+                      <FileText size={16} className="text-red-400" />
+                      <span className="text-sm text-navy-200 font-medium truncate max-w-xs">{selectedItem.title}</span>
+                    </div>
+                    <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                      Open <ExternalLink size={12} />
+                    </a>
+                  </div>
+                  <iframe src={driveEmbedUrl(selectedItem.file_url)!} title={selectedItem.title} className="w-full border-0" style={{ height: '600px' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" />
+                </div>
               )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">
