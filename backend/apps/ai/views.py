@@ -33,22 +33,12 @@ class MelanyChatView(APIView):
         service = MelanyAIService()
         
         try:
-            # Note: generate_response is async, but DRF sync views use sync_to_async
-            import asyncio
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            
-            ai_response = loop.run_until_complete(
-                service.generate_response(
-                    user=request.user,
-                    activity_id=activity_id,
-                    context_type=context_type,
-                    user_message=user_message,
-                    canvas_data=canvas_data
-                )
+            ai_response = service.generate_response(
+                user=request.user,
+                activity_id=activity_id,
+                context_type=context_type,
+                user_message=user_message,
+                canvas_data=canvas_data
             )
             
             return Response({

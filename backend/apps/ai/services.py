@@ -50,7 +50,7 @@ class MelanyAIService:
                 return True
         return True  # Default allow for now; strict RBAC checked in views
     
-    async def generate_response(
+    def generate_response(
         self, 
         user, 
         activity_id, 
@@ -89,9 +89,13 @@ class MelanyAIService:
             {"role": "user", "content": f"{dynamic_context}\n\nPertanyaan Siswa: {user_message}"}
         ]
         
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(
                     self.api_url,
                     json={
                         "model": self.model,
@@ -100,18 +104,15 @@ class MelanyAIService:
                         "max_tokens": 800,
                         "stream": False
                     },
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json"
-                    }
+                    headers=headers
                 )
                 response.raise_for_status()
                 data = response.json()
                 return data["choices"][0]["message"]["content"]
                 
         except httpx.ConnectError:
-            return "⚠️ Maaf, layanan AI sedang tidak tersedia. Pastikan LM Studio berjalan di komputer Anda."
+            return "Maaf, layanan AI sedang tidak tersedia. Coba lagi nanti."
         except httpx.TimeoutException:
-            return "⏱️ Respons AI memakan waktu terlalu lama. Coba pertanyaannya lebih singkat."
+            return "Respons AI memakan waktu terlalu lama. Coba pertanyaannya lebih singkat."
         except Exception as e:
-            return f"❌ Terjadi kesalahan: {str(e)}"
+            return "Terjadi kesalahan: " + str(e)
