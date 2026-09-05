@@ -233,6 +233,19 @@ class AttendanceRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
             )
             created.append(AttendanceRecordSerializer(obj).data)
 
+            # Notify the student about their attendance status change
+            if attendance_status in ('present', 'late', 'absent', 'excused'):
+                from notifications.dispatcher import dispatch_notification
+                from identity.models import User as IdentityUser
+                student = IdentityUser.objects.filter(id=student_id).first()
+                if student:
+                    dispatch_notification(
+                        recipient=student,
+                        title='Attendance Updated',
+                        message=f'Your attendance for \"{schedule.lesson.title}\" ({schedule.date}) was marked {attendance_status}.',
+                        metadata={'schedule_id': str(schedule.id), 'status': attendance_status, 'type': 'attendance_marked'},
+                    )
+
         return DRFResponse({'results': created, 'count': len(created)})
 
     @action(detail=False, methods=['post'], url_path='self-check-in')

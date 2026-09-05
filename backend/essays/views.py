@@ -330,6 +330,26 @@ class EssayResponseViewSet(AuditLogMixin, viewsets.ModelViewSet):
             'feedback_released', 'feedback_released_at', 'updated_at',
         ])
 
+        # Notify the student their essay has been graded
+        from notifications.dispatcher import dispatch_notification
+        from identity.models import ParentChildLink
+        question_title = response.question.title if response.question else 'essay'
+        dispatch_notification(
+            recipient=response.student,
+            title='Essay Graded',
+            message=f'Your essay \"{question_title}\" has been graded. Score: {response.total_score or 0} ({response.percentage or 0}%).',
+            metadata={'response_id': str(response.id), 'type': 'feedback_available'},
+        )
+        for link in ParentChildLink.objects.filter(
+            student_user=response.student, is_verified=True, is_active=True, consent_given=True,
+        ).select_related('parent_user'):
+            dispatch_notification(
+                recipient=link.parent_user,
+                title='Essay Graded',
+                message=f'{response.student.full_name}\'s essay \"{question_title}\" has been graded. Score: {response.total_score or 0} ({response.percentage or 0}%).',
+                metadata={'response_id': str(response.id), 'type': 'feedback_available'},
+            )
+
         return DRFResponse(EssayResponseSerializer(response).data)
 
     @action(detail=True, methods=['post'], url_path='return-for-revision')

@@ -96,6 +96,19 @@ class CertificateViewSet(AuditLogMixin, viewsets.ModelViewSet):
             issued_date=serializer.validated_data.get('issued_date', date.today()),
         )
 
+        # Notify the recipient their certificate has been issued
+        if recipient:
+            from notifications.dispatcher import dispatch_notification
+            course_name = course.title if course else 'course'
+            dispatch_notification(
+                recipient=recipient,
+                title='Certificate Issued',
+                message=f'Your certificate for {course_name} has been issued. Verify it with the QR code.',
+                metadata={'certificate_id': str(cert.id), 'type': 'certificate_issued'},
+                template_key='certificate_issued',
+                template_vars={'course_name': course_name},
+            )
+
     def perform_update(self, serializer):
         serializer.save()
 

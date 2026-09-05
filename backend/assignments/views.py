@@ -90,6 +90,22 @@ class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
             )
         assignment.status = 'published'
         assignment.save(update_fields=['status', 'updated_at'])
+
+        # Notify enrolled students about the new assignment
+        from notifications.dispatcher import dispatch_notification
+        enrolled = Enrolment.objects.filter(
+            course=assignment.course, status='active',
+        ).select_related('student')
+        due_text = f' Due: {assignment.due_date}' if assignment.due_date else ''
+        for enrol in enrolled:
+            dispatch_notification(
+                recipient=enrol.student,
+                title='New Assignment',
+                message=f'New assignment \"{assignment.title}\" has been published for {assignment.course.title}.{due_text}',
+                email_subject=f'New assignment: {assignment.title}',
+                metadata={'assignment_id': str(assignment.id), 'type': 'assignment_published'},
+            )
+
         return Response(AssignmentSerializer(assignment).data)
 
     @action(detail=True, methods=['post'])

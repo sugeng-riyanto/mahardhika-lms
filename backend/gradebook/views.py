@@ -176,6 +176,43 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
             raise PermissionDenied('Only owners and admins can delete grades.')
         instance.delete()
 
+    def _notify_grade_released(self, grade, actor):
+        """Notify the student and their linked parents that a grade was released."""
+        from notifications.dispatcher import dispatch_notification
+        from identity.models import ParentChildLink
+
+        course_name = (grade.activity.lesson.course.title
+                       if grade.activity and grade.activity.lesson and grade.activity.lesson.course
+                       else 'course')
+        ctx = {
+            'course_name': course_name,
+            'score': grade.score,
+            'max_score': grade.max_score,
+        }
+
+        # Student (template text fits: "Your grade...")
+        dispatch_notification(
+            recipient=grade.student,
+            title='Grade Released',
+            message=f'Your grade for {course_name} has been released. Score: {grade.score}/{grade.max_score}',
+            metadata={'grade_id': str(grade.id), 'type': 'grade_released'},
+            template_key='grade_released',
+            template_vars=ctx,
+        )
+
+        # Linked parents (custom message; no template_key so our text is kept)
+        parents = ParentChildLink.objects.filter(
+            student_user=grade.student, is_verified=True, is_active=True, consent_given=True,
+        ).select_related('parent_user')
+        for link in parents:
+            dispatch_notification(
+                recipient=link.parent_user,
+                title='Grade Released',
+                message=f'{grade.student.full_name}\'s grade for {course_name} has been released. Score: {grade.score}/{grade.max_score}',
+                email_subject=f'{grade.student.full_name}\'s grade for {course_name} has been released',
+                metadata={'grade_id': str(grade.id), 'type': 'grade_released'},
+            )
+
     @action(detail=True, methods=['post'], url_path='release')
     def release_grade(self, request, pk=None):
         """Release a single grade to the student."""
@@ -208,6 +245,8 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
             reason='Grade released to student',
             actor=user,
         )
+
+        self._notify_grade_released(grade, user)
 
         return DRFResponse(GradeSerializer(grade).data)
 
@@ -257,6 +296,7 @@ class GradeViewSet(AuditLogMixin, viewsets.ModelViewSet):
                 reason='Bulk release',
                 actor=user,
             )
+            self._notify_grade_released(grade, user)
             released.append(grade.id)
 
         return DRFResponse({
