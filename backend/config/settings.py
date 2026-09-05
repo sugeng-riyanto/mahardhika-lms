@@ -196,8 +196,8 @@ CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
 
 # Storage buckets
-SUPABASE_BUCKET_CONTENT = os.environ.get('SUPABASE_BUCKET_CONTENT', 'course-content')
-SUPABASE_BUCKET_SUBMISSIONS = os.environ.get('SUPABASE_BUCKET_SUBMISSIONS', 'student-submissions')
+SUPABASE_BUCKET_CONTENT = os.environ.get('SUPABASE_BUCKET_CONTENT', 'content-library')
+SUPABASE_BUCKET_SUBMISSIONS = os.environ.get('SUPABASE_BUCKET_SUBMISSIONS', 'submissions')
 SUPABASE_BUCKET_CANVAS = os.environ.get('SUPABASE_BUCKET_CANVAS', 'canvas-documents')
 SUPABASE_BUCKET_EXPORTS = os.environ.get('SUPABASE_BUCKET_EXPORTS', 'canvas-exports')
 SUPABASE_BUCKET_VIDEOS = os.environ.get('SUPABASE_BUCKET_VIDEOS', 'learning-videos')

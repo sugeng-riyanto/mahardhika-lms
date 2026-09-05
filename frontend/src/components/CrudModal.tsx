@@ -4,12 +4,13 @@ import { X, Save, Trash2, Loader2 } from 'lucide-react'
 export interface CrudField {
   name: string
   label: string
-  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'toggle'
+  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'toggle' | 'file'
   options?: { value: string; label: string }[]
   required?: boolean
   placeholder?: string
   readOnly?: boolean
   helpText?: string
+  accept?: string
 }
 
 interface CrudModalProps {
@@ -139,6 +140,13 @@ export function CrudModal({
                         </option>
                       ))}
                     </select>
+                  ) : field.type === 'file' ? (
+                    <input
+                      type="file"
+                      accept={field.accept}
+                      onChange={(e) => handleChange(field.name, e.target.files?.[0] ?? null)}
+                      className="input-field w-full file:mr-3 file:rounded-md file:border-0 file:bg-navy-700 file:px-3 file:py-1 file:text-sm file:text-white"
+                    />
                   ) : field.type === 'textarea' ? (
                     <textarea
                       value={String(formData[field.name] ?? '')}

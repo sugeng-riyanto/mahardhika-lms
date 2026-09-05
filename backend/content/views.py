@@ -295,3 +295,26 @@ class ContentItemViewSet(AuditLogMixin, viewsets.ModelViewSet):
         )
 
         return Response(ContentItemSerializer(content).data)
+
+    @action(detail=True, methods=['get'], url_path='download')
+    def download(self, request, pk=None):
+        """Get a short-lived signed download URL for the content file."""
+        content = self.get_object()
+        if not content.file_url:
+            return Response(
+                {'detail': 'This content item has no file.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from django.conf import settings
+        from core.storage import get_supabase_signed_url
+        signed_url, error = get_supabase_signed_url(
+            content.file_url,
+            bucket=settings.SUPABASE_BUCKET_CONTENT,
+        )
+        if error:
+            return Response(
+                {'detail': f'Failed to create download URL: {error}'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({'url': signed_url})

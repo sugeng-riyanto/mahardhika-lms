@@ -143,6 +143,7 @@ def get_supabase_upload_url(
     file_path: str,
     content_type: str,
     expiry_seconds: int = 300,
+    bucket: Optional[str] = None,
 ) -> tuple[str, str]:
     """
     Create a signed upload URL for Supabase Storage.
@@ -151,7 +152,8 @@ def get_supabase_upload_url(
     """
     supabase_url = getattr(settings, 'SUPABASE_URL', '')
     secret_key = getattr(settings, 'SUPABASE_SECRET_KEY', '')
-    bucket = getattr(settings, 'SUPABASE_BUCKET_SUBMISSIONS', 'student-submissions')
+    if bucket is None:
+        bucket = getattr(settings, 'SUPABASE_BUCKET_SUBMISSIONS', 'submissions')
 
     if not supabase_url or not secret_key or 'placeholder' in supabase_url.lower():
         # Mock mode — return a mock URL
@@ -167,8 +169,9 @@ def get_supabase_upload_url(
     }
 
     try:
-        # For signed URLs, we need to use the signed URL endpoint
-        sign_url = f'{supabase_url}/storage/v1/object/sign/{bucket}/{file_path}'
+        # Signed upload URL — POST /object/upload/sign returns {token, url}.
+        # The returned URL is relative and must be joined with the project URL.
+        sign_url = f'{supabase_url}/storage/v1/object/upload/sign/{bucket}/{file_path}'
         sign_headers = {
             'Authorization': f'Bearer {secret_key}',
             'Content-Type': 'application/json',
@@ -181,15 +184,17 @@ def get_supabase_upload_url(
 
         if response.status_code == 200:
             data = response.json()
-            signed_path = data.get('signedUrl', '')
+            signed_path = data.get('url', '')
             if signed_path:
-                full_url = f'{supabase_url}{signed_path}'
+                # The returned path is relative to the storage API root (e.g.
+                # /object/upload/sign/...), so it needs the /storage/v1 prefix.
+                full_url = f'{supabase_url}/storage/v1{signed_path}'
                 return full_url, ''
             else:
-                return '', 'No signed URL returned from Supabase'
+                return '', 'No signed upload URL returned from Supabase'
         else:
             # Fallback: use the direct upload URL with service role
-            logger.warning('Signed URL creation failed (%s), using direct upload', response.status_code)
+            logger.warning('Signed upload URL creation failed (%s), using direct upload', response.status_code)
             return url, ''
 
     except requests.RequestException as e:
@@ -200,6 +205,7 @@ def get_supabase_upload_url(
 def get_supabase_signed_url(
     file_path: str,
     expiry_seconds: int = 300,
+    bucket: Optional[str] = None,
 ) -> tuple[str, str]:
     """
     Get a signed download URL for an existing file.
@@ -208,7 +214,8 @@ def get_supabase_signed_url(
     """
     supabase_url = getattr(settings, 'SUPABASE_URL', '')
     secret_key = getattr(settings, 'SUPABASE_SECRET_KEY', '')
-    bucket = getattr(settings, 'SUPABASE_BUCKET_SUBMISSIONS', 'student-submissions')
+    if bucket is None:
+        bucket = getattr(settings, 'SUPABASE_BUCKET_SUBMISSIONS', 'submissions')
 
     if not supabase_url or not secret_key or 'placeholder' in supabase_url.lower():
         mock_url = f'https://mock-storage.supabase.co/storage/v1/object/sign/{bucket}/{file_path}?token=mock'
@@ -225,9 +232,9 @@ def get_supabase_signed_url(
         response = requests.post(sign_url, json=payload, headers=headers, timeout=10)
         if response.status_code == 200:
             data = response.json()
-            signed_path = data.get('signedUrl', '')
+            signed_path = data.get('signedURL', '')
             if signed_path:
-                return f'{supabase_url}{signed_path}', ''
+                return f'{supabase_url}/storage/v1{signed_path}', ''
         return '', f'Failed to create signed URL: {response.status_code}'
     except requests.RequestException as e:
         return '', f'Storage service unavailable: {str(e)}'

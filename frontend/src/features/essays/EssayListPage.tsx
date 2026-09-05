@@ -154,10 +154,19 @@ export function EssayListPage() {
 
   const isLoading = questionsLoading || responsesLoading
 
-  const openSubmit = (q: EssayQuestion) => setModal({
-    isOpen: true, mode: 'submit',
-    data: { question_id: q.id, question_title: q.title, response_text: '' },
-  })
+  const openSubmit = (q: EssayQuestion) => {
+    const existing = responses?.find((r) => r.question === q.id)
+    setModal({
+      isOpen: true, mode: 'submit',
+      data: {
+        question_id: q.id,
+        question_title: q.title,
+        response_text: existing && existing.status !== 'submitted' ? existing.typed_answer : '',
+        allow_file_upload: q.allow_file_upload,
+        existing_response_id: existing && ['draft', 'returned'].includes(existing.status) ? existing.id : null,
+      },
+    })
+  }
 
   const openCreateEssay = () => setModal({
     isOpen: true, mode: 'create',
@@ -176,10 +185,49 @@ export function EssayListPage() {
 
   const handleSave = async (data: Record<string, unknown>) => {
     if (modal.mode === 'submit' && data.question_id) {
-      await apiClient.post('/essays/responses/', {
-        question: data.question_id,
-        typed_answer: data.response_text,
-      })
+      // Reuse an existing draft/returned response, or create a new draft,
+      // then attach a file if chosen and submit it.
+      let responseId = data.existing_response_id as string | null | undefined
+      if (responseId) {
+        await apiClient.patch(`/essays/responses/${responseId}/`, {
+          typed_answer: data.response_text,
+        })
+      } else {
+        const res = await apiClient.post<{ id: string }>('/essays/responses/', {
+          question: data.question_id,
+          typed_answer: data.response_text,
+        })
+        responseId = res.id
+      }
+      const file = data.attachment as File | null | undefined
+      if (file) {
+        // 1. Request a signed upload URL
+        const req = await apiClient.post<{ upload_url: string; file_path: string }>('/essays/upload/request/', {
+          question_id: data.question_id,
+          filename: file.name,
+          file_size: file.size,
+          content_type: file.type || 'application/octet-stream',
+        })
+        // 2. PUT the bytes directly to Supabase Storage (skip mock URLs offline)
+        if (!req.upload_url.includes('mock-storage')) {
+          const up = await fetch(req.upload_url, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+          })
+          if (!up.ok) throw new Error(`Upload to storage failed (HTTP ${up.status})`)
+        }
+        // 3. Confirm — attaches the file record to the draft response
+        await apiClient.post('/essays/upload/confirm/', {
+          response_id: responseId,
+          file_path: req.file_path,
+          original_filename: file.name,
+          file_size: file.size,
+          content_type: file.type || 'application/octet-stream',
+        })
+      }
+      // Submit so the instructor actually receives it
+      await apiClient.post(`/essays/responses/${responseId}/submit/`, {})
       await refetchR()
     } else if (modal.mode === 'create') {
       await apiClient.post('/essays/', data)
@@ -243,11 +291,17 @@ export function EssayListPage() {
             </h2>
             {questions && questions.length > 0 ? (
               <div className="space-y-3">
-                {questions.map((q) => (
+                {questions.map((q) => {
+                  const myResp = responses?.find((r) => r.question === q.id)
+                  const alreadySubmitted = myResp && ['submitted', 'grading', 'finalised', 'locked'].includes(myResp.status)
+                  return (
                   <div key={q.id} className="relative">
                     <QuestionCard question={q} />
                     <div className="absolute top-4 right-4 flex items-center gap-1">
-                      {isStudent && (
+                      {isStudent && alreadySubmitted && (
+                        <span className="badge text-[10px] bg-green-900/40 text-green-400">Submitted</span>
+                      )}
+                      {isStudent && !alreadySubmitted && (
                         <button
                           onClick={() => openSubmit(q)}
                           className="btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
@@ -276,7 +330,8 @@ export function EssayListPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div className="card p-6 text-center">
@@ -328,7 +383,14 @@ export function EssayListPage() {
           modal.mode === 'delete' ? `Delete Essay: ${modal.data.title || ''}` :
           'Essay Question'
         }
-        fields={modal.mode === 'submit' ? SUBMIT_ESSAY_FIELDS : ESSAY_FIELDS}
+        fields={modal.mode === 'submit'
+          ? [
+              ...SUBMIT_ESSAY_FIELDS,
+              ...(modal.data.allow_file_upload
+                ? [{ name: 'attachment', label: 'Attach File (optional)', type: 'file' as const, accept: '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg' }]
+                : []),
+            ]
+          : ESSAY_FIELDS}
         data={modal.data}
         onSave={handleSave}
         onDelete={handleDelete}

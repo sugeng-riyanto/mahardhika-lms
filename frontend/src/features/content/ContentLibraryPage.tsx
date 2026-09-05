@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   FileText, Search, Upload, Grid, List, Image, Package,
   Download, Trash2, Eye, Clock, HardDrive,
-  X, Film, Headphones, Layers, Edit, FileDown
+  X, Film, Headphones, Layers, Edit, FileDown, Loader2
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
@@ -75,6 +75,28 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
+const ACCEPT_TYPES = '.pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a,.zip,.json,.xml,.py,.js'
+
+function detectMime(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  const map: Record<string, string> = {
+    pdf: 'application/pdf', doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    txt: 'text/plain', rtf: 'application/rtf',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    csv: 'text/csv', ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+    webp: 'image/webp', svg: 'image/svg+xml',
+    mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
+    mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', m4a: 'audio/mp4',
+    zip: 'application/zip', json: 'application/json', xml: 'application/xml',
+    py: 'text/x-python', js: 'text/javascript',
+  }
+  return map[ext] || 'application/octet-stream'
+}
+
 async function fetchContent(): Promise<ContentItem[]> {
   try {
     const data = await apiClient.list<ContentItem>('/content/')
@@ -95,8 +117,11 @@ export function ContentLibraryPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState('')
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { roles } = useAuth()
   const canEdit = roles.includes('admin') || roles.includes('owner') || roles.includes('instructor')
 
@@ -104,6 +129,55 @@ export function ContentLibraryPage() {
     queryKey: ['content'],
     queryFn: fetchContent,
   })
+
+  const uploadFiles = useCallback(async (files: File[]) => {
+    if (!files.length) return
+    setUploading(true)
+    setUploadMessage('')
+    try {
+      for (const file of files) {
+        const mime = file.type || detectMime(file.name)
+        const req = await apiClient.post<{ upload_url: string; file_path: string }>('/content/upload/request/', {
+          filename: file.name,
+          file_size: file.size,
+          content_type: mime,
+        })
+        // PUT the bytes directly to the Supabase signed upload URL.
+        // Mock-mode URLs (local dev without Supabase) are skipped — the
+        // confirm step still records the item so the flow works offline.
+        if (!req.upload_url.includes('mock-storage')) {
+          const up = await fetch(req.upload_url, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': mime, 'x-upsert': 'true' },
+          })
+          if (!up.ok) throw new Error(`Upload to storage failed (HTTP ${up.status})`)
+        }
+        await apiClient.post('/content/upload/confirm/', {
+          file_path: req.file_path,
+          original_filename: file.name,
+          file_size: file.size,
+          content_type: mime,
+          title: file.name,
+        })
+      }
+      await refetch()
+      setUploadMessage(files.length > 1 ? `${files.length} files uploaded` : `Uploaded ${files[0].name}`)
+    } catch (err) {
+      setUploadMessage(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }, [refetch])
+
+  const handleDownload = useCallback(async (item: ContentItem) => {
+    try {
+      const res = await apiClient.get<{ url: string }>(`/content/${item.id}/download/`)
+      window.open(res.url, '_blank')
+    } catch {
+      window.open(item.file_url, '_blank')
+    }
+  }, [])
 
   const filteredContent = content?.filter((item) => {
     const matchesSearch =
@@ -134,13 +208,10 @@ export function ContentLibraryPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
-  }, [])
-
-  const openCreate = () => setModal({
-    isOpen: true,
-    mode: 'create',
-    data: { title: '', description: '', content_type: 'document', tags: '' },
-  })
+    if (e.dataTransfer.files?.length) {
+      void uploadFiles(Array.from(e.dataTransfer.files))
+    }
+  }, [uploadFiles])
 
   const openEdit = (item: ContentItem) => setModal({
     isOpen: true,
@@ -189,13 +260,25 @@ export function ContentLibraryPage() {
             Export CSV
           </button>
           {canEdit && (
-            <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-primary flex items-center gap-2">
               <Upload size={16} />
               Upload File
             </button>
           )}
         </div>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={ACCEPT_TYPES}
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length) void uploadFiles(Array.from(e.target.files))
+          e.target.value = ''
+        }}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -223,6 +306,9 @@ export function ContentLibraryPage() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          role="button"
+          aria-label="Upload files"
           className={`mb-6 border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
             dragOver
               ? 'border-cyan-400 bg-cyan-900/10'
@@ -236,6 +322,17 @@ export function ContentLibraryPage() {
           <p className="text-xs text-navy-500">
             Supports PDF, DOCX, MP4, PNG, JPG, MP3, HTML — Max 100 MB
           </p>
+          {uploading && (
+            <p className="mt-3 text-sm text-cyan-400 flex items-center justify-center gap-2">
+              <Loader2 size={14} className="animate-spin" />
+              Uploading…
+            </p>
+          )}
+          {uploadMessage && !uploading && (
+            <p className={`mt-3 text-sm ${uploadMessage.startsWith('Uploaded') || uploadMessage.endsWith('uploaded') ? 'text-green-400' : 'text-red-400'}`}>
+              {uploadMessage}
+            </p>
+          )}
         </div>
       )}
 
@@ -501,7 +598,7 @@ export function ContentLibraryPage() {
             </div>
 
             <div className="flex items-center gap-2 p-5 border-t border-navy-700">
-              <button className="btn-primary flex-1 flex items-center justify-center gap-2">
+              <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 <Download size={14} />
                 Download
               </button>

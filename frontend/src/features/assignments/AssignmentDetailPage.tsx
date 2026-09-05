@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   ClipboardList, Clock, FileText, Users, CheckCircle, Send,
-  ArrowLeft, Star, MessageSquare, AlertCircle,
+  ArrowLeft, Star, MessageSquare, AlertCircle, Upload, X, Loader2,
 } from 'lucide-react'
 import { useAssignment, useAssignmentSubmissions } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
@@ -65,23 +65,51 @@ function SubmissionCard({ sub }: { sub: AssignmentSubmission }) {
 
 function SubmitForm({ assignmentId, attemptNumber }: { assignmentId: string; attemptNumber: number }) {
   const [response, setResponse] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = async () => {
-    if (!response.trim()) {
-      setError('Please enter your response')
+    if (!response.trim() && !file) {
+      setError('Write your response or attach a file')
       return
     }
     setSubmitting(true)
     setError('')
     try {
-      // Create submission
+      // Create the draft submission first so a file can be attached to it
       const sub = await apiClient.post<AssignmentSubmission>('/assignments/submissions/', {
         assignment: assignmentId,
         content_data: { response },
       })
+      if (file) {
+        // 1. Request a signed upload URL
+        const req = await apiClient.post<{ upload_url: string; file_path: string }>('/assignments/submissions/upload/request/', {
+          assignment_id: assignmentId,
+          filename: file.name,
+          file_size: file.size,
+          content_type: file.type || 'application/octet-stream',
+        })
+        // 2. PUT the bytes directly to Supabase Storage (skip mock URLs offline)
+        if (!req.upload_url.includes('mock-storage')) {
+          const up = await fetch(req.upload_url, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+          })
+          if (!up.ok) throw new Error(`Upload to storage failed (HTTP ${up.status})`)
+        }
+        // 3. Confirm — attaches the file record to the draft submission
+        await apiClient.post('/assignments/submissions/upload/confirm/', {
+          submission_id: sub.id,
+          file_path: req.file_path,
+          original_filename: file.name,
+          file_size: file.size,
+          content_type: file.type || 'application/octet-stream',
+        })
+      }
       // Submit it
       await apiClient.post(`/assignments/submissions/${sub.id}/submit/`, {})
       setSubmitted(true)
@@ -118,6 +146,35 @@ function SubmitForm({ assignmentId, attemptNumber }: { assignmentId: string; att
         value={response}
         onChange={(e) => setResponse(e.target.value)}
       />
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={(e) => {
+          setFile(e.target.files?.[0] ?? null)
+          e.target.value = ''
+        }}
+      />
+      <div className="mt-3">
+        {file ? (
+          <div className="flex items-center gap-2 text-sm bg-navy-800 border border-navy-700 rounded-lg px-3 py-2 max-w-md">
+            <FileText size={14} className="text-cyan-400 shrink-0" />
+            <span className="text-navy-200 truncate flex-1">{file.name}</span>
+            <button onClick={() => setFile(null)} aria-label="Remove file" className="text-navy-400 hover:text-red-400">
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-secondary text-sm flex items-center gap-2"
+          >
+            <Upload size={14} />
+            Attach File (PDF, DOCX, images…)
+          </button>
+        )}
+      </div>
       {error && (
         <p className="text-red-400 text-sm mt-2 flex items-center gap-1">
           <AlertCircle size={14} /> {error}
@@ -129,7 +186,7 @@ function SubmitForm({ assignmentId, attemptNumber }: { assignmentId: string; att
           disabled={submitting}
           className="btn-primary flex items-center gap-2"
         >
-          <Send size={16} />
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           {submitting ? 'Submitting...' : 'Submit Assignment'}
         </button>
       </div>
