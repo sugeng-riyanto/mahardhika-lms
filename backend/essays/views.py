@@ -141,7 +141,7 @@ class EssayResponseViewSet(AuditLogMixin, viewsets.ModelViewSet):
             return qs.filter(
                 student_id__in=child_ids,
             ).filter(
-                Q(status='finalised') | Q(feedback_released=True),
+                Q(status='finalised') | Q(feedback_released=True) | Q(overall_feedback__gt=''),
             )
 
         return qs.none()
