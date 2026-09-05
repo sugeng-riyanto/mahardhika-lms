@@ -1,8 +1,20 @@
-import { Award, ExternalLink, XCircle, Copy } from 'lucide-react'
+import { Award, ExternalLink, XCircle, Copy, Download } from 'lucide-react'
 import { useCertificates } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { CertificateQR } from '@/components/CertificateQR'
+import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
 import type { Certificate } from '@/api/hooks'
+
+const CERT_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'certificate_number', label: 'Certificate No' },
+  { key: 'title', label: 'Title' },
+  { key: 'recipient_name', label: 'Recipient' },
+  { key: 'recipient_email', label: 'Email' },
+  { key: 'course_title', label: 'Course' },
+  { key: 'status', label: 'Status' },
+  { key: 'issued_date', label: 'Issued', format: formatDate },
+  { key: 'verification_code', label: 'Verification Code' },
+]
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const isRevoked = cert.status === 'revoked'
@@ -97,11 +109,22 @@ export function CertificatePage() {
         <Award className="text-green-400" size={24} />
         <h1 className="page-title mb-0">Certificates</h1>
       </div>
-      <p className="page-subtitle">
-        {roles.includes('student')
-          ? 'Your course completion certificates'
-          : 'Issued certificates and verification'}
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="page-subtitle mb-0">
+          {roles.includes('student')
+            ? 'Your course completion certificates'
+            : 'Issued certificates and verification'}
+        </p>
+        {(roles.includes('admin') || roles.includes('owner') || roles.includes('instructor')) && certificates.length > 0 && (
+          <button
+            onClick={() => exportToCSV(certificates, CERT_CSV_COLUMNS, 'certificates')}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
+            <Download size={16} />
+            Export
+          </button>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="text-center py-12">

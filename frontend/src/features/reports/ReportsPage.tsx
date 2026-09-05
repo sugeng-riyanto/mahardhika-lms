@@ -1,5 +1,14 @@
-import { BarChart3, BookOpen, Users, TrendingUp, GraduationCap, Calendar } from 'lucide-react'
+import { BarChart3, BookOpen, Users, TrendingUp, GraduationCap, Calendar, Download } from 'lucide-react'
 import { useCourses, useGrades, useAssignments } from '@/api/hooks'
+import { exportToCSV, type CSVColumn } from '@/utils/csvExport'
+
+const GRADE_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'activity_title', label: 'Activity' },
+  { key: 'student_email', label: 'Student' },
+  { key: 'score', label: 'Score' },
+  { key: 'max_score', label: 'Max Score' },
+  { key: 'released', label: 'Released', format: (v) => v ? 'Yes' : 'No' },
+]
 
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {
@@ -80,6 +89,16 @@ export function ReportsPage() {
         <h1 className="page-title mb-0">Reports & Analytics</h1>
       </div>
       <p className="page-subtitle">Grade distributions, course completion, and performance analytics</p>
+
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => exportToCSV(grades, GRADE_CSV_COLUMNS, 'grades-report')}
+          className="btn-secondary flex items-center gap-2 text-sm"
+        >
+          <Download size={16} />
+          Export Grades CSV
+        </button>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-12">

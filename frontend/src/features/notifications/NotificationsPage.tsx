@@ -1,7 +1,16 @@
 import { useState } from 'react'
-import { Bell, CheckCheck, Filter, Search, Eye, Mail, MessageSquare } from 'lucide-react'
+import { Bell, CheckCheck, Filter, Search, Eye, Mail, MessageSquare, Download } from 'lucide-react'
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/api/hooks'
 import { t } from '@/i18n/translations'
+import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
+
+const NOTIF_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'title', label: 'Title' },
+  { key: 'message', label: 'Message' },
+  { key: 'channel', label: 'Channel' },
+  { key: 'is_read', label: 'Read', format: (v) => v ? 'Yes' : 'No' },
+  { key: 'created_at', label: 'Date', format: formatDate },
+]
 
 const channelIcons: Record<string, React.ReactNode> = {
   in_app: <Bell size={14} className="text-cyan-400" />,
@@ -51,16 +60,25 @@ export function NotificationsPage() {
             </span>
           )}
         </div>
-        {unreadCount > 0 && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
+            onClick={() => exportToCSV(filtered, NOTIF_CSV_COLUMNS, 'notifications')}
             className="btn-secondary flex items-center gap-2 text-sm"
           >
-            <CheckCheck size={16} />
-            {t('notif.markAllRead')}
+            <Download size={16} />
+            Export
           </button>
-        )}
+          {unreadCount > 0 && (
+            <button
+              onClick={() => markAllRead.mutate()}
+              disabled={markAllRead.isPending}
+              className="btn-secondary flex items-center gap-2 text-sm"
+            >
+              <CheckCheck size={16} />
+              {t('notif.markAllRead')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
