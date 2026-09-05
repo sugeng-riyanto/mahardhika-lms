@@ -17,6 +17,7 @@ from core.audit_mixin import AuditLogMixin
 from attendance.models import LessonSchedule, AttendanceRecord
 from attendance.serializers import (
     LessonScheduleSerializer, AttendanceRecordSerializer,
+    SelfCheckInSerializer,
 )
 from courses.models import Enrolment
 from identity.permissions import (
@@ -233,6 +234,89 @@ class AttendanceRecordViewSet(AuditLogMixin, viewsets.ModelViewSet):
             created.append(AttendanceRecordSerializer(obj).data)
 
         return DRFResponse({'results': created, 'count': len(created)})
+
+    @action(detail=False, methods=['post'], url_path='self-check-in')
+    def self_check_in(self, request):
+        """Student self-service check-in with selfie + geolocation."""
+        user = request.user
+        roles = get_user_roles(user)
+
+        if 'student' not in roles:
+            return DRFResponse(
+                {'detail': 'Only students can self-check in.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        ser = SelfCheckInSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        schedule_id = ser.validated_data['schedule_id']
+        try:
+            schedule = LessonSchedule.objects.get(id=schedule_id)
+        except LessonSchedule.DoesNotExist:
+            return DRFResponse(
+                {'detail': 'Schedule not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Verify student is enrolled in the course
+        enrolled = Enrolment.objects.filter(
+            student=user, course=schedule.course, status='active',
+        ).exists()
+        if not enrolled:
+            return DRFResponse(
+                {'detail': 'You are not enrolled in this course.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Only allow check-in on the schedule date
+        from django.utils import timezone as tz
+        today = tz.localdate()
+        if schedule.date != today:
+            return DRFResponse(
+                {'detail': f'Check-in is only allowed on the scheduled date ({schedule.date}).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        face = ser.validated_data.get('face_thumbnail', '')
+        lat = ser.validated_data.get('latitude')
+        lng = ser.validated_data.get('longitude')
+        accuracy = ser.validated_data.get('location_accuracy_m')
+
+        # Determine status: present if on time, late if past start_time
+        status_val = 'present'
+        if schedule.start_time:
+            now_time = tz.localtime().time()
+            if now_time > schedule.start_time:
+                # More than 15 min late = late
+                import datetime
+                diff = datetime.datetime.combine(today, now_time) - datetime.datetime.combine(today, schedule.start_time)
+                if diff.total_seconds() > 900:  # 15 min
+                    status_val = 'late'
+
+        obj, was_created = AttendanceRecord.objects.update_or_create(
+            schedule=schedule,
+            student=user,
+            defaults={
+                'status': status_val,
+                'face_thumbnail': face,
+                'latitude': lat,
+                'longitude': lng,
+                'location_accuracy_m': accuracy,
+                'self_checked': True,
+                'marked_by': user,
+                'marked_at': tz.now(),
+                'notes': f'Self check-in{f" (GPS ±{accuracy:.0f}m)" if accuracy else ""}',
+            },
+        )
+
+        return DRFResponse({
+            'success': True,
+            'status': status_val,
+            'record_id': str(obj.id),
+            'was_created': was_created,
+            'message': f'Checked in as {status_val}.',
+        })
 
     @action(detail=False, methods=['get'], url_path='summary')
     def summary(self, request):

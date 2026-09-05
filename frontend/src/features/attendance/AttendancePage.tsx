@@ -2,11 +2,12 @@ import { useState, useMemo } from 'react'
 import {
   Users, Clock, Calendar, CheckCircle, XCircle, AlertCircle,
   BookOpen, MapPin, ChevronLeft, ChevronRight, Download,
-  Search,
+  Search, Camera,
 } from 'lucide-react'
 import { useSchedules, useAttendanceRecords, useAttendanceSummary } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { RollCallModal } from '@/features/calendar/RollCallModal'
+import { SelfCheckIn } from './SelfCheckIn'
 import { exportAttendanceFiles, filterAttendanceRecords, inViewedMonth } from '@/utils/attendanceExport'
 
 const STATUS_META = {
@@ -39,6 +40,7 @@ export function AttendancePage() {
   const { data: summary } = useAttendanceSummary()
 
   const isInstructor = roles.some((r) => ['owner', 'admin', 'instructor'].includes(r))
+  const isStudent = roles.includes('student')
 
   const today = new Date()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
@@ -48,6 +50,7 @@ export function AttendancePage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'schedule' | 'calendar'>('schedule')
   const [rollOpen, setRollOpen] = useState(false)
+  const [selfCheckInSchedule, setSelfCheckInSchedule] = useState<{ id: string; title: string; course: string } | null>(null)
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
@@ -457,6 +460,21 @@ export function AttendancePage() {
                       {record.notes && (
                         <p className="text-[10px] text-navy-500 mt-1 ml-11 italic">{record.notes}</p>
                       )}
+                      {isInstructor && record.face_thumbnail && (
+                        <div className="mt-1.5 ml-11 flex items-center gap-2">
+                          <img
+                            src={record.face_thumbnail}
+                            alt="Check-in selfie"
+                            className="w-8 h-8 rounded-full border border-navy-700 object-cover scale-x-[-1]"
+                          />
+                          {record.latitude && record.longitude && (
+                            <span className="text-[10px] text-navy-500 flex items-center gap-1">
+                              <MapPin size={10} className="text-green-400" />
+                              {Number(record.latitude).toFixed(4)}, {Number(record.longitude).toFixed(4)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })
@@ -473,10 +491,47 @@ export function AttendancePage() {
         </div>
       </div>
 
+      {/* Student self-check-in button */}
+      {isStudent && selectedSchedules.length > 0 && (
+        <div className="mb-4">
+          <div className="card p-4">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Camera size={14} className="text-cyan-400" />
+              Self Check-In
+            </h3>
+            <div className="space-y-2">
+              {selectedSchedules.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setSelfCheckInSchedule({ id: s.id, title: s.lesson_title, course: s.course_title })}
+                  className="w-full text-left p-3 rounded-lg bg-navy-800 hover:bg-navy-700 border border-navy-700 hover:border-cyan-700/50 transition-colors"
+                >
+                  <p className="text-xs font-medium text-white">{s.lesson_title}</p>
+                  <p className="text-[10px] text-navy-400 mt-0.5">{s.course_title} &middot; {s.start_time ? `${s.start_time.slice(0, 5)} - ${s.end_time?.slice(0, 5) || '?'}` : 'All day'}</p>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <Camera size={10} className="text-cyan-400" />
+                    <span className="text-[10px] text-cyan-400">Check in with selfie + GPS</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {rollOpen && rollSchedules.length > 0 && (
         <RollCallModal
           schedules={rollSchedules}
           onClose={() => setRollOpen(false)}
+        />
+      )}
+
+      {selfCheckInSchedule && (
+        <SelfCheckIn
+          scheduleId={selfCheckInSchedule.id}
+          scheduleTitle={selfCheckInSchedule.title}
+          courseTitle={selfCheckInSchedule.course}
+          onClose={() => setSelfCheckInSchedule(null)}
         />
       )}
     </div>

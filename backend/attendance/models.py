@@ -3,6 +3,20 @@ from django.utils import timezone
 from core.models import TimestampedModel
 
 
+def validate_face_thumbnail(value):
+    """Ensure face thumbnail is compact base64 JPEG under 50KB."""
+    if not value:
+        return
+    # Strip data-URL prefix if present
+    raw = value
+    if ',' in raw and raw.startswith('data:'):
+        raw = raw.split(',', 1)[1]
+    # Rough size check: base64 ~4/3 of raw bytes
+    raw_bytes = len(raw) * 3 // 4
+    if raw_bytes > 50 * 1024:
+        raise models.ValidationError('Face thumbnail must be under 50 KB.')
+
+
 class LessonSchedule(TimestampedModel):
     """Scheduled occurrence of a lesson on a specific date/time."""
 
@@ -56,6 +70,26 @@ class AttendanceRecord(TimestampedModel):
         null=True, blank=True, related_name='attendance_marked',
     )
     marked_at = models.DateTimeField(null=True, blank=True)
+
+    # Self-check-in fields (face + geolocation)
+    face_thumbnail = models.TextField(
+        blank=True, default='',
+        help_text='Base64-encoded JPEG thumbnail (≤100×100 px, ≤50 KB).',
+    )
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+    )
+    location_accuracy_m = models.FloatField(
+        null=True, blank=True,
+        help_text='GPS accuracy in metres at check-in time.',
+    )
+    self_checked = models.BooleanField(
+        default=False,
+        help_text='True if the student checked in themselves (vs instructor roll).',
+    )
 
     class Meta:
         db_table = 'attendance_records'

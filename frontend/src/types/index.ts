@@ -333,6 +333,11 @@ export interface AttendanceRecord {
   marked_by: string | null;
   marked_by_email: string | null;
   marked_at: string | null;
+  face_thumbnail: string;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy_m: number | null;
+  self_checked: boolean;
   lesson_title: string;
   schedule_date: string;
   course_title: string;
