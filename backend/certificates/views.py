@@ -166,6 +166,8 @@ def verify_certificate(request, verification_code):
             status=status.HTTP_404_NOT_FOUND,
         )
 
+    chain_valid, chain_msg = cert.verify_chain()
+
     return Response({
         'valid': cert.status == 'active',
         'certificate_number': cert.certificate_number,
@@ -175,4 +177,9 @@ def verify_certificate(request, verification_code):
         'programme': cert.programme.name if cert.programme else None,
         'issued_date': cert.issued_date,
         'status': cert.status,
+        'block_index': cert.block_index,
+        'block_hash': cert.block_hash,
+        'previous_hash': cert.previous_hash,
+        'chain_valid': chain_valid,
+        'chain_message': chain_msg,
     })

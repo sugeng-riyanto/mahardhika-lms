@@ -1,6 +1,7 @@
 import { Award, ExternalLink, XCircle, Copy } from 'lucide-react'
 import { useCertificates } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
+import { CertificateQR } from '@/components/CertificateQR'
 import type { Certificate } from '@/api/hooks'
 
 function CertificateCard({ cert }: { cert: Certificate }) {
@@ -77,6 +78,10 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           <ExternalLink size={12} />
           Verify Online
         </a>
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-navy-700 flex justify-center">
+        <CertificateQR verificationCode={cert.verification_code} certificateNumber={cert.certificate_number} size={120} />
       </div>
     </div>
   )
