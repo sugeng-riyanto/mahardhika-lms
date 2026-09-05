@@ -59,6 +59,90 @@ async function openAttendanceRollModal(page) {
   await page.getByRole('button', { name: 'Save Attendance' }).waitFor({ state: 'visible', timeout: 5000 });
 }
 
+// ---- Assignment video brief flow ----
+
+async function openAssignmentVideoModal(page) {
+  await page.getByRole('button', { name: 'Create Assignment' }).click();
+  await page.getByPlaceholder('Assignment title').fill('Video Brief: Motion Laws');
+  await page.getByPlaceholder(/youtube\.com\/watch/).fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  await page.waitForTimeout(1200); // embed renders
+}
+
+async function createAssignmentWithVideoAndOpen(page) {
+  const id = await page.evaluate(async () => {
+    const base = 'http://localhost:8000';
+    const coursesRes = await fetch(`${base}/api/v1/courses/`, {
+      headers: { Authorization: 'Bearer mock-token-instructor@mahardhika.id' },
+    });
+    const courses = await coursesRes.json();
+    const rows = courses.results || courses;
+    const courseId = Array.isArray(rows) ? rows[0]?.id : null;
+    if (!courseId) return null;
+    const res = await fetch(`${base}/api/v1/assignments/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer mock-token-instructor@mahardhika.id',
+      },
+      body: JSON.stringify({
+        title: 'Video Brief Demo Assignment',
+        description: 'Watch the video and submit your analysis.',
+        video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        course: courseId, max_score: 100, status: 'published',
+      }),
+    });
+    const a = await res.json();
+    return a.id || null;
+  });
+  if (!id) throw new Error('failed to create video assignment');
+  await page.goto(`${BASE_URL}/assignments/${id}`, { waitUntil: 'networkidle', timeout: 15000 });
+  await page.waitForTimeout(1500);
+}
+
+// ---- Lesson video embed ----
+
+async function createVideoLessonAndOpen(page) {
+  const id = await page.evaluate(async () => {
+    const base = 'http://localhost:8000';
+    const coursesRes = await fetch(`${base}/api/v1/courses/`, {
+      headers: { Authorization: 'Bearer mock-token-instructor@mahardhika.id' },
+    });
+    const courses = await coursesRes.json();
+    const rows = courses.results || courses;
+    const courseId = Array.isArray(rows) ? rows[0]?.id : null;
+    if (!courseId) return null;
+    const res = await fetch(`${base}/api/v1/lessons/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer mock-token-instructor@mahardhika.id',
+      },
+      body: JSON.stringify({
+        title: 'Video Lesson Demo',
+        description: 'Watch the embedded video and discuss.',
+        course: courseId, content_type: 'video',
+        content_data: { body: 'This lesson embeds a video.' },
+        video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        is_published: true, order: 99,
+      }),
+    });
+    const l = await res.json();
+    return l.id || null;
+  });
+  if (!id) throw new Error('failed to create video lesson');
+  const courseId = await page.evaluate(async (lessonId) => {
+    const base = 'http://localhost:8000';
+    const res = await fetch(`${base}/api/v1/lessons/${lessonId}/`, {
+      headers: { Authorization: 'Bearer mock-token-student@mahardhika.id' },
+    });
+    const l = await res.json();
+    return l.course_id || l.course || null;
+  }, id);
+  if (!courseId) throw new Error('cannot resolve course');
+  await page.goto(`${BASE_URL}/courses/${courseId}/lessons/${id}`, { waitUntil: 'networkidle', timeout: 15000 });
+  await page.waitForTimeout(1500);
+}
+
 // ---- File-upload and video-embed flows (Content Library + essays) ----
 
 // Upload a real (tiny, valid) PDF through the library's file input, wait for
@@ -218,6 +302,13 @@ const PAGES = [
   ['/content',                      '36-content-video-modal',         'Content Library — Add Video embed','instructor', openContentVideoModal],
   // Video-based essay prompt (student workspace)
   ['/essays',                       '37-essay-video-workspace',       'Essay — video prompt workspace','student', createVideoEssayAndOpen],
+  // Assignment video brief
+  ['/assignments',                  '38-assignment-video-modal',      'Assignment — video brief create','instructor', openAssignmentVideoModal],
+  ['/assignments',                  '39-assignment-video-detail',     'Assignment — video brief detail','student', createAssignmentWithVideoAndOpen],
+  // Lesson video embed
+  ['/courses',                      '40-lesson-video-player',         'Lesson — video embed player','student', createVideoLessonAndOpen],
+  // Clean seed data
+  ['/courses',                      '41-courses-clean-seed',          'Courses — clean seed data','all'],
 ];
 
 // Role-to-email mapping for mock auth

@@ -1,8 +1,8 @@
 # AKADEMI Digital Campus — Weekly Progress Report
 
 **Week of:** 2026-09-05
-**Git Commit:** efb3450 (2026-09-05 09:28:17 +0700)
-**Commit Message:** feat: video-based essay prompts — video_url field with YouTube/Google Drive embed across essay pages
+**Git Commit:** c98015f (2026-09-05 12:59:04 +0700)
+**Commit Message:** feat: inline video embed in lesson player — video_url field on Lesson model
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Screenshots Captured | 37/37 |
-| Screenshot Failures | 0 |
-| Git Commit | efb3450 |
-| Report Generated | 2026-09-05 02:39:58 |
+| Screenshots Captured | 36/41 |
+| Screenshot Failures | 5 |
+| Git Commit | c98015f |
+| Report Generated | 2026-09-05 06:09:22 |
 
 ---
 
@@ -30,15 +30,15 @@
 
 ### Login Page
 ![Login Page](01-login.png)
-- Role: `public` | Size: 176KB
+- Role: `public` | Size: 174KB
 
 ### Admin Dashboard
 ![Admin Dashboard](02-admin-dashboard.png)
-- Role: `admin` | Size: 176KB
+- Role: `admin` | Size: 174KB
 
 ### Owner Dashboard
 ![Owner Dashboard](03-owner-dashboard.png)
-- Role: `owner` | Size: 156KB
+- Role: `owner` | Size: 155KB
 
 ### Instructor Dashboard
 ![Instructor Dashboard](04-instructor-dashboard.png)
@@ -50,7 +50,7 @@
 
 ### Parent Dashboard
 ![Parent Dashboard](06-parent-dashboard.png)
-- Role: `parent` | Size: 196KB
+- Role: `parent` | Size: 190KB
 
 ### Treasurer Dashboard
 ![Treasurer Dashboard](07-treasurer-dashboard.png)
@@ -66,23 +66,23 @@
 
 ### Course List
 ![Course List](10-courses.png)
-- Role: `all` | Size: 438KB
+- Role: `all` | Size: 409KB
 
 ### User Management
 ![User Management](11-users.png)
-- Role: `admin` | Size: 231KB
+- Role: `admin` | Size: 232KB
 
 ### Programme Management
 ![Programme Management](12-programmes.png)
-- Role: `admin` | Size: 290KB
+- Role: `admin` | Size: 292KB
 
 ### Gradebook
 ![Gradebook](13-gradebook.png)
-- Role: `all` | Size: 205KB
+- Role: `all` | Size: 235KB
 
 ### Essay List
 ![Essay List](14-essays.png)
-- Role: `all` | Size: 166KB
+- Role: `all` | Size: 260KB
 
 ### Annotation Canvas
 ![Annotation Canvas](15-canvas.png)
@@ -90,19 +90,19 @@
 
 ### Attendance
 ![Attendance](16-attendance.png)
-- Role: `all` | Size: 225KB
+- Role: `all` | Size: 222KB
 
 ### Calendar
 ![Calendar](17-calendar.png)
-- Role: `all` | Size: 160KB
+- Role: `all` | Size: 158KB
 
 ### Content Library
 ![Content Library](18-content-library.png)
-- Role: `instructor` | Size: 189KB
+- Role: `instructor` | Size: 181KB
 
 ### Assignments
 ![Assignments](19-assignments.png)
-- Role: `all` | Size: 150KB
+- Role: `all` | Size: 290KB
 
 ### Finance
 ![Finance](20-finance.png)
@@ -114,7 +114,7 @@
 
 ### Reports & Analytics
 ![Reports & Analytics](22-reports.png)
-- Role: `admin` | Size: 179KB
+- Role: `admin` | Size: 176KB
 
 ### Audit Log
 ![Audit Log](23-audit-log.png)
@@ -140,41 +140,62 @@
 ![Consent Management](28-consent.png)
 - Role: `parent` | Size: 138KB
 
-### Calendar — Take Roll ready
-![Calendar — Take Roll ready](29-calendar-roll.png)
-- Role: `instructor` | Size: 205KB
+### Calendar — Take Roll ready ❌
+- **Error:** locator.waitFor: Timeout 5000ms exceeded.
+Call log:
+[2m  - waiting for getByRol
 
-### Calendar — Take Roll modal
-![Calendar — Take Roll modal](30-calendar-roll-modal.png)
-- Role: `instructor` | Size: 353KB
+### Calendar — Take Roll modal ❌
+- **Error:** locator.waitFor: Timeout 5000ms exceeded.
+Call log:
+[2m  - waiting for getByRol
 
-### Attendance — Take Roll ready
-![Attendance — Take Roll ready](31-attendance-roll.png)
-- Role: `instructor` | Size: 240KB
+### Attendance — Take Roll ready ❌
+- **Error:** locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('
 
-### Attendance — Take Roll modal
-![Attendance — Take Roll modal](32-attendance-roll-modal.png)
-- Role: `instructor` | Size: 363KB
+### Attendance — Take Roll modal ❌
+- **Error:** locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('
 
 ### Attendance Export — schedules CSV
 ![Attendance Export — schedules CSV](33-attendance-export-schedules.png)
-- Role: `instructor` | Size: 170KB
+- Role: `instructor` | Size: 123KB
 
-### Attendance Export — records CSV
-![Attendance Export — records CSV](34-attendance-export-records.png)
-- Role: `instructor` | Size: 68KB
+### Attendance Export — records CSV ❌
+- **Error:** locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('
 
 ### Content Library — file upload result
 ![Content Library — file upload result](35-content-upload-result.png)
-- Role: `instructor` | Size: 194KB
+- Role: `instructor` | Size: 201KB
 
 ### Content Library — Add Video embed
 ![Content Library — Add Video embed](36-content-video-modal.png)
-- Role: `instructor` | Size: 333KB
+- Role: `instructor` | Size: 332KB
 
 ### Essay — video prompt workspace
 ![Essay — video prompt workspace](37-essay-video-workspace.png)
-- Role: `student` | Size: 642KB
+- Role: `student` | Size: 639KB
+
+### Assignment — video brief create
+![Assignment — video brief create](38-assignment-video-modal.png)
+- Role: `instructor` | Size: 400KB
+
+### Assignment — video brief detail
+![Assignment — video brief detail](39-assignment-video-detail.png)
+- Role: `student` | Size: 90KB
+
+### Lesson — video embed player
+![Lesson — video embed player](40-lesson-video-player.png)
+- Role: `student` | Size: 280KB
+
+### Courses — clean seed data
+![Courses — clean seed data](41-courses-clean-seed.png)
+- Role: `all` | Size: 409KB
 
 ## 📥 Generated CSV Exports
 

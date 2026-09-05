@@ -1,30 +1,30 @@
 {
   "date": "2026-09-05",
   "baseUrl": "http://localhost:5173",
-  "totalScreenshots": 37,
-  "successful": 37,
-  "failed": 0,
+  "totalScreenshots": 41,
+  "successful": 36,
+  "failed": 5,
   "screenshots": [
     {
       "label": "Login Page",
       "filename": "01-login",
       "roles": "public",
       "status": "✅",
-      "size": "176KB"
+      "size": "174KB"
     },
     {
       "label": "Admin Dashboard",
       "filename": "02-admin-dashboard",
       "roles": "admin",
       "status": "✅",
-      "size": "176KB"
+      "size": "174KB"
     },
     {
       "label": "Owner Dashboard",
       "filename": "03-owner-dashboard",
       "roles": "owner",
       "status": "✅",
-      "size": "156KB"
+      "size": "155KB"
     },
     {
       "label": "Instructor Dashboard",
@@ -45,7 +45,7 @@
       "filename": "06-parent-dashboard",
       "roles": "parent",
       "status": "✅",
-      "size": "196KB"
+      "size": "190KB"
     },
     {
       "label": "Treasurer Dashboard",
@@ -73,35 +73,35 @@
       "filename": "10-courses",
       "roles": "all",
       "status": "✅",
-      "size": "438KB"
+      "size": "409KB"
     },
     {
       "label": "User Management",
       "filename": "11-users",
       "roles": "admin",
       "status": "✅",
-      "size": "231KB"
+      "size": "232KB"
     },
     {
       "label": "Programme Management",
       "filename": "12-programmes",
       "roles": "admin",
       "status": "✅",
-      "size": "290KB"
+      "size": "292KB"
     },
     {
       "label": "Gradebook",
       "filename": "13-gradebook",
       "roles": "all",
       "status": "✅",
-      "size": "205KB"
+      "size": "235KB"
     },
     {
       "label": "Essay List",
       "filename": "14-essays",
       "roles": "all",
       "status": "✅",
-      "size": "166KB"
+      "size": "260KB"
     },
     {
       "label": "Annotation Canvas",
@@ -115,28 +115,28 @@
       "filename": "16-attendance",
       "roles": "all",
       "status": "✅",
-      "size": "225KB"
+      "size": "222KB"
     },
     {
       "label": "Calendar",
       "filename": "17-calendar",
       "roles": "all",
       "status": "✅",
-      "size": "160KB"
+      "size": "158KB"
     },
     {
       "label": "Content Library",
       "filename": "18-content-library",
       "roles": "instructor",
       "status": "✅",
-      "size": "189KB"
+      "size": "181KB"
     },
     {
       "label": "Assignments",
       "filename": "19-assignments",
       "roles": "all",
       "status": "✅",
-      "size": "150KB"
+      "size": "290KB"
     },
     {
       "label": "Finance",
@@ -157,7 +157,7 @@
       "filename": "22-reports",
       "roles": "admin",
       "status": "✅",
-      "size": "179KB"
+      "size": "176KB"
     },
     {
       "label": "Audit Log",
@@ -205,64 +205,92 @@
       "label": "Calendar — Take Roll ready",
       "filename": "29-calendar-roll",
       "roles": "instructor",
-      "status": "✅",
-      "size": "205KB"
+      "status": "❌",
+      "error": "locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRol"
     },
     {
       "label": "Calendar — Take Roll modal",
       "filename": "30-calendar-roll-modal",
       "roles": "instructor",
-      "status": "✅",
-      "size": "353KB"
+      "status": "❌",
+      "error": "locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRol"
     },
     {
       "label": "Attendance — Take Roll ready",
       "filename": "31-attendance-roll",
       "roles": "instructor",
-      "status": "✅",
-      "size": "240KB"
+      "status": "❌",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
     },
     {
       "label": "Attendance — Take Roll modal",
       "filename": "32-attendance-roll-modal",
       "roles": "instructor",
-      "status": "✅",
-      "size": "363KB"
+      "status": "❌",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
     },
     {
       "label": "Attendance Export — schedules CSV",
       "filename": "33-attendance-export-schedules",
       "roles": "instructor",
       "status": "✅",
-      "size": "170KB"
+      "size": "123KB"
     },
     {
       "label": "Attendance Export — records CSV",
       "filename": "34-attendance-export-records",
       "roles": "instructor",
-      "status": "✅",
-      "size": "68KB"
+      "status": "❌",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
     },
     {
       "label": "Content Library — file upload result",
       "filename": "35-content-upload-result",
       "roles": "instructor",
       "status": "✅",
-      "size": "194KB"
+      "size": "201KB"
     },
     {
       "label": "Content Library — Add Video embed",
       "filename": "36-content-video-modal",
       "roles": "instructor",
       "status": "✅",
-      "size": "333KB"
+      "size": "332KB"
     },
     {
       "label": "Essay — video prompt workspace",
       "filename": "37-essay-video-workspace",
       "roles": "student",
       "status": "✅",
-      "size": "642KB"
+      "size": "639KB"
+    },
+    {
+      "label": "Assignment — video brief create",
+      "filename": "38-assignment-video-modal",
+      "roles": "instructor",
+      "status": "✅",
+      "size": "400KB"
+    },
+    {
+      "label": "Assignment — video brief detail",
+      "filename": "39-assignment-video-detail",
+      "roles": "student",
+      "status": "✅",
+      "size": "90KB"
+    },
+    {
+      "label": "Lesson — video embed player",
+      "filename": "40-lesson-video-player",
+      "roles": "student",
+      "status": "✅",
+      "size": "280KB"
+    },
+    {
+      "label": "Courses — clean seed data",
+      "filename": "41-courses-clean-seed",
+      "roles": "all",
+      "status": "✅",
+      "size": "409KB"
     }
   ]
 }
