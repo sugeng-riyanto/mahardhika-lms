@@ -8,6 +8,8 @@ import {
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
+import { VideoEmbed } from '@/components/VideoEmbed'
+import { parseVideoUrl, videoEmbedUrl } from '@/utils/videoEmbed'
 import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
 
 const CONTENT_CSV_COLUMNS: CSVColumn[] = [
@@ -83,40 +85,6 @@ function formatFileSize(bytes: number): string {
 }
 
 const ACCEPT_TYPES = '.pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a,.zip,.json,.xml,.py,.js'
-
-interface VideoLink {
-  provider: 'youtube' | 'gdrive'
-  video_id: string
-}
-
-function parseVideoUrl(url: string): VideoLink | null {
-  try {
-    const u = new URL(url.trim())
-    if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
-      let id = ''
-      if (u.hostname === 'youtu.be') id = u.pathname.slice(1)
-      else if (u.pathname === '/watch') id = u.searchParams.get('v') || ''
-      else if (u.pathname.startsWith('/shorts/') || u.pathname.startsWith('/embed/')) id = u.pathname.split('/')[2] || ''
-      return id ? { provider: 'youtube', video_id: id } : null
-    }
-    if (u.hostname.includes('drive.google.com')) {
-      const m = u.pathname.match(/\/file\/d\/([^/]+)/)
-      const id = m ? m[1] : (u.searchParams.get('id') || '')
-      return id ? { provider: 'gdrive', video_id: id } : null
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-function videoEmbedUrl(url: string): string | null {
-  const parsed = parseVideoUrl(url)
-  if (!parsed) return null
-  return parsed.provider === 'youtube'
-    ? `https://www.youtube.com/embed/${parsed.video_id}`
-    : `https://drive.google.com/file/d/${parsed.video_id}/preview`
-}
 
 function detectMime(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase() || ''
@@ -626,13 +594,7 @@ export function ContentLibraryPage() {
               <p className="text-sm text-navy-300">{selectedItem.description}</p>
 
               {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) && (
-                <iframe
-                  src={videoEmbedUrl(selectedItem.file_url)!}
-                  title={selectedItem.title}
-                  className="w-full aspect-video rounded-lg border border-navy-700"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
+                <VideoEmbed url={selectedItem.file_url} title={selectedItem.title} />
               )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">

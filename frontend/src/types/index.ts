@@ -210,6 +210,7 @@ export interface EssayQuestion {
   allow_file_upload: boolean;
   late_submission_allowed: boolean;
   late_penalty_percent: number;
+  video_url?: string;
   course: string | null;
   course_title: string | null;
   lesson: string | null;

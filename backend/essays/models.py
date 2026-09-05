@@ -33,6 +33,7 @@ class EssayQuestion(TimestampedModel):
     allow_file_upload = models.BooleanField(default=False)
     late_submission_allowed = models.BooleanField(default=True)
     late_penalty_percent = models.PositiveIntegerField(default=0)
+    video_url = models.CharField(max_length=500, blank=True, default='')
     # FK relationships
     course = models.ForeignKey(
         'courses.Course', on_delete=models.CASCADE,

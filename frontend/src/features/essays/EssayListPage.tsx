@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
   PenTool, Clock, CheckCircle, AlertTriangle, Star,
-  Users, FileText, Plus, Send, Edit, Trash2,
+  Users, FileText, Plus, Send, Edit, Trash2, Film,
 } from 'lucide-react'
+import { parseVideoUrl } from '@/utils/videoEmbed'
 import { Link } from 'react-router-dom'
 import { useEssayQuestions, useEssayResponses } from '@/api/hooks'
 import { apiClient } from '@/api/client'
@@ -34,6 +35,12 @@ function QuestionCard({ question }: { question: EssayQuestion }) {
         <p className="text-xs text-navy-400 mb-3 line-clamp-2">{question.description}</p>
       )}
       <div className="flex items-center gap-3 text-[10px] text-navy-500">
+        {question.video_url && parseVideoUrl(question.video_url) && (
+          <span className="flex items-center gap-1 text-red-400">
+            <Film size={10} />
+            Video
+          </span>
+        )}
         <span className="flex items-center gap-1">
           <Star size={10} className="text-yellow-400" />
           {question.marks} marks
@@ -125,6 +132,7 @@ const SUBMIT_ESSAY_FIELDS: CrudField[] = [
 const ESSAY_FIELDS: CrudField[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Essay question title' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Essay prompt...' },
+  { name: 'video_url', label: 'Video Prompt (YouTube / Google Drive)', type: 'text', placeholder: 'https://www.youtube.com/watch?v=... or https://drive.google.com/file/d/.../view' },
   { name: 'marks', label: 'Max Marks', type: 'number', required: true, placeholder: '100' },
   { name: 'difficulty', label: 'Difficulty', type: 'select', options: [
     { value: 'easy', label: 'Easy' },
@@ -170,12 +178,12 @@ export function EssayListPage() {
 
   const openCreateEssay = () => setModal({
     isOpen: true, mode: 'create',
-    data: { title: '', description: '', marks: 100, difficulty: 'medium', status: 'draft' },
+    data: { title: '', description: '', video_url: '', marks: 100, difficulty: 'medium', status: 'draft' },
   })
 
   const openEditEssay = (q: EssayQuestion) => setModal({
     isOpen: true, mode: 'edit',
-    data: { id: q.id, title: q.title, description: q.description || '', marks: q.marks, difficulty: q.difficulty || 'medium', status: q.status },
+    data: { id: q.id, title: q.title, description: q.description || '', video_url: q.video_url || '', marks: q.marks, difficulty: q.difficulty || 'medium', status: q.status },
   })
 
   const openDeleteEssay = (q: EssayQuestion) => setModal({

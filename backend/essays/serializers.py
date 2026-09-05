@@ -62,6 +62,7 @@ class EssayQuestionSerializer(serializers.ModelSerializer):
             'expected_answer', 'learning_objectives', 'difficulty', 'status',
             'max_time_minutes', 'allow_canvas_response', 'allow_typed_response',
             'allow_file_upload', 'late_submission_allowed', 'late_penalty_percent',
+            'video_url',
             'course', 'course_title', 'lesson', 'created_by', 'created_by_email',
             'rubric_criteria', 'response_count',
             'created_at', 'updated_at',

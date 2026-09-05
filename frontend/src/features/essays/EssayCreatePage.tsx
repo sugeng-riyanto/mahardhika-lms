@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { PenTool, Plus, Trash2, Save, ArrowLeft, AlertCircle } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useCourses } from '@/api/hooks'
+import { VideoEmbed } from '@/components/VideoEmbed'
+import { parseVideoUrl } from '@/utils/videoEmbed'
 
 interface RubricCriterionInput {
   name: string
@@ -29,6 +31,7 @@ export function EssayCreatePage() {
   const [allowFileUpload, setAllowFileUpload] = useState(false)
   const [lateAllowed, setLateAllowed] = useState(true)
   const [latePenalty, setLatePenalty] = useState(10)
+  const [videoUrl, setVideoUrl] = useState('')
 
   const [rubricCriteria, setRubricCriteria] = useState<RubricCriterionInput[]>([
     { name: '', description: '', max_score: 10 },
@@ -69,6 +72,7 @@ export function EssayCreatePage() {
         allow_file_upload: allowFileUpload,
         late_submission_allowed: lateAllowed,
         late_penalty_percent: latePenalty,
+        video_url: videoUrl.trim(),
         status: 'draft',
         content_data: {
           rubric_criteria: rubricCriteria.filter(c => c.name.trim()),
@@ -135,6 +139,23 @@ export function EssayCreatePage() {
                 className="input-field w-full"
                 placeholder="Describe the essay question, problem statement, or scenario..."
               />
+            </div>
+            <div>
+              <label htmlFor="essay-video-url" className="block text-sm font-medium text-navy-300 mb-2">Video Prompt (optional)</label>
+              <input
+                id="essay-video-url"
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                className="input-field w-full"
+                placeholder="https://www.youtube.com/watch?v=... or https://drive.google.com/file/d/.../view"
+              />
+              <p className="text-xs text-navy-500 mt-1">Attach a YouTube or Google Drive video that students watch before answering.</p>
+              {videoUrl.trim() && (
+                parseVideoUrl(videoUrl)
+                  ? <div className="mt-3"><VideoEmbed url={videoUrl} title={title || 'Video prompt'} /></div>
+                  : <p className="text-xs text-red-400 mt-2">Not a valid YouTube or Google Drive link.</p>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>

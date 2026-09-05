@@ -8,6 +8,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useEssayQuestion, useEssayResponses } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { apiClient } from '@/api/client'
+import { VideoEmbed } from '@/components/VideoEmbed'
 import { AnnotationCanvas } from '@/features/canvas/AnnotationCanvas'
 
 export function EssayWorkspacePage() {
@@ -215,6 +216,11 @@ export function EssayWorkspacePage() {
             </div>
             <div className="bg-navy-800/50 rounded-lg p-4 mb-3">
               <p className="text-sm text-navy-200 whitespace-pre-wrap">{question.description}</p>
+              {question.video_url && (
+                <div className="mt-4">
+                  <VideoEmbed url={question.video_url} title={question.title} />
+                </div>
+              )}
               {question.content_data && Object.keys(question.content_data).length > 0 && (
                 <div className="mt-3 p-3 bg-navy-900/50 rounded border border-navy-700">
                   <p className="text-xs text-navy-400">Content Data:</p>
