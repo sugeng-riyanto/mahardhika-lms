@@ -6,25 +6,24 @@ from django.core.exceptions import PermissionDenied
 
 class MelanyAIService:
     """
-    Service untuk berinteraksi dengan Melany AI (Local LLM via LM Studio).
-    Fallback ke OpenAI-compatible API jika LM Studio tidak tersedia.
+    Service untuk berinteraksi dengan Melany AI via DeepSeek API.
     """
     
     def __init__(self):
         self.api_url = getattr(
             settings, 
-            'LM_STUDIO_URL', 
-            os.getenv('LM_STUDIO_URL', 'http://localhost:1234/v1/chat/completions')
+            'MELANY_API_URL', 
+            os.getenv('MELANY_API_URL', 'https://api.deepseek.com/v1/chat/completions')
         )
         self.model = getattr(
             settings, 
-            'LM_STUDIO_MODEL', 
-            os.getenv('LM_STUDIO_MODEL', 'deepseek-v4')
+            'MELANY_MODEL', 
+            os.getenv('MELANY_MODEL', 'deepseek-chat')
         )
         self.api_key = getattr(
             settings,
-            'LM_STUDIO_API_KEY',
-            os.getenv('LM_STUDIO_API_KEY', 'lm-studio')
+            'DEEPSEEK_API_KEY',
+            os.getenv('DEEPSEEK_API_KEY', '')
         )
         self.system_prompt = self._load_system_prompt()
     

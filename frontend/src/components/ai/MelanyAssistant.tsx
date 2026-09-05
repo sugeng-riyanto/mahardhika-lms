@@ -54,7 +54,7 @@ export function MelanyAssistant({ activityId, contextType, canvasData }: MelanyA
     } catch (err: unknown) {
       const errorMsg =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        'Terjadi kesalahan. Pastikan LM Studio berjalan atau coba lagi nanti.'
+        'Terjadi kesalahan. Pastikan API key DeepSeek sudah dikonfigurasi atau coba lagi nanti.'
       setMessages((prev) => [
         ...prev,
         { role: 'ai', text: `⚠️ ${errorMsg}`, timestamp: new Date() },

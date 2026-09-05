@@ -21,19 +21,18 @@ Response → Frontend chat UI
 Jalankan file `supabase/migrations/009_ai_features.sql` di Supabase SQL Editor untuk membuat tabel `ai_interactions` dan `ai_canvas_feedback` dengan RLS policies.
 
 ### 2. Backend Configuration
-Tambahkan ke `backend/settings.py` atau environment variables:
-```python
-LM_STUDIO_URL = os.getenv('LM_STUDIO_URL', 'http://localhost:1234/v1/chat/completions')
-LM_STUDIO_MODEL = os.getenv('LM_STUDIO_MODEL', 'deepseek-v4')
-LM_STUDIO_API_KEY = os.getenv('LM_STUDIO_API_KEY', 'lm-studio')
+Tambahkan environment variable `DEEPSEEK_API_KEY` ke `.env` atau system:
+```bash
+export DEEPSEEK_API_KEY=sk-your-deepseek-api-key
 ```
 
-### 3. LM Studio Setup
-1. Download LM Studio dari https://lmstudio.ai
-2. Load model `deepseek-v4` (atau model lain yang kompatibel)
-3. Start local server di port 1234
+Optional (defaults shown):
+```python
+MELANY_API_URL = 'https://api.deepseek.com/v1/chat/completions'  # default
+MELANY_MODEL = 'deepseek-chat'  # default, bisa ganti ke deepseek-reasoner
+```
 
-### 4. Frontend Integration
+### 3. Frontend Integration
 MelanyAssistant sudah diintegrasikan ke:
 - Activity Player (`/activities/:id/play`) — mode `canvas` atau `chat`
 - Essay Workspace (`/essays/:id`) — mode `essay`
@@ -51,7 +50,7 @@ MelanyAssistant sudah diintegrasikan ke:
   "activity_id": "uuid",
   "context_type": "chat|canvas|essay",
   "message": "Pertanyaan siswa",
-  "canvas_data": {} // optional
+  "canvas_data": {}
 }
 ```
 
@@ -61,6 +60,17 @@ Response:
   "success": true,
   "response": "Jawaban Melany AI",
   "context_type": "chat"
+}
+```
+
+### GET /api/v1/ai/health/
+```json
+{
+  "status": "ok",
+  "api_url": "https://api.deepseek.com/v1/chat/completions",
+  "model": "deepseek-chat",
+  "api_key_configured": true,
+  "system_prompt_loaded": true
 }
 ```
 

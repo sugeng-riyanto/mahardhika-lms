@@ -78,9 +78,11 @@ class MelanyHealthCheckView(APIView):
     
     def get(self, request):
         service = MelanyAIService()
+        has_key = bool(service.api_key)
         return Response({
-            "status": "ok",
+            "status": "ok" if has_key else "no_api_key",
             "api_url": service.api_url,
             "model": service.model,
+            "api_key_configured": has_key,
             "system_prompt_loaded": len(service.system_prompt) > 0
         })
