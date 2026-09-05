@@ -1122,7 +1122,9 @@ export function useUnreadNotificationCount() {
     queryKey: ['unreadNotificationCount'],
     queryFn: fetchUnreadCount,
     staleTime: 10_000,
-    refetchInterval: 30_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }
 

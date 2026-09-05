@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Check, CheckCheck, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Bell, Check, CheckCheck, X, ArrowRight } from 'lucide-react'
 import {
   useNotifications, useUnreadNotificationCount,
   useMarkNotificationRead, useMarkAllNotificationsRead,
@@ -83,7 +84,8 @@ export function NotificationPanel() {
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* Bell Button */}          <button
+      {/* Bell Button */}
+          <button
             onClick={() => setIsOpen(!isOpen)}
             className="relative p-2 rounded-lg hover:bg-navy-700 transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-navy-900"
             aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
@@ -91,8 +93,15 @@ export function NotificationPanel() {
             aria-haspopup="true"
           >
             <Bell size={20} className="text-navy-300" aria-hidden="true" />
+            {/* Real-time pulse dot when there are unread items */}
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1" aria-hidden="true">
+              <span className="absolute top-0 right-0 flex h-2.5 w-2.5" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+              </span>
+            )}
+            {unreadCount > 0 && (
+              <span className="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 border-2 border-navy-900" aria-hidden="true">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -141,10 +150,19 @@ export function NotificationPanel() {
 
           {/* Footer */}
           {displayNotifications.length > 0 && (
-            <div className="px-4 py-2 border-t border-navy-700 text-center">
-              <span className="text-xs text-navy-500">
-                {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
-              </span>
+            <div className="px-4 py-2 border-t border-navy-700">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-navy-500">
+                  {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+                </span>
+                <Link
+                  to="/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+                >
+                  View all <ArrowRight size={12} />
+                </Link>
+              </div>
             </div>
           )}
         </div>

@@ -31,6 +31,7 @@ import {
   Moon,
 } from 'lucide-react'
 import { NotificationPanel } from '@/components/NotificationPanel'
+import { useUnreadNotificationCount } from '@/api/hooks'
 import { ConnectionStatus } from '@/components/ConnectionStatus'
 
 interface NavItem {
@@ -52,7 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Content Library', path: '/content', icon: <FileText size={20} />, roles: ['admin', 'instructor'] },
   { label: 'Finance', path: '/finance', icon: <CreditCard size={20} />, roles: ['owner', 'treasurer'] },
   { label: 'Reports', path: '/reports', icon: <BarChart3 size={20} />, roles: ['owner', 'admin', 'sponsorship'] },
-  { label: 'Notifications', path: '/notifications', icon: <MessageSquare size={20} />, roles: ['owner', 'admin', 'instructor', 'student', 'parent'] },
+  { label: 'Notifications', path: '/notifications', icon: <MessageSquare size={20} />, roles: ['owner', 'admin', 'treasurer', 'instructor', 'student', 'parent', 'sponsorship', 'third_party'] },
   { label: 'Certificates', path: '/certificates', icon: <Award size={20} />, roles: ['student', 'parent', 'instructor', 'admin', 'owner'] },
   { label: 'Audit Log', path: '/audit', icon: <Shield size={20} />, roles: ['owner', 'admin'] },
   { label: 'Settings', path: '/settings', icon: <Settings size={20} />, roles: ['owner', 'admin'] },
@@ -81,6 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const filteredNavItems = NAV_ITEMS.filter((item) =>
     item.roles.some((role) => roles.includes(role))
   )
+  const { data: unreadCount = 0 } = useUnreadNotificationCount()
 
   const handleSignOut = async () => {
     await signOut()
@@ -189,6 +191,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               >
                 {item.icon}
                 {item.label}
+                {item.path === '/notifications' && unreadCount > 0 && (
+                  <span
+                    className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold"
+                    aria-label={`${unreadCount} unread notifications`}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
             )
           })}
