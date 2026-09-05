@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, BookOpen, BarChart3, Users, ChevronRight, AlertCircle, Shield } from 'lucide-react'
-import { useParentChildren, useChildGrades, useChildCourses } from '@/api/hooks'
-import type { ParentChildLink, ChildGrade, ChildCourse } from '@/api/hooks'
+import { Heart, BookOpen, BarChart3, Users, ChevronRight, AlertCircle, Shield, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { useParentChildren, useChildGrades, useChildCourses, useChildAttendance } from '@/api/hooks'
+import type { ParentChildLink, ChildGrade, ChildCourse, ChildAttendance } from '@/api/hooks'
 import { t } from '@/i18n/translations'
 
 function ChildSelector({
@@ -43,10 +43,12 @@ function ChildStatsCard({
   link,
   grades,
   courses,
+  attendance,
 }: {
   link: ParentChildLink
   grades: ChildGrade[]
   courses: ChildCourse[]
+  attendance: ChildAttendance[]
 }) {
   const releasedGrades = grades.filter(g => g.released)
   const avgGrade = releasedGrades.length > 0
@@ -86,7 +88,7 @@ function ChildStatsCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-navy-700">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-6 pt-6 border-t border-navy-700">
         <div>
           <p className="text-2xl font-bold text-white">{courses.length}</p>
           <p className="text-sm text-navy-400">{t('dash.parent.activeCourses')}</p>
@@ -102,6 +104,10 @@ function ChildStatsCard({
         <div>
           <p className="text-2xl font-bold text-white">{letterGrade}</p>
           <p className="text-sm text-navy-400">{t('dash.parent.overallLetter')}</p>
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-white">{attendance.length > 0 ? Math.round(((attendance.filter(a => a.status === 'present' || a.status === 'late' || a.status === 'excused').length) / attendance.length) * 100) : 0}%</p>
+          <p className="text-sm text-navy-400">Attendance</p>
         </div>
       </div>
     </div>
@@ -226,6 +232,93 @@ function ConsentStatus({ links }: { links: ParentChildLink[] }) {
   )
 }
 
+const STATUS_META: Record<string, { label: string; icon: typeof CheckCircle; color: string; bg: string }> = {
+  present: { label: 'Present', icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-900/30' },
+  absent: { label: 'Absent', icon: XCircle, color: 'text-red-400', bg: 'bg-red-900/30' },
+  late: { label: 'Late', icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-900/30' },
+  excused: { label: 'Excused', icon: AlertCircle, color: 'text-blue-400', bg: 'bg-blue-900/30' },
+}
+
+function AttendancePanel({ records }: { records: ChildAttendance[] }) {
+  if (records.length === 0) {
+    return (
+      <div className="card">
+        <h2 className="text-lg font-semibold text-white mb-4">{t('dash.parent.attendance')}</h2>
+        <div className="text-center py-8">
+          <Calendar className="mx-auto text-navy-600 mb-3" size={32} />
+          <p className="text-navy-400 text-sm">No attendance records yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const present = records.filter(r => r.status === 'present').length
+  const late = records.filter(r => r.status === 'late').length
+  const absent = records.filter(r => r.status === 'absent').length
+  const excused = records.filter(r => r.status === 'excused').length
+  const total = records.length
+  const attendanceRate = total > 0 ? Math.round(((present + late + excused) / total) * 100) : 0
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-white">
+          {t('dash.parent.attendance')}
+          <span className="ml-2 text-sm text-navy-400 font-normal">({total} records)</span>
+        </h2>
+        <span className={`text-sm font-bold ${
+          attendanceRate >= 90 ? 'text-green-400' : attendanceRate >= 75 ? 'text-yellow-400' : 'text-red-400'
+        }`}>
+          {attendanceRate}% attendance
+        </span>
+      </div>
+
+      {/* Summary bar */}
+      <div className="flex gap-1 h-3 rounded-full overflow-hidden mb-4 bg-navy-800">
+        {present > 0 && <div className="bg-green-500 h-full" style={{ width: `${(present / total) * 100}%` }} />}
+        {late > 0 && <div className="bg-yellow-500 h-full" style={{ width: `${(late / total) * 100}%` }} />}
+        {excused > 0 && <div className="bg-blue-500 h-full" style={{ width: `${(excused / total) * 100}%` }} />}
+        {absent > 0 && <div className="bg-red-500 h-full" style={{ width: `${(absent / total) * 100}%` }} />}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 mb-4 text-xs">
+        {[
+          { label: 'Present', count: present, color: 'text-green-400' },
+          { label: 'Late', count: late, color: 'text-yellow-400' },
+          { label: 'Excused', count: excused, color: 'text-blue-400' },
+          { label: 'Absent', count: absent, color: 'text-red-400' },
+        ].filter(l => l.count > 0).map(l => (
+          <span key={l.label} className={`${l.color}`}>{l.label}: {l.count}</span>
+        ))}
+      </div>
+
+      {/* Recent records */}
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {records.slice(0, 10).map((record) => {
+          const meta = STATUS_META[record.status] || STATUS_META.present
+          const Icon = meta.icon
+          return (
+            <div key={record.id} className="flex items-center gap-3 py-2 border-b border-navy-700 last:border-0">
+              <div className={`p-1.5 rounded-lg ${meta.bg}`}>
+                <Icon size={14} className={meta.color} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white truncate">{record.lesson_title}</p>
+                <p className="text-xs text-navy-500">{record.course_title}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
+                <p className="text-[10px] text-navy-500">{new Date(record.schedule_date).toLocaleDateString()}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function ParentDashboard() {
   const { data: links = [], isLoading: linksLoading } = useParentChildren()
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
@@ -237,6 +330,7 @@ export function ParentDashboard() {
   const { data: coursesMap, isLoading: coursesLoading } = useChildCourses(
     links.map(l => l.student_user)
   )
+  const { data: attendance = [], isLoading: attendanceLoading } = useChildAttendance(activeChildId || '')
 
   const activeCourses = coursesMap?.get(activeChildId || '') || []
   const activeLink = links.find(l => l.student_user === activeChildId)
@@ -297,6 +391,7 @@ export function ParentDashboard() {
           link={activeLink}
           grades={grades}
           courses={activeCourses}
+          attendance={attendance}
         />
       )}
 
@@ -310,6 +405,17 @@ export function ParentDashboard() {
           <GradesPanel grades={grades} />
         )}
 
+        {attendanceLoading ? (
+          <div className="card p-8 text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-3" />
+            <p className="text-navy-400 text-sm">Loading attendance...</p>
+          </div>
+        ) : (
+          <AttendancePanel records={attendance} />
+        )}
+      </div>
+
+      <div className="mt-6">
         {coursesLoading ? (
           <div className="card p-8 text-center">
             <div className="animate-spin w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-3" />

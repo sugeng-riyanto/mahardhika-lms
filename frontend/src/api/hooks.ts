@@ -271,6 +271,20 @@ export interface ChildCourse {
   is_published: boolean
 }
 
+export interface ChildAttendance {
+  id: string
+  schedule: string
+  student: string
+  student_email: string
+  student_name: string
+  status: 'present' | 'absent' | 'late' | 'excused'
+  notes: string
+  marked_by_email: string
+  lesson_title: string
+  schedule_date: string
+  course_title: string
+}
+
 interface ParentChildLinkResponse {
   results: ParentChildLink[]
 }
@@ -348,6 +362,24 @@ export function useChildCourses(childIds: string[]) {
     queryFn: () => fetchChildCourses(childIds),
     staleTime: 30_000,
     enabled: childIds.length > 0,
+  })
+}
+
+async function fetchChildAttendance(childId: string): Promise<ChildAttendance[]> {
+  try {
+    const data = await apiClient.get<{ results: ChildAttendance[] }>('/attendance/records/', { student: childId })
+    return data.results || []
+  } catch {
+    return []
+  }
+}
+
+export function useChildAttendance(childId: string) {
+  return useQuery({
+    queryKey: ['childAttendance', childId],
+    queryFn: () => fetchChildAttendance(childId),
+    staleTime: 30_000,
+    enabled: !!childId,
   })
 }
 
