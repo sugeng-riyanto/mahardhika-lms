@@ -328,41 +328,41 @@ export function ContentLibraryPage() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <FileText className="text-cyan-400" size={24} />
           <h1 className="page-title mb-0">Content Library</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => exportToCSV(filteredContent, CONTENT_CSV_COLUMNS, 'content-library')} className="btn-secondary flex items-center gap-2">
-            <FileDown size={16} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={() => exportToCSV(filteredContent, CONTENT_CSV_COLUMNS, 'content-library')} className="btn-secondary flex items-center gap-2 text-sm">
+            <FileDown size={14} />
             Export CSV
           </button>
           {canEdit && (
             <>
-              <button onClick={openCreateVideo} className="btn-primary flex items-center gap-2">
-                <Film size={16} />
-                Add Video
+              <button onClick={openCreateVideo} className="btn-primary flex items-center gap-2 text-sm">
+                <Film size={14} />
+                <span className="hidden sm:inline">Add</span> Video
               </button>
-              <button onClick={openCreatePdf} className="btn-primary flex items-center gap-2">
-                <FileText size={16} />
-                Add PDF (Drive)
+              <button onClick={openCreatePdf} className="btn-primary flex items-center gap-2 text-sm">
+                <FileText size={14} />
+                <span className="hidden sm:inline">Add</span> PDF
               </button>
-              <button onClick={openCreateSlides} className="btn-primary flex items-center gap-2">
-                <Layers size={16} />
-                Add Slides (Drive)
+              <button onClick={openCreateSlides} className="btn-primary flex items-center gap-2 text-sm">
+                <Layers size={14} />
+                <span className="hidden sm:inline">Add</span> Slides
               </button>
-              <button onClick={openCreateAudio} className="btn-primary flex items-center gap-2">
-                <Headphones size={16} />
-                Add Audio (Drive)
+              <button onClick={openCreateAudio} className="btn-primary flex items-center gap-2 text-sm">
+                <Headphones size={14} />
+                <span className="hidden sm:inline">Add</span> Audio
               </button>
-              <button onClick={openCreateImage} className="btn-primary flex items-center gap-2">
-                <Image size={16} />
-                Add Image (Drive)
+              <button onClick={openCreateImage} className="btn-primary flex items-center gap-2 text-sm">
+                <Image size={14} />
+                <span className="hidden sm:inline">Add</span> Image
               </button>
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary flex items-center gap-2">
-                <Upload size={16} />
-                Upload File
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary flex items-center gap-2 text-sm">
+                <Upload size={14} />
+                <span className="hidden sm:inline">Upload</span> File
               </button>
             </>
           )}
@@ -730,25 +730,25 @@ export function ContentLibraryPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 p-5 border-t border-navy-700">
+            <div className="flex flex-wrap items-center gap-2 p-5 border-t border-navy-700">
               {isGoogleDriveUrl(selectedItem.file_url) || videoEmbedUrl(selectedItem.file_url) ? (
-                <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 flex items-center justify-center gap-2">
+                <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 flex items-center justify-center gap-2 text-sm">
                   <ExternalLink size={14} />
                   Open {TYPE_META[selectedItem.content_type]?.label || 'File'}
                 </a>
               ) : (
-                <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2 text-sm">
                   <Download size={14} />
                   Download
                 </button>
               )}
               {canEdit && (
                 <>
-                  <button onClick={() => { setSelectedItem(null); openEdit(selectedItem) }} className="btn-secondary flex items-center gap-2">
+                  <button onClick={() => { setSelectedItem(null); openEdit(selectedItem) }} className="btn-secondary flex items-center gap-2 text-sm">
                     <Edit size={14} />
                     Edit
                   </button>
-                  <button onClick={() => { setSelectedItem(null); openDelete(selectedItem) }} className="btn-ghost text-red-400 flex items-center gap-2 px-3">
+                  <button onClick={() => { setSelectedItem(null); openDelete(selectedItem) }} className="btn-ghost text-red-400 flex items-center gap-2 px-3 text-sm">
                     <Trash2 size={14} />
                   </button>
                 </>
