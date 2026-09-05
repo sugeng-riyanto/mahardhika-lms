@@ -106,3 +106,33 @@ Authorization is evaluated server-side using role + permission + scope + relatio
 ## Implementation response format
 
 Report: outcome, files changed, security/privacy impact, tests run, migration/configuration, and remaining risks.
+
+## Session learnings (non-obvious, not recoverable from code)
+
+### Auth & API
+- Mock auth tokens use `mock-token-{email}` (e.g. `mock-token-admin@mahardhika.id`), NOT `mock-token-{role}`. The backend parses the email from the token prefix.
+- Changing `localStorage` mock auth keys does not trigger a React re-render. Must navigate to `/login` and re-authenticate through the UI.
+- Consent endpoint is a router root at `/api/v1/consent/`; actual records are at `/api/v1/consent/records/`.
+- Certificate verification endpoint `/api/v1/certificates/verify/{code}/` is public (no auth required). The frontend route must be outside `ProtectedRoute`.
+
+### Data model gotchas
+- `Grade` model has `activity` and `attempt` FKs — there is NO `assignment` field. Cannot `get_or_create` grades with `assignment=...`.
+- `AttendanceRecord` has no `recorded_by` field. Only `schedule`, `student`, `status`, `notes`.
+- `EssayResponse.overall_feedback` is writable via PATCH (not in `read_only_fields`), but parent queryset required `feedback_released=True` OR `status='finalised'` to see it — fixed by adding `Q(overall_feedback__gt='')`.
+- `videoEmbed.ts` `parseVideoUrl` returns `file_id` (renamed from `video_id`). All consumers must use `file_id`.
+
+### Frontend hidden coupling
+- `AuditLogPage` was gated on `isSupabaseConfigured` — always returned mock data in local dev even though Django API was running. Remove the guard; the API client handles mock tokens.
+- `ContentLibraryPage` `fetchContent()` silently falls back to `MOCK_CONTENT` on API error. Real API data shows only when the request succeeds.
+- `VideoEmbed` component uses `url` prop (not `src`). The `Video` lucide icon does not accept `title`.
+- `EssayWorkspacePage` `myResponse` selection matches by `status !== 'finalised'`, not by `user.id` — the latter breaks under mock auth (fake UUIDs).
+
+### Testing & build
+- Full pytest suite takes ~10min because each RBAC comprehensive test class rebuilds the DB. Run by module (`identity/`, `essays/`, `security/`) with 300s timeout per batch.
+- `seed_comprehensive.py` and `seed_dummy_content.py` are both idempotent — re-running adds zero duplicates.
+- Vitest runs in ~3s (50 tests). tsc `--noEmit` is the fast pre-commit check.
+
+### Environment
+- Git push hangs on Windows due to Git Credential Manager interactive prompt. Run `git push origin main` from user's own terminal, or use `GIT_TERMINAL_PROMPT=0` (still may timeout).
+- Django dev server on port 8000, Vite on port 5173. Both must be running for full CRUD verification.
+- `DATABASE_URL=sqlite:///db.sqlite3` is the local default; `SUPABASE_DATABASE_URL` is the remote PostgreSQL.
