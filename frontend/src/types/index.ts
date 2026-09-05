@@ -145,6 +145,7 @@ export interface Lesson {
   order: number;
   content_type: 'text' | 'video' | 'activity' | 'essay';
   content_data: Record<string, unknown>;
+  video_url: string;
   is_published: boolean;
   created_at: string;
   updated_at: string;

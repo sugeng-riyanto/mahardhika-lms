@@ -9,6 +9,7 @@ import { apiClient } from '@/api/client'
 import { useQuery } from '@tanstack/react-query'
 import { useLessons } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
+import { CrudModal } from '@/components/CrudModal'
 import type { Course } from '@/types'
 
 const CONTENT_TYPE_ICONS: Record<string, typeof BookOpen> = {
@@ -46,7 +47,8 @@ export function CourseDetailPage() {
     enabled: !!courseId,
   })
 
-  const { data: lessons, isLoading: lessonsLoading } = useLessons(courseId || '')
+  const { data: lessons, isLoading: lessonsLoading, refetch: refetchLessons } = useLessons(courseId || '')
+  const [lessonModal, setLessonModal] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; data: Record<string, unknown> }>({ isOpen: false, mode: 'create', data: {} })
 
   if (courseLoading) {
     return (
@@ -146,7 +148,7 @@ export function CourseDetailPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Lessons</h2>
             {(isAdmin || isInstructor) && (
-              <button className="btn-primary text-sm flex items-center gap-1">
+              <button onClick={() => setLessonModal({ isOpen: true, mode: 'create', data: { title: '', description: '', content_type: 'text', video_url: '', is_published: false } })} className="btn-primary text-sm flex items-center gap-1">
                 <Plus size={14} />
                 Add Lesson
               </button>
@@ -215,6 +217,40 @@ export function CourseDetailPage() {
           <p className="text-navy-400">Course settings coming soon.</p>
         </div>
       )}
+
+      {/* Add Lesson Modal */}
+      <CrudModal
+        isOpen={lessonModal.isOpen}
+        mode={lessonModal.mode}
+        title="Add Lesson"
+        fields={[
+          { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Lesson title' },
+          { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Brief description...' },
+          { name: 'content_type', label: 'Type', type: 'select', options: [
+            { value: 'text', label: 'Text / Reading' },
+            { value: 'video', label: 'Video' },
+            { value: 'activity', label: 'Activity' },
+            { value: 'essay', label: 'Essay' },
+          ]},
+          { name: 'video_url', label: 'Video URL (YouTube / Google Drive)', type: 'text', placeholder: 'https://youtube.com/watch?v=... or https://drive.google.com/file/d/.../preview' },
+          { name: 'is_published', label: 'Publish immediately', type: 'text', placeholder: 'true or false' },
+        ]}
+        data={{ ...lessonModal.data, course: courseId }}
+        onSave={async (data) => {
+          await apiClient.post('/lessons/', {
+            title: data.title,
+            description: data.description,
+            course: courseId,
+            content_type: data.content_type,
+            video_url: data.video_url || '',
+            is_published: data.is_published === true || data.is_published === 'true',
+            content_data: {},
+          })
+          await refetchLessons()
+          setLessonModal({ isOpen: false, mode: 'create', data: {} })
+        }}
+        onClose={() => setLessonModal({ isOpen: false, mode: 'create', data: {} })}
+      />
     </div>
   )
 }

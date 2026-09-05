@@ -88,6 +88,10 @@ class Lesson(TimestampedModel):
     order = models.PositiveIntegerField(default=0)
     content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES)
     content_data = models.JSONField(default=dict, blank=True)
+    video_url = models.URLField(
+        max_length=500, blank=True, default='',
+        help_text='YouTube or Google Drive embed URL for inline video',
+    )
     is_published = models.BooleanField(default=False)
 
     class Meta:

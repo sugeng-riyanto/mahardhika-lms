@@ -6,6 +6,7 @@ import {
   CheckCircle, Clock, Menu, X,
   Play, FileText, Award
 } from 'lucide-react'
+import { VideoEmbed } from '@/components/VideoEmbed'
 import { useLesson, useLessons, useActivities } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import type { Lesson } from '@/types'
@@ -39,20 +40,28 @@ function TextLessonContent({ lesson }: { lesson: Lesson }) {
 }
 
 function VideoLessonContent({ lesson }: { lesson: Lesson }) {
+  const videoUrl = lesson.video_url || (lesson.content_data as Record<string, unknown>)?.video_url as string || ''
+
   return (
     <div className="space-y-6">
-      <div className="bg-navy-800/50 rounded-xl border border-navy-700 overflow-hidden">
-        <div className="aspect-video bg-gradient-to-br from-navy-800 to-navy-900 flex items-center justify-center relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-purple-600/5" />
-          <div className="text-center relative z-10">
-            <div className="w-20 h-20 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
-              <Play className="text-red-400 ml-1" size={32} />
+      {videoUrl ? (
+        <div className="rounded-xl overflow-hidden border border-navy-700">
+          <VideoEmbed url={videoUrl} title={lesson.title} />
+        </div>
+      ) : (
+        <div className="bg-navy-800/50 rounded-xl border border-navy-700 overflow-hidden">
+          <div className="aspect-video bg-gradient-to-br from-navy-800 to-navy-900 flex items-center justify-center relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-purple-600/5" />
+            <div className="text-center relative z-10">
+              <div className="w-20 h-20 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
+                <Play className="text-red-400 ml-1" size={32} />
+              </div>
+              <p className="text-navy-300 font-medium">Video Player</p>
+              <p className="text-sm text-navy-500 mt-1">No video URL set — add one in lesson settings</p>
             </div>
-            <p className="text-navy-300 font-medium">Video Player</p>
-            <p className="text-sm text-navy-500 mt-1">Video content will be loaded here</p>
           </div>
         </div>
-      </div>
+      )}
       <div className="bg-navy-800/50 rounded-xl p-6 border border-navy-700">
         <p className="text-navy-300 text-sm">
           {(lesson.content_data as Record<string, unknown>)?.body as string || lesson.description || 'Video description not available.'}

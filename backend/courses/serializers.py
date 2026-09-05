@@ -30,8 +30,7 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'id', 'course', 'title', 'description', 'order',
-            'content_type', 'content_data', 'is_published',
-            'created_at', 'updated_at',
+            'content_type', 'content_data', 'video_url', 'is_published', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
