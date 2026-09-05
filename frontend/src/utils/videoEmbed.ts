@@ -45,13 +45,6 @@ export function isGoogleDriveUrl(url: string): boolean {
 }
 
 /**
- * Check if a URL is any embeddable video (YouTube or Google Drive).
- */
-export function isEmbeddableVideo(url: string): boolean {
-  return parseVideoUrl(url) !== null
-}
-
-/**
  * For Google Drive links, return the /preview embed URL
  * which works for both videos and PDFs.
  */
