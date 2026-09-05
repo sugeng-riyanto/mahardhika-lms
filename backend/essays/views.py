@@ -175,10 +175,16 @@ class EssayResponseViewSet(AuditLogMixin, viewsets.ModelViewSet):
         roles = get_user_roles(user)
 
         if 'student' in roles:
+            # Compute next version to avoid unique_together collision
+            last = EssayResponse.objects.filter(
+                question=serializer.validated_data.get('question'),
+                student=user,
+            ).order_by('-version').first()
+            next_version = (last.version if last else 0) + 1
             response = serializer.save(
                 student=user,
                 status='draft',
-                version=1,
+                version=next_version,
             )
         elif _has_any_role(user, ['owner', 'admin', 'instructor']):
             response = serializer.save()
