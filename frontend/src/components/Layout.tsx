@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { useTheme } from '@/theme/ThemeProvider'
+import { MelanyAssistant } from '@/components/ai/MelanyAssistant'
 import {
   getRoleLabel,
   getRoleBadgeClass,
@@ -328,6 +329,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           aria-hidden="true"
         />
       )}
+
+      {/* Melany AI Assistant */}
+      <MelanyAssistant />
     </div>
   )
 }
