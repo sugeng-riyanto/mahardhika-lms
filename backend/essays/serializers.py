@@ -72,6 +72,46 @@ class EssayQuestionSerializer(serializers.ModelSerializer):
     def get_response_count(self, obj):
         return obj.responses.count() if hasattr(obj, 'responses') else 0
 
+    # The question form posts rubric criteria inside content_data; materialize
+    # them into real RubricCriterion rows so the grading page has a rubric to
+    # score against.
+    def create(self, validated_data):
+        question = super().create(validated_data)
+        self._sync_rubric_criteria(question)
+        return question
+
+    def update(self, instance, validated_data):
+        question = super().update(instance, validated_data)
+        self._sync_rubric_criteria(question)
+        return question
+
+    def _sync_rubric_criteria(self, question):
+        raw = (question.content_data or {}).get('rubric_criteria') or []
+        wanted = [
+            {
+                'name': str(item.get('name') or '').strip(),
+                'description': str(item.get('description') or ''),
+                'max_score': item.get('max_score') or 0,
+            }
+            for item in raw
+            if str(item.get('name') or '').strip()
+        ]
+        existing = {c.name: c for c in question.rubric_criteria.all()}
+        for i, item in enumerate(wanted):
+            if item['name'] in existing:
+                crit = existing[item['name']]
+                crit.description = item['description']
+                crit.max_score = item['max_score']
+                crit.order = i
+                crit.save()
+            else:
+                RubricCriterion.objects.create(question=question, order=i, **item)
+        # Drop criteria no longer listed, but only if no scores reference them.
+        kept = {item['name'] for item in wanted}
+        for name, crit in existing.items():
+            if name not in kept and not crit.scores.exists():
+                crit.delete()
+
 
 class EssayResponseSerializer(serializers.ModelSerializer):
     student_email = serializers.CharField(source='student.email', read_only=True)

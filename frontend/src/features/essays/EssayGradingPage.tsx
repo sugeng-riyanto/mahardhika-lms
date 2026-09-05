@@ -5,7 +5,7 @@ import {
   RotateCcw, Eye, Layers,
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { useEssayResponse, useEssayResponses } from '@/api/hooks'
+import { useEssayResponse, useEssayResponses, useRubricCriteria } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { AnnotationCanvas } from '@/features/canvas/AnnotationCanvas'
 
@@ -13,6 +13,9 @@ export function EssayGradingPage() {
   const { responseId } = useParams<{ responseId: string }>()
   const { data: response, isLoading: responseLoading, refetch } = useEssayResponse(responseId || '')
   const { data: allResponses } = useEssayResponses(response?.question)
+  // The rubric panel scores against the question's criteria (not just the
+  // scores already entered), so instructors can grade a fresh response.
+  const { data: criteria } = useRubricCriteria(response?.question || '')
 
   // Navigate between responses
   const currentIndex = allResponses?.findIndex((r) => r.id === responseId) ?? -1
@@ -376,7 +379,7 @@ export function EssayGradingPage() {
               {showRubric ? <ChevronUp size={14} className="text-navy-400" /> : <ChevronDown size={14} className="text-navy-400" />}
             </button>
 
-            {showRubric && response.rubric_scores && (
+            {showRubric && criteria && criteria.length > 0 && (
               <div className="px-4 pb-4 space-y-3 border-t border-navy-700 pt-3">
                 {/* Score bar */}
                 <div className="mb-3">
@@ -396,32 +399,40 @@ export function EssayGradingPage() {
                   </div>
                 </div>
 
-                {response.rubric_scores.map((rs) => (
-                  <div key={rs.id} className="bg-navy-800/50 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-medium text-white">{rs.criterion_name}</p>
-                      <span className="text-xs text-navy-400">
-                        <input
-                          type="number"
-                          value={rubricScores[rs.criterion] ?? rs.score ?? 0}
-                          onChange={(e) => handleScoreChange(rs.criterion, parseFloat(e.target.value) || 0)}
-                          className="w-12 bg-navy-900 border border-navy-700 rounded px-1 py-0.5 text-xs text-white text-center focus:outline-none focus:border-cyan-700"
-                          min={0}
-                          max={rs.criterion_max_score}
-                          step={0.5}
-                        />
-                        /{rs.criterion_max_score}
-                      </span>
+                {criteria.map((c) => {
+                  const existing = response.rubric_scores?.find((rs) => rs.criterion === c.id)
+                  return (
+                    <div key={c.id} className="bg-navy-800/50 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium text-white">{c.name}</p>
+                        <span className="text-xs text-navy-400">
+                          <input
+                            type="number"
+                            value={rubricScores[c.id] ?? existing?.score ?? 0}
+                            onChange={(e) => handleScoreChange(c.id, parseFloat(e.target.value) || 0)}
+                            className="w-12 bg-navy-900 border border-navy-700 rounded px-1 py-0.5 text-xs text-white text-center focus:outline-none focus:border-cyan-700"
+                            min={0}
+                            max={c.max_score}
+                            step={0.5}
+                          />
+                          /{c.max_score}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={rubricComments[c.id] ?? existing?.comment ?? ''}
+                        onChange={(e) => handleCommentChange(c.id, e.target.value)}
+                        placeholder="Add criterion comment..."
+                        className="w-full bg-navy-900 border border-navy-700 rounded px-2 py-1 text-[10px] text-navy-300 placeholder-navy-600 focus:outline-none focus:border-cyan-700 mt-1"
+                      />
                     </div>
-                    <input
-                      type="text"
-                      value={rubricComments[rs.criterion] ?? rs.comment ?? ''}
-                      onChange={(e) => handleCommentChange(rs.criterion, e.target.value)}
-                      placeholder="Add criterion comment..."
-                      className="w-full bg-navy-900 border border-navy-700 rounded px-2 py-1 text-[10px] text-navy-300 placeholder-navy-600 focus:outline-none focus:border-cyan-700 mt-1"
-                    />
-                  </div>
-                ))}
+                  )
+                })}
+              </div>
+            )}
+            {showRubric && criteria && criteria.length === 0 && (
+              <div className="px-4 pb-4 border-t border-navy-700 pt-3">
+                <p className="text-xs text-navy-500">No rubric criteria on this question — grade with overall feedback below, or add criteria when editing the question.</p>
               </div>
             )}
           </div>

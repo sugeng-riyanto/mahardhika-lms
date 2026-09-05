@@ -125,7 +125,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           // Keep UUID as label on failure
         }
       }
-      if (!cancelled) setBreadcrumbLabels(prev => ({ ...prev, ...updates }))
+      if (!cancelled && Object.keys(updates).length > 0) {
+        setBreadcrumbLabels(prev => ({ ...prev, ...updates }))
+      }
     }
     resolve()
     return () => { cancelled = true }

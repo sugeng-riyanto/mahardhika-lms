@@ -146,6 +146,30 @@ class EssayResponseViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
         return qs.none()
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        roles = get_user_roles(user)
+        # Idempotent: a concurrent autosave may already have created the draft —
+        # return it instead of 500'ing on the unique constraint or leaving a
+        # stray duplicate the workspace would pick up. Must short-circuit the
+        # mixin's create (which would serialize the unsaved instance and crash).
+        if 'student' in roles:
+            existing = EssayResponse.objects.filter(
+                question=serializer.validated_data.get('question'),
+                student=user,
+                status='draft',
+            ).order_by('-created_at').first()
+            if existing:
+                return DRFResponse(
+                    EssayResponseSerializer(existing, context=self.get_serializer_context()).data,
+                    status=200,
+                )
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return DRFResponse(serializer.data, status=201, headers=headers)
+
     def perform_create(self, serializer):
         user = self.request.user
         roles = get_user_roles(user)

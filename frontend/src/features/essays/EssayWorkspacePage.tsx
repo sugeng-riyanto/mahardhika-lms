@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { useEssayQuestion, useEssayResponses } from '@/api/hooks'
+import type { EssayResponse } from '@/types'
 import { useAuth } from '@/auth/AuthProvider'
 import { apiClient } from '@/api/client'
 import { VideoEmbed } from '@/components/VideoEmbed'
@@ -15,16 +16,40 @@ export function EssayWorkspacePage() {
   const { questionId } = useParams<{ questionId: string }>()
   const { user } = useAuth()
   const { data: question, isLoading: questionLoading } = useEssayQuestion(questionId || '')
-  const { data: responses } = useEssayResponses(questionId)
+  const { data: responses, refetch: refetchResponses } = useEssayResponses(questionId)
 
-  // Find student's current response
+  // Find student's current response. The API already scopes the list to the
+  // requesting student, so match by status only — comparing against user.id
+  // breaks under mock auth (fake UUIDs).
   const myResponse = responses?.find(
-    (r) => r.student === user?.id && r.status !== 'finalised',
-  ) || responses?.find(
-    (r) => r.student === user?.id,
-  )
+    (r) => r.status !== 'finalised',
+  ) || responses?.[0]
 
   const [typedAnswer, setTypedAnswer] = useState(myResponse?.typed_answer || '')
+
+  // Students answer fresh questions from this workspace; if no response exists
+  // yet, create the draft on first save/submit instead of silently doing nothing.
+  // If a concurrent autosave beat us to it, reuse that draft (unique_together
+  // on question+student+version would otherwise 500).
+  const ensureResponse = useCallback(async () => {
+    if (myResponse) return myResponse
+    try {
+      const res = await apiClient.post<EssayResponse>('/essays/responses/', {
+        question: questionId,
+        typed_answer: typedAnswer,
+      })
+      await refetchResponses()
+      return res
+    } catch {
+      const data = await apiClient.get<{ results: EssayResponse[] }>(`/essays/responses/?question=${questionId}`)
+      const existing = data.results.find((r) => r.status === 'draft')
+      if (existing) {
+        await refetchResponses()
+        return existing
+      }
+      throw new Error('Could not create essay response')
+    }
+  }, [myResponse, questionId, typedAnswer, refetchResponses, user?.id])
   const [showCanvas, setShowCanvas] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
@@ -61,11 +86,12 @@ export function EssayWorkspacePage() {
 
   // Autosave
   const saveDraft = useCallback(async () => {
-    if (!myResponse || !questionId) return
+    if (!questionId) return
     setSaving(true)
     setSaveStatus('saving')
     try {
-      await apiClient.patch(`/essays/responses/${myResponse.id}/`, {
+      const resp = await ensureResponse()
+      await apiClient.patch(`/essays/responses/${resp.id}/`, {
         typed_answer: typedAnswer,
       })
       setSaveStatus('saved')
@@ -74,22 +100,23 @@ export function EssayWorkspacePage() {
     } finally {
       setSaving(false)
     }
-  }, [myResponse, typedAnswer, questionId])
+  }, [ensureResponse, typedAnswer, questionId])
 
-  // Autosave on content change
+  // Autosave on content change (also before a draft exists)
   useEffect(() => {
-    if (!myResponse || myResponse.status !== 'draft') return
+    if (myResponse && myResponse.status !== 'draft') return
     setSaveStatus('unsaved')
     const timer = setTimeout(saveDraft, 2000)
     return () => clearTimeout(timer)
   }, [typedAnswer, myResponse, saveDraft])
 
   const handleSubmit = async () => {
-    if (!myResponse) return
+    if (!questionId) return
     setSubmitting(true)
     try {
-      await apiClient.post(`/essays/responses/${myResponse.id}/submit/`)
-      // Refresh would happen via query invalidation
+      const resp = await ensureResponse()
+      await apiClient.post(`/essays/responses/${resp.id}/submit/`)
+      await refetchResponses()
     } catch {
       // Handle error
     } finally {

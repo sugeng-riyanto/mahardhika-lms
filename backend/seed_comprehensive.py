@@ -15,7 +15,7 @@ from organisations.models import Organisation
 from courses.models import Programme, Course, Lesson
 from activities.models import ActivityDefinition, ActivityQuestion
 from assignments.models import Assignment, AssignmentSubmission
-from essays.models import EssayQuestion, EssayResponse
+from essays.models import EssayQuestion, EssayResponse, RubricCriterion
 from gradebook.models import Grade
 from certificates.models import Certificate
 from progress.models import CourseProgress
@@ -170,6 +170,16 @@ for course in courses[:2]:
                 }
             )
             if er: erc += 1
+    # Give every question a rubric (idempotent) so instructors can grade it.
+    for order, (name, desc, max_score) in enumerate([
+        ('Content', 'Depth and accuracy of the argument', 40),
+        ('Structure', 'Organisation, flow and clarity', 30),
+        ('Language', 'Grammar, vocabulary and expression', 30),
+    ]):
+        RubricCriterion.objects.get_or_create(
+            question=eq, name=name,
+            defaults={'description': desc, 'max_score': max_score, 'order': order},
+        )
 print(f"  + {ec} essays, {erc} responses")
 
 # 6. GRADES (need activity FK - use existing activities)
