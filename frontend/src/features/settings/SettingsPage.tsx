@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Globe, Shield, Bell, Database, Save, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Settings as SettingsIcon, Globe, Shield, Bell, Database, Save, CheckCircle, Upload, Image } from 'lucide-react'
 import { t, setLocale, getLocale } from '@/i18n/translations'
 import type { Locale } from '@/i18n/translations'
 
@@ -21,11 +21,32 @@ export function SettingsPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const [orgLogo, setOrgLogo] = useState(() => {
+    try { return localStorage.getItem('org_logo') || '' } catch { return '' }
+  })
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   const handleLanguageChange = (newLang: Locale) => {
     setLang(newLang)
     setLocale(newLang)
-    // Force re-render so all t() calls pick up the new locale
     window.dispatchEvent(new Event('languageChanged'))
+  }
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setOrgLogo(dataUrl)
+      localStorage.setItem('org_logo', dataUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleLogoRemove = () => {
+    setOrgLogo('')
+    localStorage.removeItem('org_logo')
   }
 
   const sections = [
@@ -79,6 +100,29 @@ export function SettingsPage() {
                     defaultValue="Mahardhika Academy"
                     className="input-field w-full"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-navy-300 mb-2">Organization Logo (QR Code Center)</label>
+                  <p className="text-xs text-navy-500 mb-2">Upload a logo to display in the center of certificate QR codes.</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg bg-navy-800 border border-navy-700 flex items-center justify-center overflow-hidden">
+                      {orgLogo ? (
+                        <img src={orgLogo} alt="Org logo" className="w-full h-full object-contain" />
+                      ) : (
+                        <Image size={24} className="text-navy-600" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => logoInputRef.current?.click()} className="btn-secondary text-xs flex items-center gap-1">
+                        <Upload size={12} />
+                        {orgLogo ? 'Change Logo' : 'Upload Logo'}
+                      </button>
+                      {orgLogo && (
+                        <button onClick={handleLogoRemove} className="text-xs text-red-400 hover:text-red-300">Remove</button>
+                      )}
+                    </div>
+                    <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="org-slug" className="block text-sm font-medium text-navy-300 mb-2">{t('settings.orgSlug')}</label>
