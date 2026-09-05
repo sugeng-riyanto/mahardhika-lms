@@ -3,11 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import {
   FileText, Search, Upload, Grid, List, Image, Package,
   Download, Trash2, Eye, Clock, HardDrive,
-  X, Film, Headphones, Layers, Edit, FileDown, Loader2, ExternalLink
+  X, Film, Headphones, Layers, Edit, FileDown, Loader2, ExternalLink, Plus
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
+import { ContentWizard, type WizardStep, type WizardField } from '@/components/ContentWizard'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { parseVideoUrl, videoEmbedUrl, isGoogleDriveUrl, driveEmbedUrl } from '@/utils/videoEmbed'
 import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
@@ -128,6 +129,59 @@ interface ModalState {
   data: Record<string, unknown>
 }
 
+const CONTENT_STEPS: WizardStep[] = [
+  { id: 'type', label: 'Content Type' },
+  { id: 'details', label: 'Details' },
+  { id: 'preview', label: 'Preview' },
+]
+
+const CONTENT_WIZARD_FIELDS: WizardField[] = [
+  { name: 'content_type', label: 'Content Type', type: 'select', required: true, step: 'type', options: [
+    { value: 'video', label: 'Video (YouTube / Google Drive)' },
+    { value: 'document', label: 'Document (PDF / Slides via Drive)' },
+    { value: 'audio', label: 'Audio (via Google Drive)' },
+    { value: 'image', label: 'Image (via Google Drive)' },
+  ]},
+  { name: 'title', label: 'Title', type: 'text', required: true, step: 'details', placeholder: 'e.g. Newton\'s Laws Animation' },
+  { name: 'description', label: 'Description', type: 'textarea', step: 'details', placeholder: 'Brief description of the content...' },
+  { name: 'file_url', label: 'Link URL', type: 'url', required: true, step: 'details', placeholder: 'https:// drive.google.com/... or youtube.com/watch?v=...', helpText: 'Paste the Google Drive share link or YouTube URL' },
+  { name: 'tags', label: 'Tags (comma separated)', type: 'text', step: 'details', placeholder: 'physics, newton, forces' },
+  { name: 'course', label: 'Course', type: 'select', step: 'details', options: [], helpText: 'Optionally link to a specific course' },
+]
+
+function ContentPreview({ data }: { data: Record<string, unknown> }) {
+  const url = String(data.file_url || '')
+  const type = String(data.content_type || 'document')
+  const isVideo = type === 'video'
+  const isDrive = isGoogleDriveUrl(url)
+  return (
+    <div className="space-y-3">
+      {url ? (
+        isVideo ? (
+          <div className="aspect-video rounded-lg overflow-hidden bg-black">
+            <VideoEmbed url={url} title={String(data.title || 'Video')} />
+          </div>
+        ) : isDrive ? (
+          <div className="aspect-video rounded-lg overflow-hidden bg-navy-800">
+            <iframe src={driveEmbedUrl(url) || undefined} title={String(data.title || 'Document')} className="w-full h-full border-0" allow="autoplay" />
+          </div>
+        ) : (
+          <div className="aspect-video rounded-lg bg-navy-800 flex items-center justify-center">
+            <FileText size={32} className="text-navy-600" />
+          </div>
+        )
+      ) : (
+        <div className="aspect-video rounded-lg bg-navy-800 flex items-center justify-center">
+          <p className="text-xs text-navy-500">Paste a URL to see preview</p>
+        </div>
+      )}
+      <h3 className="text-sm font-semibold text-white">{String(data.title || 'Untitled')}</h3>
+      <p className="text-xs text-navy-400 line-clamp-2">{String(data.description || 'No description')}</p>
+      <p className="text-[10px] text-navy-500 italic">This is how students will see the content card.</p>
+    </div>
+  )
+}
+
 export function ContentLibraryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -137,6 +191,7 @@ export function ContentLibraryPage() {
   const [uploadMessage, setUploadMessage] = useState('')
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null)
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+  const [showWizard, setShowWizard] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { roles } = useAuth()
   const canEdit = roles.includes('admin') || roles.includes('owner') || roles.includes('instructor')
@@ -241,24 +296,6 @@ export function ContentLibraryPage() {
     data: { title: '', drive_url: '', description: '', tags: '', content_type: 'document' },
   })
 
-  const openCreateSlides = () => setModal({
-    isOpen: true,
-    mode: 'create',
-    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'document', _driveType: 'slides' },
-  })
-
-  const openCreateAudio = () => setModal({
-    isOpen: true,
-    mode: 'create',
-    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'audio' },
-  })
-
-  const openCreateImage = () => setModal({
-    isOpen: true,
-    mode: 'create',
-    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'image' },
-  })
-
   const openEdit = (item: ContentItem) => setModal({
     isOpen: true,
     mode: 'edit',
@@ -340,25 +377,17 @@ export function ContentLibraryPage() {
           </button>
           {canEdit && (
             <>
-              <button onClick={openCreateVideo} className="btn-primary flex items-center gap-2 text-sm">
+              <button onClick={() => setShowWizard(true)} className="btn-primary flex items-center gap-2 text-sm">
+                <Plus size={14} />
+                <span className="hidden sm:inline">Quick</span> Create
+              </button>
+              <button onClick={openCreateVideo} className="btn-secondary flex items-center gap-2 text-sm">
                 <Film size={14} />
                 <span className="hidden sm:inline">Add</span> Video
               </button>
-              <button onClick={openCreatePdf} className="btn-primary flex items-center gap-2 text-sm">
+              <button onClick={openCreatePdf} className="btn-secondary flex items-center gap-2 text-sm">
                 <FileText size={14} />
                 <span className="hidden sm:inline">Add</span> PDF
-              </button>
-              <button onClick={openCreateSlides} className="btn-primary flex items-center gap-2 text-sm">
-                <Layers size={14} />
-                <span className="hidden sm:inline">Add</span> Slides
-              </button>
-              <button onClick={openCreateAudio} className="btn-primary flex items-center gap-2 text-sm">
-                <Headphones size={14} />
-                <span className="hidden sm:inline">Add</span> Audio
-              </button>
-              <button onClick={openCreateImage} className="btn-primary flex items-center gap-2 text-sm">
-                <Image size={14} />
-                <span className="hidden sm:inline">Add</span> Image
               </button>
               <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary flex items-center gap-2 text-sm">
                 <Upload size={14} />
@@ -769,6 +798,40 @@ export function ContentLibraryPage() {
         onDelete={handleDelete}
         onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
       />
+
+      {showWizard && (
+        <ContentWizard
+          title="Add Content"
+          steps={CONTENT_STEPS}
+          fields={CONTENT_WIZARD_FIELDS}
+          initialValues={{ content_type: 'video', title: '', description: '', file_url: '', tags: '', course: '' }}
+          onSubmit={async (data) => {
+            const url = String(data.file_url || '').trim()
+            const ct = String(data.content_type || 'document')
+            const isVideo = ct === 'video'
+            const parsed = isVideo ? parseVideoUrl(url) : null
+            const mimeMap: Record<string, string> = {
+              document: 'application/pdf',
+              audio: 'audio/mpeg',
+              image: 'image/jpeg',
+              video: 'video/url',
+            }
+            await apiClient.post('/content/', {
+              title: data.title,
+              description: data.description || '',
+              content_type: ct,
+              tags: typeof data.tags === 'string' ? (data.tags as string).split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+              file_url: url,
+              mime_type: isVideo && parsed ? `video/${parsed.provider}` : mimeMap[ct] || 'application/octet-stream',
+              course: data.course || null,
+              metadata: isVideo && parsed ? { provider: parsed.provider, file_id: parsed.file_id } : { provider: 'gdrive', url },
+            })
+            await refetch()
+          }}
+          onClose={() => setShowWizard(false)}
+          preview={(data) => <ContentPreview data={data} />}
+        />
+      )}
     </div>
   )
 }

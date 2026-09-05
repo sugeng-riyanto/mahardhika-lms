@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { BookOpen, Search, Plus, Users, FileText, Eye, Edit, Trash2, GraduationCap, Download } from 'lucide-react'
-import { useCourses } from '@/api/hooks'
+import { useCourses, useProgrammes } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { exportToCSV, formatDate, formatBoolean, type CSVColumn } from '@/utils/csvExport'
+import { ContentWizard, type WizardStep, type WizardField } from '@/components/ContentWizard'
+import { CrudModal, type CrudField } from '@/components/CrudModal'
 
 const COURSE_CSV_COLUMNS: CSVColumn[] = [
   { key: 'title', label: 'Title' },
@@ -14,7 +16,6 @@ const COURSE_CSV_COLUMNS: CSVColumn[] = [
   { key: 'is_published', label: 'Published', format: formatBoolean },
   { key: 'created_at', label: 'Created', format: formatDate },
 ]
-import { CrudModal, type CrudField } from '@/components/CrudModal'
 
 const LEVEL_COLORS: Record<string, string> = {
   jhs: 'bg-blue-900/30 text-blue-400 border-blue-700/30',
@@ -27,6 +28,39 @@ const LEVEL_COLORS: Record<string, string> = {
   teacher_dev: 'bg-teal-900/30 text-teal-400 border-teal-700/30',
 }
 
+const COURSE_STEPS: WizardStep[] = [
+  { id: 'basics', label: 'Basic Info' },
+  { id: 'details', label: 'Description & Settings' },
+  { id: 'preview', label: 'Preview & Publish' },
+]
+
+const COURSE_WIZARD_FIELDS: WizardField[] = [
+  { name: 'title', label: 'Course Title', type: 'text', required: true, step: 'basics', placeholder: 'e.g. Mathematics 7A' },
+  { name: 'programme', label: 'Programme', type: 'select', required: true, step: 'basics', options: [], helpText: 'Select the programme this course belongs to' },
+  { name: 'description', label: 'Course Description', type: 'textarea', step: 'details', placeholder: 'Describe what students will learn...', helpText: 'Visible to students and parents' },
+  { name: 'is_published', label: 'Publish immediately', type: 'toggle', step: 'preview', helpText: 'Published courses are visible to enrolled students' },
+]
+
+function CoursePreview({ data }: { data: Record<string, unknown> }) {
+  const published = Boolean(data.is_published)
+  return (
+    <div className="space-y-3">
+      <div className="aspect-video bg-gradient-to-br from-cyan-900/40 to-navy-800 rounded-lg flex items-center justify-center">
+        <BookOpen size={32} className="text-cyan-400/50" />
+      </div>
+      <h3 className="text-base font-semibold text-white">{String(data.title || 'Untitled Course')}</h3>
+      <p className="text-xs text-navy-400 line-clamp-3">{String(data.description || 'No description yet.')}</p>
+      <div className="flex items-center gap-2">
+        {published ? (
+          <span className="badge text-[10px] bg-green-900/30 text-green-400">Published</span>
+        ) : (
+          <span className="badge text-[10px] bg-yellow-900/30 text-yellow-400">Draft</span>
+        )}
+      </div>
+      <p className="text-[10px] text-navy-500 italic">This is how students will see the course card.</p>
+    </div>
+  )
+}
 const COURSE_FIELDS: CrudField[] = [
   { name: 'title', label: 'Course Title', type: 'text', required: true, placeholder: 'Mathematics 7A' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Course description...' },
@@ -49,11 +83,13 @@ export function CourseListPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilter, setLevelFilter] = useState<string>('all')
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'create', data: {} })
+  const [showWizard, setShowWizard] = useState(false)
   const { roles } = useAuth()
   const isInstructor = roles.includes('instructor')
   const isAdmin = roles.includes('admin') || roles.includes('owner')
 
   const { data: courses, isLoading, error, refetch } = useCourses()
+  const { data: programmes } = useProgrammes()
 
   const filteredCourses = courses?.filter((c) => {
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -65,11 +101,7 @@ export function CourseListPage() {
   const publishedCount = courses?.filter(c => c.is_published).length || 0
   const draftCount = courses?.filter(c => !c.is_published).length || 0
 
-  const openCreate = () => setModal({
-    isOpen: true,
-    mode: 'create',
-    data: { title: '', description: '', programme_id: '', is_published: false },
-  })
+  const openCreate = () => setShowWizard(true)
 
   const openEdit = (c: typeof filteredCourses[0]) => setModal({
     isOpen: true,
@@ -287,6 +319,25 @@ export function CourseListPage() {
         onDelete={handleDelete}
         onClose={() => setModal({ isOpen: false, mode: 'create', data: {} })}
       />
+
+      {showWizard && (
+        <ContentWizard
+          title="Create Course"
+          steps={COURSE_STEPS}
+          fields={COURSE_WIZARD_FIELDS.map((f) =>
+            f.name === 'programme' && programmes
+              ? { ...f, options: programmes.map((p) => ({ value: p.id, label: p.name })) }
+              : f
+          )}
+          initialValues={{ title: '', description: '', programme: '', is_published: false }}
+          onSubmit={async (data) => {
+            await apiClient.post('/courses/', data)
+            await refetch()
+          }}
+          onClose={() => setShowWizard(false)}
+          preview={(data) => <CoursePreview data={data} />}
+        />
+      )}
     </div>
   )
 }
