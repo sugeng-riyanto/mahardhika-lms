@@ -606,6 +606,7 @@ export function useBulkUpdateAttendance() {
       qc.invalidateQueries({ queryKey: ['schedules'] })
       qc.invalidateQueries({ queryKey: ['attendanceRecords'] })
       qc.invalidateQueries({ queryKey: ['attendanceSummary'] })
+      qc.invalidateQueries({ queryKey: ['scheduleRoster'] })
     },
   })
 }
