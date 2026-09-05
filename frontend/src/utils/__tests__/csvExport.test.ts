@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCSV } from '@/utils/csvExport'
+import { buildCSV, formatDate } from '@/utils/csvExport'
 import {
   SCHEDULE_CSV_COLUMNS,
   RECORD_CSV_COLUMNS,
@@ -197,5 +197,23 @@ describe('attendance export filter -> CSV mapping', () => {
       status: 'absent',
     }), RECORD_COLUMNS)
     expect(csv).toBe('Date,Lesson,Course,Student,Email,Status,Notes,Marked By,Marked At')
+  })
+
+  it('writes the exact header and formatted rows for a filtered selection', () => {
+    // Golden lock: every cell of the filtered export, in order. The date cell is
+    // derived from the real formatDate (locale/TZ-dependent by design); the rest
+    // are asserted verbatim so a hidden mapping or formatting regression fails.
+    const expectedDate = formatDate('2026-09-07')
+    const csv = buildCSV(filterAttendanceRecords([
+      record('2026-09-07', { id: 'a', marked_at: '', status: 'present', notes: 'On time' }),
+      record('2026-09-07', { id: 'b', marked_at: '', student_name: 'Budiman Santoso', student_email: 'budiman@mahardhika.id', status: 'late', notes: 'Arrived late' }),
+      record('2026-09-08', { id: 'c', status: 'absent' }), // different day — must be filtered out
+    ], { selectedDate: '2026-09-07', status: 'all', search: '' }), RECORD_COLUMNS)
+
+    const lines = csv.split('\n')
+    expect(lines[0]).toBe('Date,Lesson,Course,Student,Email,Status,Notes,Marked By,Marked At')
+    expect(lines).toHaveLength(3) // header + exactly the two Sep 7 rows
+    expect(lines[1]).toBe(`${expectedDate},Algebraic Expressions,Mathematics 7A,Student Mahardhika,student@mahardhika.id,present,On time,instructor@mahardhika.id,`)
+    expect(lines[2]).toBe(`${expectedDate},Algebraic Expressions,Mathematics 7A,Budiman Santoso,budiman@mahardhika.id,late,Arrived late,instructor@mahardhika.id,`)
   })
 })
