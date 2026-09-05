@@ -8,6 +8,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useEssayQuestion, useEssayResponses } from '@/api/hooks'
 import type { EssayResponse } from '@/types'
 import { useAuth } from '@/auth/AuthProvider'
+import { MelanyAssistant } from '@/components/ai/MelanyAssistant'
 import { apiClient } from '@/api/client'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { AnnotationCanvas } from '@/features/canvas/AnnotationCanvas'
@@ -499,6 +500,14 @@ export function EssayWorkspacePage() {
           )}
         </div>
       </div>
+
+      {/* Melany AI Assistant */}
+      {questionId && (
+        <MelanyAssistant
+          activityId={questionId}
+          contextType="essay"
+        />
+      )}
     </div>
   )
 }
