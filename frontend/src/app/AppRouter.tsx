@@ -44,6 +44,7 @@ import { AssignmentDetailPage } from '@/features/assignments/AssignmentDetailPag
 import { ReportsPage } from '@/features/reports/ReportsPage'
 import { FinancePage } from '@/features/finance/FinancePage'
 import { CertificatePage } from '@/features/certificates/CertificatePage'
+import { VerifyCertificatePage } from '@/features/certificates/VerifyCertificatePage'
 import { PrivacyNoticePage } from '@/features/privacy/PrivacyNoticePage'
 import { ConsentManagementPage } from '@/features/privacy/ConsentManagementPage'
 
@@ -53,6 +54,7 @@ export function AppRouter() {
       {/* Public routes */}
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+      <Route path="/verify-certificate/:code" element={<VerifyCertificatePage />} />
 
       {/* Protected routes */}
       <Route path="/" element={<ProtectedRoute><Layout><Outlet /></Layout></ProtectedRoute>}>
