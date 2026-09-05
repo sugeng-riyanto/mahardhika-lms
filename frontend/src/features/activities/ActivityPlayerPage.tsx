@@ -10,7 +10,6 @@ import {
   Trophy, Send, RotateCcw, AlertCircle,
 } from 'lucide-react'
 import { BranchingScenarioPlayer, type ScenarioGraph } from './BranchingScenarioPlayer'
-import { MelanyAssistant } from '@/components/ai/MelanyAssistant'
 
 export function ActivityPlayerPage() {
   const { activityId } = useParams<{ activityId: string }>()
@@ -568,13 +567,6 @@ export function ActivityPlayerPage() {
         </div>
       )}
 
-      {/* Melany AI Assistant */}
-      {activityId && (
-        <MelanyAssistant
-          activityId={activityId}
-          contextType="chat"
-        />
-      )}
     </div>
   )
 }

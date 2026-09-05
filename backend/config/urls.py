@@ -45,7 +45,6 @@ def api_root(request):
             'progress': '/api/v1/progress/',
             'consent': '/api/v1/consent/',
             'safeguarding': '/api/v1/safeguarding/',
-            'ai': '/api/v1/ai/',
         },
         'documentation': 'See docs/RUNBOOK.md for API usage',
     })
@@ -85,5 +84,4 @@ urlpatterns = [
     path('api/v1/progress/', include('progress.urls')),
     path('api/v1/consent/', include('consent.urls')),
     path('api/v1/safeguarding/', include('safeguarding.urls')),
-    path('api/v1/ai/', include('apps.ai.urls')),
 ]
