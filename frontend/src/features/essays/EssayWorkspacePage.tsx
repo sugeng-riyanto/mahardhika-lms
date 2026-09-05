@@ -128,7 +128,6 @@ export function EssayWorkspacePage() {
   const isReturned = myResponse?.status === 'returned'
   const isLocked = isSubmitted && !isReturned
   const showReleasedFeedback = myResponse?.feedback_released && myResponse?.status === 'finalised'
-  const hasFeedback = !!myResponse?.overall_feedback
 
   if (questionLoading) {
     return (
@@ -327,8 +326,8 @@ export function EssayWorkspacePage() {
             )}
           </div>
 
-          {/* Teacher feedback (released or returned) */}
-          {hasFeedback && (showReleasedFeedback || isReturned || (myResponse.total_score != null)) && (
+          {/* Teacher feedback (released) */}
+          {showReleasedFeedback && myResponse.overall_feedback && (
             <div className="card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare size={16} className="text-purple-400" />
@@ -357,7 +356,7 @@ export function EssayWorkspacePage() {
         {/* Sidebar (1/4) */}
         <div className="xl:col-span-1 space-y-4">
           {/* Score summary (if graded) */}
-          {(showReleasedFeedback || myResponse?.total_score != null) && myResponse && (
+          {showReleasedFeedback && myResponse.total_score != null && (
             <div className="card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Star size={16} className="text-yellow-400" />
