@@ -9,7 +9,8 @@ import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
 import { VideoEmbed } from '@/components/VideoEmbed'
-import { parseVideoUrl, videoEmbedUrl } from '@/utils/videoEmbed'
+import { DrivePdfEmbed } from '@/components/DrivePdfEmbed'
+import { parseVideoUrl, videoEmbedUrl, isGoogleDriveUrl } from '@/utils/videoEmbed'
 import { exportToCSV, formatDate, type CSVColumn } from '@/utils/csvExport'
 
 const CONTENT_CSV_COLUMNS: CSVColumn[] = [
@@ -73,6 +74,13 @@ const CONTENT_FIELDS: CrudField[] = [
     { value: 'audio', label: 'Audio' },
     { value: 'interactive', label: 'Interactive' },
   ]},
+  { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'math, physics, reference' },
+]
+
+const PDF_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'PDF title' },
+  { name: 'drive_url', label: 'Google Drive Link', type: 'text', required: true, placeholder: 'https://drive.google.com/file/d/.../view' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description...' },
   { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'math, physics, reference' },
 ]
 
@@ -228,6 +236,12 @@ export function ContentLibraryPage() {
     data: { title: '', video_url: '', description: '', tags: '', content_type: 'video' },
   })
 
+  const openCreatePdf = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', drive_url: '', description: '', tags: '', content_type: 'document' },
+  })
+
   const openEdit = (item: ContentItem) => setModal({
     isOpen: true,
     mode: 'edit',
@@ -256,7 +270,20 @@ export function ContentLibraryPage() {
           tags: Array.isArray(payload.tags) ? payload.tags : [],
           file_url: url,
           mime_type: parsed ? `video/${parsed.provider}` : 'video/url',
-          metadata: parsed ? { provider: parsed.provider, video_id: parsed.video_id } : {},
+          metadata: parsed ? { provider: parsed.provider, file_id: parsed.file_id } : {},
+        })
+      } else if (modal.data.content_type === 'document' && data.drive_url) {
+        const url = String(data.drive_url).trim()
+        const parsed = parseVideoUrl(url)
+        await apiClient.post('/content/', {
+          title: data.title,
+          description: data.description || '',
+          content_type: 'document',
+          tags: Array.isArray(payload.tags) ? payload.tags : [],
+          file_url: url,
+          mime_type: 'application/pdf',
+          file_size: 0,
+          metadata: parsed ? { provider: 'gdrive', file_id: parsed.file_id } : {},
         })
       } else {
         await apiClient.post('/content/', payload)
@@ -293,6 +320,10 @@ export function ContentLibraryPage() {
               <button onClick={openCreateVideo} className="btn-primary flex items-center gap-2">
                 <Film size={16} />
                 Add Video
+              </button>
+              <button onClick={openCreatePdf} className="btn-primary flex items-center gap-2">
+                <FileText size={16} />
+                Add PDF (Drive)
               </button>
               <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary flex items-center gap-2">
                 <Upload size={16} />
@@ -596,6 +627,9 @@ export function ContentLibraryPage() {
               {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) && (
                 <VideoEmbed url={selectedItem.file_url} title={selectedItem.title} />
               )}
+              {selectedItem.content_type === 'document' && isGoogleDriveUrl(selectedItem.file_url) && (
+                <DrivePdfEmbed url={selectedItem.file_url} title={selectedItem.title} />
+              )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -642,6 +676,11 @@ export function ContentLibraryPage() {
                   <ExternalLink size={14} />
                   Open Video
                 </a>
+              ) : selectedItem.content_type === 'document' && isGoogleDriveUrl(selectedItem.file_url) ? (
+                <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 flex items-center justify-center gap-2">
+                  <ExternalLink size={14} />
+                  Open PDF
+                </a>
               ) : (
                 <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2">
                   <Download size={14} />
@@ -669,7 +708,7 @@ export function ContentLibraryPage() {
         isOpen={modal.isOpen}
         mode={modal.mode}
         title={modal.data.content_type === 'video' ? 'Video' : 'Content'}
-        fields={modal.data.content_type === 'video' ? VIDEO_FIELDS : CONTENT_FIELDS}
+        fields={modal.data.content_type === 'video' ? VIDEO_FIELDS : (modal.mode === 'create' && modal.data.content_type === 'document' && modal.data.drive_url !== undefined ? PDF_FIELDS : CONTENT_FIELDS)}
         data={modal.data}
         onSave={handleSave}
         onDelete={handleDelete}
