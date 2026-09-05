@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   FileText, Search, Upload, Grid, List, Image, Package,
   Download, Trash2, Eye, Clock, HardDrive,
-  X, Film, Headphones, Layers, Edit, FileDown, Loader2
+  X, Film, Headphones, Layers, Edit, FileDown, Loader2, ExternalLink
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
@@ -54,6 +54,13 @@ const TYPE_META: Record<string, { label: string; icon: typeof FileText; color: s
   other: { label: 'Other', icon: Package, color: 'text-navy-400', bg: 'bg-navy-800' },
 }
 
+const VIDEO_FIELDS: CrudField[] = [
+  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Video title' },
+  { name: 'video_url', label: 'YouTube / Google Drive Link', type: 'text', required: true, placeholder: 'https://www.youtube.com/watch?v=... or https://drive.google.com/file/d/.../view' },
+  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description...' },
+  { name: 'tags', label: 'Tags (comma-separated)', type: 'text', placeholder: 'physics, lecture' },
+]
+
 const CONTENT_FIELDS: CrudField[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Content title' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Description...' },
@@ -76,6 +83,40 @@ function formatFileSize(bytes: number): string {
 }
 
 const ACCEPT_TYPES = '.pdf,.doc,.docx,.txt,.rtf,.xls,.xlsx,.csv,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.webm,.mov,.mp3,.wav,.ogg,.m4a,.zip,.json,.xml,.py,.js'
+
+interface VideoLink {
+  provider: 'youtube' | 'gdrive'
+  video_id: string
+}
+
+function parseVideoUrl(url: string): VideoLink | null {
+  try {
+    const u = new URL(url.trim())
+    if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
+      let id = ''
+      if (u.hostname === 'youtu.be') id = u.pathname.slice(1)
+      else if (u.pathname === '/watch') id = u.searchParams.get('v') || ''
+      else if (u.pathname.startsWith('/shorts/') || u.pathname.startsWith('/embed/')) id = u.pathname.split('/')[2] || ''
+      return id ? { provider: 'youtube', video_id: id } : null
+    }
+    if (u.hostname.includes('drive.google.com')) {
+      const m = u.pathname.match(/\/file\/d\/([^/]+)/)
+      const id = m ? m[1] : (u.searchParams.get('id') || '')
+      return id ? { provider: 'gdrive', video_id: id } : null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function videoEmbedUrl(url: string): string | null {
+  const parsed = parseVideoUrl(url)
+  if (!parsed) return null
+  return parsed.provider === 'youtube'
+    ? `https://www.youtube.com/embed/${parsed.video_id}`
+    : `https://drive.google.com/file/d/${parsed.video_id}/preview`
+}
 
 function detectMime(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase() || ''
@@ -213,6 +254,12 @@ export function ContentLibraryPage() {
     }
   }, [uploadFiles])
 
+  const openCreateVideo = () => setModal({
+    isOpen: true,
+    mode: 'create',
+    data: { title: '', video_url: '', description: '', tags: '', content_type: 'video' },
+  })
+
   const openEdit = (item: ContentItem) => setModal({
     isOpen: true,
     mode: 'edit',
@@ -231,7 +278,21 @@ export function ContentLibraryPage() {
       payload.tags = (payload.tags as string).split(',').map((t: string) => t.trim()).filter(Boolean)
     }
     if (modal.mode === 'create') {
-      await apiClient.post('/content/', payload)
+      if (modal.data.content_type === 'video' && data.video_url) {
+        const url = String(data.video_url).trim()
+        const parsed = parseVideoUrl(url)
+        await apiClient.post('/content/', {
+          title: data.title,
+          description: data.description || '',
+          content_type: 'video',
+          tags: Array.isArray(payload.tags) ? payload.tags : [],
+          file_url: url,
+          mime_type: parsed ? `video/${parsed.provider}` : 'video/url',
+          metadata: parsed ? { provider: parsed.provider, video_id: parsed.video_id } : {},
+        })
+      } else {
+        await apiClient.post('/content/', payload)
+      }
     } else if (modal.mode === 'edit' && payload.id) {
       await apiClient.patch(`/content/${payload.id}/`, payload)
     }
@@ -260,10 +321,16 @@ export function ContentLibraryPage() {
             Export CSV
           </button>
           {canEdit && (
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-primary flex items-center gap-2">
-              <Upload size={16} />
-              Upload File
-            </button>
+            <>
+              <button onClick={openCreateVideo} className="btn-primary flex items-center gap-2">
+                <Film size={16} />
+                Add Video
+              </button>
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary flex items-center gap-2">
+                <Upload size={16} />
+                Upload File
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -558,6 +625,16 @@ export function ContentLibraryPage() {
             <div className="p-5 space-y-4">
               <p className="text-sm text-navy-300">{selectedItem.description}</p>
 
+              {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) && (
+                <iframe
+                  src={videoEmbedUrl(selectedItem.file_url)!}
+                  title={selectedItem.title}
+                  className="w-full aspect-video rounded-lg border border-navy-700"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+              )}
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-navy-500 mb-1">Type</p>
@@ -598,10 +675,17 @@ export function ContentLibraryPage() {
             </div>
 
             <div className="flex items-center gap-2 p-5 border-t border-navy-700">
-              <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                <Download size={14} />
-                Download
-              </button>
+              {selectedItem.content_type === 'video' && videoEmbedUrl(selectedItem.file_url) ? (
+                <a href={selectedItem.file_url} target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 flex items-center justify-center gap-2">
+                  <ExternalLink size={14} />
+                  Open Video
+                </a>
+              ) : (
+                <button onClick={() => void handleDownload(selectedItem)} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                  <Download size={14} />
+                  Download
+                </button>
+              )}
               {canEdit && (
                 <>
                   <button onClick={() => { setSelectedItem(null); openEdit(selectedItem) }} className="btn-secondary flex items-center gap-2">
@@ -622,8 +706,8 @@ export function ContentLibraryPage() {
       <CrudModal
         isOpen={modal.isOpen}
         mode={modal.mode}
-        title="Content"
-        fields={CONTENT_FIELDS}
+        title={modal.data.content_type === 'video' ? 'Video' : 'Content'}
+        fields={modal.data.content_type === 'video' ? VIDEO_FIELDS : CONTENT_FIELDS}
         data={modal.data}
         onSave={handleSave}
         onDelete={handleDelete}

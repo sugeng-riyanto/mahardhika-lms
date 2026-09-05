@@ -52,6 +52,7 @@ class ContentItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = [
             'id', 'created_at', 'updated_at', 'uploaded_by',
+            'organisation',
             'submitted_for_review_at', 'published_at', 'archived_at',
             'reviewed_by', 'review_notes', 'version', 'status_logs',
         ]
