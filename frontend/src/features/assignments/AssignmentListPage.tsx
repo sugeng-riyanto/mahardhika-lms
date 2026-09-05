@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardList, Clock, CheckCircle, FileText, Users, Search, Plus, Send, Edit, Trash2, Video } from 'lucide-react'
+import { ClipboardList, Clock, CheckCircle, FileText, Users, Search, Plus, Send, Edit, Trash2, Video, FileDown, Upload, Loader2 } from 'lucide-react'
+import { exportToCSV, type CSVColumn } from '@/utils/csvExport'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { videoEmbedUrl } from '@/utils/videoEmbed'
 import { useAssignments } from '@/api/hooks'
@@ -27,6 +28,18 @@ function formatDueDate(dateStr: string | null): string {
   return `Due in ${days}d`
 }
 
+const ASSIGNMENT_CSV_COLUMNS: CSVColumn[] = [
+  { key: 'title', label: 'Title' },
+  { key: 'description', label: 'Description' },
+  { key: 'course_title', label: 'Course' },
+  { key: 'max_score', label: 'Max Score' },
+  { key: 'due_date', label: 'Due Date', format: (v) => v ? String(v).split('T')[0] : '' },
+  { key: 'video_url', label: 'Video URL' },
+  { key: 'status', label: 'Status' },
+  { key: 'submission_count', label: 'Submissions' },
+  { key: 'graded_count', label: 'Graded' },
+]
+
 const ASSIGNMENT_FIELDS: CrudField[] = [
   { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Assignment title' },
   { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Assignment description...' },
@@ -39,6 +52,24 @@ const ASSIGNMENT_FIELDS: CrudField[] = [
     { value: 'published', label: 'Published' },
   ]},
 ]
+
+function parseCSV(text: string): Record<string, string>[] {
+  const lines = text.trim().split('\n')
+  if (lines.length < 2) return []
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+  return lines.slice(1).map(line => {
+    const values: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes } else if (ch === ',' && !inQuotes) { values.push(current.trim()); current = '' } else { current += ch }
+    }
+    values.push(current.trim())
+    const row: Record<string, string> = {}
+    headers.forEach((h, i) => { row[h] = values[i] || '' })
+    return row
+  })
+}
 
 const SUBMIT_FIELDS: CrudField[] = [
   { name: 'content', label: 'Your Submission', type: 'textarea', required: true, placeholder: 'Write your answer here...' },
@@ -168,6 +199,10 @@ export function AssignmentListPage() {
   if (search) params.search = search
   if (statusFilter) params.status = statusFilter
 
+  const [importing, setImporting] = useState(false)
+  const [importMsg, setImportMsg] = useState('')
+  const importRef = useRef<HTMLInputElement>(null)
+
   const { data: assignments = [], isLoading, refetch } = useAssignments(params)
 
   const openCreate = () => setModal({
@@ -211,6 +246,38 @@ export function AssignmentListPage() {
     }
   }
 
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportMsg('')
+    try {
+      const text = await file.text()
+      const rows = parseCSV(text)
+      let created = 0
+      for (const row of rows) {
+        if (!row.title) continue
+        await apiClient.post('/assignments/', {
+          title: row.title,
+          description: row.description || '',
+          max_score: Number(row.max_score) || 100,
+          due_date: row.due_date || null,
+          video_url: row.video_url || '',
+          status: row.status || 'draft',
+          course: row.course_id || row.course || '',
+        })
+        created++
+      }
+      await refetch()
+      setImportMsg(`Imported ${created} assignments`)
+    } catch (err) {
+      setImportMsg(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setImporting(false)
+      if (importRef.current) importRef.current.value = ''
+    }
+  }
+
   return (
     <div className="page-container">
       <div className="flex items-center justify-between mb-6">
@@ -218,13 +285,31 @@ export function AssignmentListPage() {
           <ClipboardList className="text-cyan-400" size={24} />
           <h1 className="page-title mb-0">Assignments</h1>
         </div>
-        {canCreate && (
-          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-            <Plus size={16} />
-            Create Assignment
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportToCSV(assignments, ASSIGNMENT_CSV_COLUMNS, 'assignments')} className="btn-secondary flex items-center gap-2">
+            <FileDown size={16} />
+            Export CSV
           </button>
-        )}
+          {canCreate && (
+            <>
+              <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+                <Plus size={16} />
+                Create Assignment
+              </button>
+              <button onClick={() => importRef.current?.click()} disabled={importing} className="btn-secondary flex items-center gap-2">
+                {importing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                Import CSV
+              </button>
+            </>
+          )}
+        </div>
       </div>
+      <input ref={importRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+      {importMsg && (
+        <div className={`mb-4 px-4 py-2 rounded-lg text-sm ${importMsg.includes('Imported') ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+          {importMsg}
+        </div>
+      )}
 
       <p className="page-subtitle">
         {isStudent ? 'View and submit your assignments' : 'Manage course assignments and submissions'}
