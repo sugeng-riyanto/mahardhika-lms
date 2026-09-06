@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import {
   ClipboardList, Clock, FileText, Users, CheckCircle, Send,
   ArrowLeft, Star, MessageSquare, AlertCircle, Upload, X, Loader2,
+  ZoomIn, ZoomOut,
 } from 'lucide-react'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { videoEmbedUrl } from '@/utils/videoEmbed'
@@ -466,12 +467,124 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
   )
 }
 
+function ExamPaper({ assignment, isStudent }: { assignment: Assignment; isStudent: boolean }) {
+  const pages = assignment.exam_pages || []
+  const [scale, setScale] = useState(1) // multiplier on top of the base mode
+  const [mode, setMode] = useState<'fit' | 'actual'>('fit')
+
+  const zoomIn = () => setScale((s) => Math.min(3, Math.round(s * 1.25 * 100) / 100))
+  const zoomOut = () => setScale((s) => Math.max(0.5, Math.round(s * 0.8 * 100) / 100))
+
+  const toolbarBtn =
+    'p-1.5 rounded-md border transition-colors ' +
+    'border-navy-700 light:border-gray-300 text-navy-300 light:text-gray-600 ' +
+    'hover:bg-navy-700 light:hover:bg-gray-100 disabled:opacity-40'
+  const modeBtn = (active: boolean) =>
+    `px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors ${active
+      ? 'border-cyan-500/60 bg-cyan-600/15 text-cyan-400 light:text-cyan-700'
+      : 'border-navy-700 light:border-gray-300 text-navy-300 light:text-gray-600 hover:bg-navy-700 light:hover:bg-gray-100'}`
+
+  return (
+    <div className="card space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-white light:text-gray-900 font-semibold">Exam Paper</h3>
+          <span className="text-xs text-navy-400 light:text-gray-500">
+            {assignment.exam_pdf_name || 'PDF'} · {pages.length} page{pages.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {/* Zoom toolbar — responsive, wraps on small screens */}
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Zoom controls">
+          <button type="button" onClick={zoomOut} disabled={scale <= 0.5} className={toolbarBtn} aria-label="Zoom out">
+            <ZoomOut size={16} />
+          </button>
+          <span className="text-xs font-medium text-navy-300 light:text-gray-600 w-12 text-center">
+            {mode === 'actual' ? '1:1' : `${Math.round(scale * 100)}%`}
+          </span>
+          <button type="button" onClick={zoomIn} disabled={scale >= 3} className={toolbarBtn} aria-label="Zoom in">
+            <ZoomIn size={16} />
+          </button>
+          <span className="w-px h-5 bg-navy-700 light:bg-gray-300 hidden sm:block" />
+          <button
+            type="button"
+            onClick={() => { setMode('fit'); setScale(1) }}
+            className={modeBtn(mode === 'fit' && scale === 1)}
+          >
+            Fit width
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('actual'); setScale(1) }}
+            className={modeBtn(mode === 'actual')}
+          >
+            Actual size
+          </button>
+        </div>
+      </div>
+
+      {pages.length === 0 ? (
+        <p className="text-navy-500 light:text-gray-500 text-sm">No exam pages available.</p>
+      ) : (
+        <div className={mode === 'actual' ? 'overflow-x-auto' : ''}>
+          <div className={`space-y-4 ${mode === 'actual' ? 'min-w-max' : ''}`}>
+            {pages.map((page, i) => (
+              <ExamPageImage
+                key={i}
+                src={page}
+                pageNumber={i + 1}
+                scale={scale}
+                mode={mode}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(assignment.essay_question_titles?.length ?? 0) > 0 && (
+        <div className="pt-2 border-t border-navy-700 light:border-gray-200">
+          <EssayTaskSection assignment={assignment} isStudent={isStudent} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ExamPageImage({ src, pageNumber, scale, mode }: {
+  src: string
+  pageNumber: number
+  scale: number
+  mode: 'fit' | 'actual'
+}) {
+  const [naturalW, setNaturalW] = useState<number | null>(null)
+  const width = mode === 'actual' && naturalW ? Math.round(naturalW * scale) : undefined
+  return (
+    <figure className="rounded-lg overflow-hidden border border-navy-700 light:border-gray-300 bg-navy-950 light:bg-gray-100">
+      <div className="overflow-x-auto">
+        <img
+          src={src}
+          alt={`Exam page ${pageNumber}`}
+          className="h-auto mx-auto"
+          style={{
+            width: width !== undefined ? `${width}px` : `${scale * 100}%`,
+            maxWidth: width !== undefined ? 'none' : undefined,
+          }}
+          onLoad={(e) => {
+            const nw = e.currentTarget.naturalWidth
+            if (nw) setNaturalW(nw)
+          }}
+        />
+      </div>
+      <figcaption className="text-center text-xs text-navy-500 light:text-gray-500 py-1">Page {pageNumber}</figcaption>
+    </figure>
+  )
+}
+
 function ExamView({ assignment, isStudent, existing }: {
   assignment: Assignment
   isStudent: boolean
   existing?: AssignmentSubmission | null
 }) {
-  const pages = assignment.exam_pages || []
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-4 items-start">
       {/* Left sidebar: answer sheet */}
@@ -480,31 +593,7 @@ function ExamView({ assignment, isStudent, existing }: {
       </aside>
 
       {/* Main: the exam paper pages */}
-      <div className="card space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-white font-semibold">Exam Paper</h3>
-          <span className="text-xs text-navy-400">
-            {assignment.exam_pdf_name || 'PDF'} · {pages.length} page{pages.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        {pages.length === 0 ? (
-          <p className="text-navy-500 text-sm">No exam pages available.</p>
-        ) : (
-          <div className="space-y-4">
-            {pages.map((page, i) => (
-              <figure key={i} className="rounded-lg overflow-hidden border border-navy-700 bg-navy-900">
-                <img src={page} alt={`Exam page ${i + 1}`} className="w-full h-auto" />
-                <figcaption className="text-center text-xs text-navy-500 py-1">Page {i + 1}</figcaption>
-              </figure>
-            ))}
-          </div>
-        )}
-        {(assignment.essay_question_titles?.length ?? 0) > 0 && (
-          <div className="pt-2 border-t border-navy-700">
-            <EssayTaskSection assignment={assignment} isStudent={isStudent} />
-          </div>
-        )}
-      </div>
+      <ExamPaper assignment={assignment} isStudent={isStudent} />
     </div>
   )
 }
