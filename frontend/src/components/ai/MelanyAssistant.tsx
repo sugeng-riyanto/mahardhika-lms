@@ -78,11 +78,11 @@ export function MelanyAssistant({ contextType = 'chat' }: MelanyAssistantProps) 
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 group"
+        className="fixed bottom-6 right-6 bg-cyan-800 hover:bg-cyan-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 group"
         title="Tanya Melany AI"
       >
         <MessageSquare size={24} />
-        <span className="font-semibold hidden group-hover:inline-block transition-all">
+        <span className="font-semibold text-white hidden group-hover:inline-block transition-all">
           Melany AI
         </span>
       </button>

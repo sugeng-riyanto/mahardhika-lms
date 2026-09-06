@@ -170,9 +170,9 @@ export function EssayWorkspacePage() {
               {question.marks} marks
               {question.difficulty && (
                 <span className={`ml-2 badge text-[10px] ${
-                  question.difficulty === 'hard' ? 'bg-red-900/30 text-red-400' :
-                  question.difficulty === 'medium' ? 'bg-yellow-900/30 text-yellow-400' :
-                  'bg-green-900/30 text-green-400'
+                  question.difficulty === 'hard' ? 'bg-red-900/30 text-red-400 light:bg-red-100 light:text-red-700' :
+                  question.difficulty === 'medium' ? 'bg-yellow-900/30 text-yellow-400 light:bg-yellow-100 light:text-yellow-700' :
+                  'bg-green-900/30 text-green-400 light:bg-green-100 light:text-green-700'
                 }`}>
                   {question.difficulty}
                 </span>
@@ -193,10 +193,10 @@ export function EssayWorkspacePage() {
           )}
           <span className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border ${
             saveStatus === 'saved'
-              ? 'bg-green-900/30 text-green-400 border-green-700/50'
+              ? 'bg-green-900/30 text-green-400 border-green-700/50 light:bg-green-100 light:text-green-700 light:border-green-300'
               : saveStatus === 'saving'
-              ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700/50'
-              : 'bg-navy-800 text-navy-300 border-navy-700'
+              ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700/50 light:bg-yellow-100 light:text-yellow-700 light:border-yellow-300'
+              : 'bg-navy-800 text-navy-300 border-navy-700 light:text-navy-700 light:border-gray-300'
           }`}>
             {saveStatus === 'saved' ? <CheckCircle size={12} /> : saveStatus === 'saving' ? <Save size={12} className="animate-spin" /> : <Save size={12} />}
             {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}
@@ -242,7 +242,7 @@ export function EssayWorkspacePage() {
               <h3 className="text-sm font-semibold text-white">Question</h3>
             </div>
             <div className="bg-navy-800/50 rounded-lg p-4 mb-3">
-              <p className="text-sm text-navy-200 whitespace-pre-wrap">{question.description}</p>
+              <p className="text-sm text-navy-200 whitespace-pre-wrap light:text-navy-700">{question.description}</p>
               {question.video_url && (
                 <div className="mt-4">
                   <VideoEmbed url={question.video_url} title={question.title} />
@@ -262,7 +262,7 @@ export function EssayWorkspacePage() {
                 <p className="text-xs text-navy-400 mb-1">Learning Objectives:</p>
                 <div className="flex flex-wrap gap-1">
                   {question.learning_objectives.map((obj, idx) => (
-                    <span key={idx} className="text-[10px] px-2 py-0.5 bg-cyan-900/20 text-cyan-400 rounded-full border border-cyan-700/30">
+                    <span key={idx} className="text-[10px] px-2 py-0.5 bg-cyan-900/20 text-cyan-400 rounded-full border border-cyan-700/30 light:bg-cyan-100 light:text-cyan-800 light:border-cyan-300">
                       {obj}
                     </span>
                   ))}
@@ -278,7 +278,7 @@ export function EssayWorkspacePage() {
                 <PenTool size={16} className="text-green-400" />
                 <h3 className="text-sm font-semibold text-white">Your Answer</h3>
                 {myResponse && (
-                  <span className="text-[10px] text-navy-500">Version {myResponse.version}</span>
+                  <span className="text-[10px] text-navy-300 light:text-navy-700">Version {myResponse.version}</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -287,8 +287,8 @@ export function EssayWorkspacePage() {
                     onClick={() => setShowCanvas(false)}
                     className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                       !showCanvas
-                        ? 'bg-green-900/30 text-green-400 border-green-700/50'
-                        : 'bg-navy-800 text-navy-400 border-navy-700 hover:text-white'
+                        ? 'bg-green-900/30 text-green-400 border-green-700/50 light:bg-green-100 light:text-green-700 light:border-green-300'
+                        : 'bg-navy-800 text-navy-300 border-navy-700 hover:text-white light:text-navy-700 light:border-gray-300 light:hover:text-navy-900'
                     }`}
                   >
                     <FileText size={12} className="inline mr-1" />
@@ -300,8 +300,8 @@ export function EssayWorkspacePage() {
                     onClick={() => setShowCanvas(true)}
                     className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                       showCanvas
-                        ? 'bg-green-900/30 text-green-400 border-green-700/50'
-                        : 'bg-navy-800 text-navy-400 border-navy-700 hover:text-white'
+                        ? 'bg-green-900/30 text-green-400 border-green-700/50 light:bg-green-100 light:text-green-700 light:border-green-300'
+                        : 'bg-navy-800 text-navy-300 border-navy-700 hover:text-white light:text-navy-700 light:border-gray-300 light:hover:text-navy-900'
                     }`}
                   >
                     <Layers size={12} className="inline mr-1" />
@@ -334,7 +334,7 @@ export function EssayWorkspacePage() {
                 <h3 className="text-sm font-semibold text-white">Teacher Feedback</h3>
               </div>
               <div className="bg-purple-900/10 border border-purple-700/30 rounded-lg p-4">
-                <p className="text-sm text-navy-200 whitespace-pre-wrap">{myResponse.overall_feedback}</p>
+                <p className="text-sm text-navy-200 whitespace-pre-wrap light:text-navy-700">{myResponse.overall_feedback}</p>
               </div>
               {myResponse.inline_feedbacks && myResponse.inline_feedbacks.length > 0 && (
                 <div className="mt-3 space-y-2">
@@ -365,21 +365,21 @@ export function EssayWorkspacePage() {
               <div className="text-center mb-3">
                 <p className="text-3xl font-bold text-white">
                   {myResponse.total_score}
-                  <span className="text-lg text-navy-500">/{question.marks}</span>
+                  <span className="text-lg text-navy-500 light:text-navy-700">/{question.marks}</span>
                 </p>
                 <p className={`text-lg font-semibold ${
-                  (myResponse.percentage || 0) >= 80 ? 'text-green-400' :
-                  (myResponse.percentage || 0) >= 60 ? 'text-yellow-400' :
-                  'text-red-400'
+                  (myResponse.percentage || 0) >= 80 ? 'text-green-400 light:text-green-700' :
+                  (myResponse.percentage || 0) >= 60 ? 'text-yellow-400 light:text-yellow-700' :
+                  'text-red-400 light:text-red-700'
                 }`}>
                   {myResponse.percentage}%
                 </p>
                 {myResponse.letter_grade && (
                   <span className={`badge text-sm ${
-                    myResponse.letter_grade.startsWith('A') ? 'bg-green-900/30 text-green-400' :
-                    myResponse.letter_grade.startsWith('B') ? 'bg-cyan-900/30 text-cyan-400' :
-                    myResponse.letter_grade.startsWith('C') ? 'bg-yellow-900/30 text-yellow-400' :
-                    'bg-red-900/30 text-red-400'
+                    myResponse.letter_grade.startsWith('A') ? 'bg-green-900/30 text-green-400 light:bg-green-100 light:text-green-700' :
+                    myResponse.letter_grade.startsWith('B') ? 'bg-cyan-900/30 text-cyan-400 light:bg-cyan-100 light:text-cyan-800' :
+                    myResponse.letter_grade.startsWith('C') ? 'bg-yellow-900/30 text-yellow-400 light:bg-yellow-100 light:text-yellow-700' :
+                    'bg-red-900/30 text-red-400 light:bg-red-100 light:text-red-700'
                   }`}>
                     {myResponse.letter_grade}
                   </span>
@@ -450,7 +450,7 @@ export function EssayWorkspacePage() {
               <div className="text-center">
                 <CheckCircle size={24} className="text-green-400 mx-auto mb-2" />
                 <p className="text-sm text-navy-300">Answer submitted</p>
-                <p className="text-[10px] text-navy-500">Waiting for teacher feedback</p>
+                <p className="text-[10px] text-navy-300 light:text-navy-700">Waiting for teacher feedback</p>
               </div>
             ) : isReturned ? (
               <>
@@ -462,7 +462,7 @@ export function EssayWorkspacePage() {
                   <Send size={14} />
                   {submitting ? 'Submitting...' : 'Resubmit'}
                 </button>
-                <p className="text-[10px] text-navy-500 text-center">
+                <p className="text-[10px] text-navy-300 text-center light:text-navy-700">
                   Revise your answer and resubmit
                 </p>
               </>

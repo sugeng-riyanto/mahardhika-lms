@@ -104,10 +104,32 @@ html.light .page-title {
   color: rgb(17 24 39) !important;
 }
 
-/* Override Tailwind text-navy-* utilities */
+/* Override Tailwind text-navy-* utilities — but never on table headers,
+   where pages set their own (already AA-safe) light:text-* override. */
+html.light th [class*="text-navy-300"],
+html.light th [class*="text-navy-400"],
+html.light th[class*="text-navy-300"],
+html.light th[class*="text-navy-400"] {
+  color: inherit !important;
+}
 html.light [class*="text-navy-300"],
 html.light [class*="text-navy-400"] {
   color: rgb(107 114 128) !important;
+}
+/* White text on colored backgrounds (badges, buttons) must stay white; the
+   gray-900 override below only applies to white text on light surfaces. */
+html.light [class*="bg-red-600"] [class*="text-white"],
+html.light [class*="bg-red-700"] [class*="text-white"],
+html.light [class*="bg-cyan-700"] [class*="text-white"],
+html.light [class*="bg-cyan-800"] [class*="text-white"],
+html.light [class*="bg-green-700"] [class*="text-white"],
+html.light [class*="bg-indigo-600"] [class*="text-white"],
+html.light [class*="bg-red-600"][class*="text-white"],
+html.light [class*="bg-red-700"][class*="text-white"],
+html.light [class*="bg-cyan-700"][class*="text-white"],
+html.light [class*="bg-cyan-800"][class*="text-white"],
+html.light [class*="bg-green-700"][class*="text-white"] {
+  color: rgb(255 255 255) !important;
 }
 html.light [class*="text-white"] {
   color: rgb(17 24 39) !important;

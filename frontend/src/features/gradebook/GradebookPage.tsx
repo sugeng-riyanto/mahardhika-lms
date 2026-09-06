@@ -19,11 +19,11 @@ import { CrudModal, type CrudField } from '@/components/CrudModal'
 import type { GradeEntry } from '@/api/hooks'
 
 function getGradeColor(pct: number): string {
-  if (pct >= 90) return 'text-green-400'
-  if (pct >= 80) return 'text-cyan-400'
-  if (pct >= 70) return 'text-yellow-400'
-  if (pct >= 60) return 'text-orange-400'
-  return 'text-red-400'
+  if (pct >= 90) return 'text-green-400 light:text-green-700'
+  if (pct >= 80) return 'text-cyan-400 light:text-cyan-700'
+  if (pct >= 70) return 'text-yellow-400 light:text-yellow-700'
+  if (pct >= 60) return 'text-orange-400 light:text-orange-700'
+  return 'text-red-400 light:text-red-700'
 }
 
 function getLetterGrade(pct: number): string {
@@ -42,9 +42,9 @@ function getLetterGrade(pct: number): string {
 
 function getGradeBadgeClass(pct: number): string {
   if (pct >= 80) return 'badge-success'
-  if (pct >= 70) return 'bg-yellow-900/30 text-yellow-400'
-  if (pct >= 60) return 'bg-orange-900/30 text-orange-400'
-  return 'bg-red-900/30 text-red-400'
+  if (pct >= 70) return 'bg-yellow-900/30 text-yellow-400 light:bg-yellow-100 light:text-yellow-700'
+  if (pct >= 60) return 'bg-orange-900/30 text-orange-400 light:bg-orange-100 light:text-orange-700'
+  return 'bg-red-900/30 text-red-400 light:bg-red-100 light:text-red-700'
 }
 
 const GRADE_FIELDS: CrudField[] = [
@@ -78,15 +78,15 @@ function StatsCards({ grades }: { grades: GradeEntry[] }) {
       </div>
       <div className="card p-4">
         <p className={`text-2xl font-bold ${getGradeColor(avgScore)}`}>{avgScore}%</p>
-        <p className="text-sm text-navy-400">Class Average</p>
+        <p className="text-sm text-navy-400 light:text-navy-600">Class Average</p>
       </div>
       <div className="card p-4">
-        <p className="text-2xl font-bold text-green-400">{aboveB}</p>
-        <p className="text-sm text-navy-400">Above B</p>
+        <p className="text-2xl font-bold text-green-400 light:text-green-700">{aboveB}</p>
+        <p className="text-sm text-navy-400 light:text-navy-600">Above B</p>
       </div>
       <div className="card p-4">
-        <p className="text-2xl font-bold text-red-400">{atRisk}</p>
-        <p className="text-sm text-navy-400">At Risk</p>
+        <p className="text-2xl font-bold text-red-400 light:text-red-700">{atRisk}</p>
+        <p className="text-sm text-navy-400 light:text-navy-600">At Risk</p>
       </div>
     </div>
   )
@@ -299,14 +299,14 @@ export function GradebookPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-navy-700">
-                  <th scope="col" className="text-left px-4 py-3 text-sm font-medium text-navy-400">Student</th>
-                  <th scope="col" className="text-left px-4 py-3 text-sm font-medium text-navy-400">Activity</th>
-                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400">Type</th>
-                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400">Score</th>
-                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400">Percentage</th>
-                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400">Grade</th>
-                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400">Status</th>
-                  {canGrade && <th scope="col" className="text-right px-4 py-3 text-sm font-medium text-navy-400">Actions</th>}
+                  <th scope="col" className="text-left px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Student</th>
+                  <th scope="col" className="text-left px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Activity</th>
+                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Type</th>
+                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Score</th>
+                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Percentage</th>
+                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Grade</th>
+                  <th scope="col" className="text-center px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Status</th>
+                  {canGrade && <th scope="col" className="text-right px-4 py-3 text-sm font-medium text-navy-400 light:text-gray-700">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -314,15 +314,15 @@ export function GradebookPage() {
                   <tr key={grade.id} className="border-b border-navy-800 hover:bg-navy-800/50 transition-colors">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="text-sm font-medium text-white">{grade.student_name || 'Unknown'}</p>
-                        <p className="text-xs text-navy-500">{grade.student_email}</p>
+                        <p className="text-sm font-medium text-white light:text-gray-900">{grade.student_name || 'Unknown'}</p>
+                        <p className="text-xs text-navy-400 light:text-navy-700">{grade.student_email}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-navy-200">{grade.activity_title || 'Untitled'}</span>
+                      <span className="text-sm text-navy-200 light:text-navy-700">{grade.activity_title || 'Untitled'}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="text-xs text-navy-400 capitalize">{grade.activity_type?.replace('_', ' ') || '—'}</span>
+                      <span className="text-xs text-navy-400 capitalize light:text-navy-700">{grade.activity_type?.replace('_', ' ') || '—'}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`text-sm font-mono ${getGradeColor(grade.percentage)}`}>{grade.score}/{grade.max_score}</span>
@@ -341,9 +341,9 @@ export function GradebookPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {grade.released ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-400"><Eye size={10} /> Released</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-green-400 light:text-green-700"><Eye size={10} /> Released</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-navy-500"><EyeOff size={10} /> Draft</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-navy-500 light:text-navy-700"><EyeOff size={10} /> Draft</span>
                       )}
                     </td>
                     {canGrade && (

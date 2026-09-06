@@ -193,7 +193,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {item.label}
                 {item.path === '/notifications' && unreadCount > 0 && (
                   <span
-                    className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold"
+                    className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold"
                     aria-label={`${unreadCount} unread notifications`}
                   >
                     {unreadCount > 99 ? '99+' : unreadCount}

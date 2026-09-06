@@ -101,7 +101,7 @@ export function NotificationPanel() {
               </span>
             )}
             {unreadCount > 0 && (
-              <span className="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 border-2 border-navy-900" aria-hidden="true">
+              <span className="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 border-2 border-navy-900 light:border-white" aria-hidden="true">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
