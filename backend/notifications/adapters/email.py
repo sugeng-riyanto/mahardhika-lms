@@ -129,6 +129,7 @@ class SMTPEmailProvider:
             host = getattr(settings, 'EMAIL_HOST', 'localhost')
             port = getattr(settings, 'EMAIL_PORT', 587)
             use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
+            use_ssl = getattr(settings, 'EMAIL_USE_SSL', False)
             username = getattr(settings, 'EMAIL_HOST_USER', '')
             password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
             timeout = getattr(settings, 'EMAIL_TIMEOUT', 10)
@@ -136,8 +137,13 @@ class SMTPEmailProvider:
             import uuid
             message_id = f'{uuid.uuid4().hex[:12]}@akademi.id'
 
-            with smtplib.SMTP(host, port, timeout=timeout) as server:
-                if use_tls:
+            if use_ssl:
+                smtp_class = smtplib.SMTP_SSL
+            else:
+                smtp_class = smtplib.SMTP
+
+            with smtp_class(host, port, timeout=timeout) as server:
+                if use_tls and not use_ssl:
                     server.starttls()
                 if username and password:
                     server.login(username, password)

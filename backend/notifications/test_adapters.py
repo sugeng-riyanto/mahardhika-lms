@@ -91,6 +91,69 @@ class EmailAdapterTest(TestCase):
         self.assertEqual(result.provider, 'smtp')
         self.assertIn('error', result.error.lower()) or self.assertTrue(len(result.error) > 0)
 
+    @override_settings(
+        EMAIL_HOST='smtp.sendgrid.net', EMAIL_PORT=587, EMAIL_USE_TLS=True,
+        EMAIL_HOST_USER='apikey', EMAIL_HOST_PASSWORD='SG.sandbox-key',
+    )
+    def test_smtp_send_success_uses_sendgrid_endpoint(self):
+        """SMTP provider connects, STARTTLS, logs in, and sends (SendGrid-style)."""
+        server = MagicMock()
+        server.__enter__.return_value = server
+        with patch('notifications.adapters.email.smtplib.SMTP', return_value=server) as mock_smtp:
+            result = SMTPEmailProvider().send(EmailMessage(
+                to_email='demo@example.com', subject='Hi', body='Body',
+            ))
+        mock_smtp.assert_called_once_with('smtp.sendgrid.net', 587, timeout=15)
+        server.starttls.assert_called_once()
+        server.login.assert_called_once_with('apikey', 'SG.sandbox-key')
+        server.sendmail.assert_called_once()
+        self.assertTrue(result.success)
+        self.assertEqual(result.provider, 'smtp')
+
+    @override_settings(
+        EMAIL_HOST='smtp-relay.brevo.com', EMAIL_PORT=465, EMAIL_USE_SSL=True,
+        EMAIL_HOST_USER='brevo-login', EMAIL_HOST_PASSWORD='brevo-master-key',
+    )
+    def test_smtp_ssl_path_uses_ssl_class_without_starttls(self):
+        """Brevo-style 465 SSL: SMTP_SSL is used and starttls is skipped."""
+        server = MagicMock()
+        server.__enter__.return_value = server
+        with patch('notifications.adapters.email.smtplib.SMTP_SSL', return_value=server) as mock_ssl:
+            result = SMTPEmailProvider().send(EmailMessage(
+                to_email='demo@example.com', subject='Hi', body='Body',
+            ))
+        mock_ssl.assert_called_once_with('smtp-relay.brevo.com', 465, timeout=15)
+        server.starttls.assert_not_called()
+        server.login.assert_called_once_with('brevo-login', 'brevo-master-key')
+        self.assertTrue(result.success)
+
+    @override_settings(EMAIL_PROVIDER='mock', EMAIL_HOST='smtp.sendgrid.net', EMAIL_PORT=587)
+    def test_send_test_email_command_delivers_via_mock(self):
+        """send_test_email management command renders and sends through the provider."""
+        from io import StringIO
+        from django.core.management import call_command
+        from notifications.adapters.email import get_email_provider
+        provider = get_email_provider()
+        provider.clear()
+
+        out = StringIO()
+        call_command('send_test_email', '--to', 'demo@example.com', '--template', 'grade_released', stdout=out)
+        output = out.getvalue()
+        self.assertIn('Provider: mock', output)
+        self.assertIn('Email sent to demo@example.com', output)
+
+        sent = provider.sent_emails[-1]
+        self.assertEqual(sent['to'], 'demo@example.com')
+        self.assertIn('Your grade for Physics 10 Mechanics is ready', sent['subject'])
+        self.assertIn('AKADEMI Digital Campus', sent['html_body'])
+
+    @override_settings(EMAIL_PROVIDER='mock')
+    def test_send_test_email_command_rejects_unknown_template(self):
+        from io import StringIO
+        from django.core.management import call_command, CommandError
+        with self.assertRaises(CommandError):
+            call_command('send_test_email', '--to', 'x@example.com', '--template', 'nope')
+
 
 class WhatsAppAdapterTest(TestCase):
     """Test the WhatsApp adapter."""

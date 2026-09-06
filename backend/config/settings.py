@@ -208,6 +208,18 @@ EMAIL_PROVIDER = os.environ.get('EMAIL_PROVIDER', 'mock')
 WHATSAPP_PROVIDER = os.environ.get('WHATSAPP_PROVIDER', 'mock')
 PAYMENT_PROVIDER = os.environ.get('PAYMENT_PROVIDER', 'mock')
 
+# Email (SMTP) — used when EMAIL_PROVIDER=smtp.
+# Compatible with SendGrid (smtp.sendgrid.net:587, user=apikey) and
+# Brevo (smtp-relay.brevo.com:587, user=smtp login). See docs/EMAIL_SETUP.md.
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '15'))
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@akademi.id')
+
 # Logging
 LOGGING = {
     'version': 1,
