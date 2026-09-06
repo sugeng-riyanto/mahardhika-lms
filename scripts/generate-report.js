@@ -151,6 +151,175 @@ const storagePolicies = rls.storagePolicies ?? 8;
 const helperFunctions = rls.helperFunctions ?? 16;
 const authUsers      = rls.authUsers ?? 8;
 
+// Per-screenshot notes + before/after comparison, keyed by manifest filename.
+// Written in Indonesian (owner-facing). 'before' = state sebelum update report ini.
+const SCREENSHOT_NOTES = {
+  '01-login': {
+    note: 'Halaman login dengan email/password, dukungan MFA, dan mode mock untuk demo.',
+    before: 'Dulu langsung redirect ke dashboard student; sekarang login terpisah dan 8 role bisa dicoba via akun seed (password dev-password-2026).',
+  },
+  '02-admin-dashboard': {
+    note: 'Dashboard admin: statistik ringkas, notifikasi, dan kartu Email Delivery Health (provider, last send, gagal 24 jam).',
+    before: 'Dulu statistik hardcoded; sekarang data real dari API + kartu health email terpasang.',
+  },
+  '03-owner-dashboard': {
+    note: 'Dashboard owner: ringkasan organisasi, pengguna, keuangan, dan audit.',
+    before: 'Dulu menu owner terbatas; sekarang akses penuh (Users, Programmes, Audit, Finance) dengan data API real.',
+  },
+  '04-instructor-dashboard': {
+    note: 'Dashboard instructor: kursus, jadwal, tugas belum dinilai, dan akses Take Roll.',
+    before: 'Dulu instructor hampir tidak bisa melakukan apa-apa; sekarang CRUD kursus/tugas/essay/gradebook miliknya sendiri + roll call.',
+  },
+  '05-student-dashboard': {
+    note: 'Dashboard student: materi, tugas, nilai yang sudah dirilis, dan notifikasi.',
+    before: 'Dulu student hanya melihat; sekarang bisa submit tugas/essay, mengerjakan aktivitas, dan melihat nilai + feedback.',
+  },
+  '06-parent-dashboard': {
+    note: 'Dashboard parent: progres anak, nilai, kehadiran, dan consent.',
+    before: 'Dulu hampir kosong; sekarang melihat progres/nilai/kehadiran anak dan mengelola consent.',
+  },
+  '07-treasurer-dashboard': {
+    note: 'Dashboard treasurer: invoice, pembayaran, dan ringkasan keuangan.',
+    before: 'Dulu finance mock; sekarang invoice & pembayaran CRUD terhubung ke API/database.',
+  },
+  '08-sponsor-dashboard': {
+    note: 'Dashboard sponsor: data agregat programme dan sponsorship.',
+    before: 'Dulu agregat statis; sekarang data programme agregat diambil dari API.',
+  },
+  '09-thirdparty-dashboard': {
+    note: 'Dashboard third party: hanya konten yang dikontrakkan untuk role ini.',
+    before: 'Dulu kosong; sekarang hanya konten ber-izin yang tampil sesuai RBAC.',
+  },
+  '10-courses': {
+    note: 'Daftar kursus dengan CRUD lengkap dan export CSV.',
+    before: 'Dulu kursus duplikat dan seed crash; sekarang data di-dedup, seed idempotent, CRUD jalan.',
+  },
+  '11-users': {
+    note: 'Manajemen pengguna (owner/admin): daftar, aktif/nonaktif, MFA, export CSV.',
+    before: 'Dulu read-only/mock; sekarang CRUD + export terhubung database.',
+  },
+  '12-programmes': {
+    note: 'Manajemen programme (JHS/SHS/PKBM/Academy/STEAM/Arts/IELTS/Teacher Dev) dengan CRUD + export.',
+    before: 'Dulu programme duplikat; sekarang satu organisasi, dedup bersih, CRUD jalan.',
+  },
+  '13-gradebook': {
+    note: 'Gradebook instructor: nilai per kursus, bulk release, dan feedback essay.',
+    before: 'Dulu gradebook tidak bisa di-update; sekarang instructor CRUD nilai miliknya + release + feedback ke student.',
+  },
+  '14-essays': {
+    note: 'Daftar essay: buat prompt dengan video embed, student menjawab, instructor menilai dengan feedback.',
+    before: 'Dulu essay tidak bisa dinilai; sekarang feedback loop lengkap + prompt video YouTube/Drive.',
+  },
+  '15-canvas': {
+    note: 'Annotation canvas: menggambar ber-layer, PDF export.',
+    before: 'Dulu export canvas gagal; sekarang PDF export dan ekspor data berfungsi.',
+  },
+  '16-attendance': {
+    note: 'Kehadiran: jadwal, Take Roll, dan export CSV yang mengikuti filter panel (tanggal/status/cari).',
+    before: 'Dulu read-only; sekarang instructor bisa menandai satu kelas present/late/absent dan export sesuai tampilan.',
+  },
+  '17-calendar': {
+    note: 'Kalender jadwal dengan panel kehadiran, Take Roll, dan export CSV.',
+    before: 'Dulu kalender hanya tampilan; sekarang jadwal & kehadiran dari API real + roll call + export.',
+  },
+  '18-content-library': {
+    note: 'Content library: upload file (PDF/DOCX/image) via Supabase Storage + embed video/link, drag-drop multi-file, responsif.',
+    before: 'Dulu upload tidak bisa; sekarang file tersimpan di storage dan video/pdf cukup pakai link.',
+  },
+  '19-assignments': {
+    note: 'Assignments: buat tugas + video brief, publish, student submit, instructor menilai.',
+    before: 'Dulu tidak bisa CRUD/upload; sekarang CRUD penuh + video brief + submit + notifikasi email.',
+  },
+  '20-finance': {
+    note: 'Finance: invoice CRUD, status pembayaran, export CSV.',
+    before: 'Dulu mock; sekarang terhubung database dan treasurer bisa memproses pembayaran.',
+  },
+  '21-notifications': {
+    note: 'Pusat notifikasi + email digest HTML branded untuk semua tipe (grade, essay, attendance, certificate, assignment).',
+    before: 'Dulu hanya notifikasi in-app; sekarang email HTML branded + badge bell per role.',
+  },
+  '22-reports': {
+    note: 'Reports: distribusi nilai (A-F) dan progres per aktivitas.',
+    before: 'Dulu mock; sekarang dihitung dari data API real.',
+  },
+  '23-audit-log': {
+    note: 'Audit log aktivitas (owner/admin) dengan export.',
+    before: 'Dulu tidak tercatat; sekarang setiap aksi penting masuk log dan bisa diexport.',
+  },
+  '24-certificates': {
+    note: 'Sertifikat dengan QR verifikasi keaslian (bisa diklik & zoom) + nomor verifikasi.',
+    before: 'Dulu sertifikat tanpa verifikasi; sekarang QR + hash blockchain + halaman verify publik.',
+  },
+  '25-settings': {
+    note: 'Settings: profil, template email (preview + toggle aktif), dark/light mode.',
+    before: 'Dulu statis; sekarang template email bisa diedit admin tanpa ubah kode + preview HTML.',
+  },
+  '26-profile': {
+    note: 'Profile self-service: simpan data, ganti password, toggle MFA, hapus akun.',
+    before: 'Dulu tombol mati; sekarang semua memanggil endpoint real.',
+  },
+  '27-privacy': {
+    note: 'Privacy notice + data export/deletion sesuai consent.',
+    before: 'Dulu statis; sekarang terkait consent & data export yang diawasi RBAC.',
+  },
+  '28-consent': {
+    note: 'Consent management: parent/student mengelola persetujuan.',
+    before: 'Dulu tidak ada; sekarang CRUD consent + RLS.',
+  },
+  '29-calendar-roll': {
+    note: 'Siap Take Roll di panel kehadiran kalender — gagal capture karena bergantung jadwal hari ini.',
+    before: 'Dulu tombol roll tidak ada; sekarang tersedia tapi perlu seed jadwal hari berjalan agar ter-capture.',
+  },
+  '30-calendar-roll-modal': {
+    note: 'Modal Take Roll di kalender dengan daftar siswa per jadwal — gagal capture (bergantung tanggal).',
+    before: 'Dulu tidak ada; sekarang modal muncul per jadwal, perlu jadwal hari ini.',
+  },
+  '31-attendance-roll': {
+    note: 'Siap Take Roll dari daftar jadwal Attendance — gagal capture (bergantung jadwal hari ini).',
+    before: 'Dulu read-only; sekarang tombol roll per jadwal, perlu seed jadwal hari ini.',
+  },
+  '32-attendance-roll-modal': {
+    note: 'Modal Take Roll di Attendance dengan save per status — gagal capture (bergantung jadwal).',
+    before: 'Dulu tidak ada; sekarang bisa mark satu kelas, perlu jadwal hari ini.',
+  },
+  '33-attendance-export-schedules': {
+    note: 'Export CSV jadwal sesuai bulan yang sedang dilihat di panel.',
+    before: 'Dulu export seluruh data; sekarang mengikuti filter bulan panel.',
+  },
+  '34-attendance-export-records': {
+    note: 'Export CSV records mengikuti tanggal/status/cari di panel — gagal capture (bergantung jadwal).',
+    before: 'Dulu export semua records; sekarang sesuai filter panel.',
+  },
+  '35-content-upload-result': {
+    note: 'Hasil upload file ke Supabase Storage dengan link file tersimpan.',
+    before: 'Dulu upload gagal; sekarang berhasil via signed URL dan tidak membebani server.',
+  },
+  '36-content-video-modal': {
+    note: 'Modal tambah video embed (YouTube / Google Drive) di content library.',
+    before: 'Dulu harus upload file besar; sekarang cukup tempel link dan ter-render inline.',
+  },
+  '37-essay-video-workspace': {
+    note: 'Workspace essay: video prompt di samping area jawaban student.',
+    before: 'Dulu essay teks saja; sekarang ada prompt video + feedback instructor.',
+  },
+  '38-assignment-video-modal': {
+    note: 'Modal buat assignment dengan field Video Brief (YouTube/Drive).',
+    before: 'Dulu assignment tanpa media; sekarang instructor bisa lampirkan video brief.',
+  },
+  '39-assignment-video-detail': {
+    note: 'Detail assignment menampilkan video brief yang ter-render.',
+    before: 'Dulu hanya teks; sekarang embed video tampil di detail untuk student.',
+  },
+  '40-lesson-video-player': {
+    note: 'Lesson player dengan embed video — gagal capture (course belum ter-resolve di seed).',
+    before: 'Dulu lesson hanya file upload; sekarang mendukung embed video, perlu seed course.',
+  },
+  '41-courses-clean-seed': {
+    note: 'State kursus setelah dedup + seed bersih: satu organisasi, tanpa orphant course kosong.',
+    before: 'Dulu duplikat & seed crash; sekarang seed idempotent dan data konsisten.',
+  },
+};
+
 // Build report
 let report = `# AKADEMI Digital Campus — Weekly Progress Report
 
@@ -182,16 +351,25 @@ let report = `# AKADEMI Digital Campus — Weekly Progress Report
 
 ## 🖥️ Frontend Screenshots
 
+*Setiap tangkapan layar disertai **📝 Note** (isi halaman saat ini) dan **🔄 Sebelum → Sekarang** (perbandingan kondisi sebelum update report ini).*
+
 `;
 
 for (const s of manifest.screenshots) {
+  const meta = SCREENSHOT_NOTES[s.filename] || {};
   if (s.status === '✅') {
     report += `### ${s.label}\n`;
     report += `![${s.label}](${s.filename}.png)\n`;
-    report += `- Role: \`${s.roles}\` | Size: ${s.size}\n\n`;
+    report += `- Role: \`${s.roles}\` | Size: ${s.size}\n`;
+    if (meta.note) report += `- **📝 Note:** ${meta.note}\n`;
+    if (meta.before) report += `- **🔄 Sebelum → Sekarang:** ${meta.before}\n`;
+    report += `\n`;
   } else {
     report += `### ${s.label} ❌\n`;
-    report += `- **Error:** ${s.error || 'Unknown'}\n\n`;
+    report += `- **Error:** ${s.error || 'Unknown'}\n`;
+    if (meta.note) report += `- **📝 Note:** ${meta.note}\n`;
+    if (meta.before) report += `- **🔄 Sebelum → Sekarang:** ${meta.before}\n`;
+    report += `\n`;
   }
 }
 
