@@ -14,12 +14,12 @@ import { apiClient } from '@/api/client'
 import type { Assignment, AssignmentQuestion, AssignmentSubmission, EssayResponse } from '@/types'
 
 const STATUS_BADGE: Record<string, string> = {
-  draft: 'bg-gray-800 text-gray-400',
-  published: 'bg-green-900/30 text-green-400',
-  archived: 'bg-navy-800 text-navy-400',
-  submitted: 'bg-cyan-900/30 text-cyan-400',
-  graded: 'bg-purple-900/30 text-purple-400',
-  returned: 'bg-yellow-900/30 text-yellow-400',
+  draft: 'bg-gray-800 text-gray-400 light:bg-gray-100 light:text-gray-600',
+  published: 'bg-green-900/30 text-green-400 light:bg-green-100 light:text-green-700',
+  archived: 'bg-navy-800 text-navy-400 light:bg-gray-100 light:text-gray-600',
+  submitted: 'bg-cyan-900/30 text-cyan-400 light:bg-cyan-100 light:text-cyan-800',
+  graded: 'bg-purple-900/30 text-purple-400 light:bg-purple-100 light:text-purple-700',
+  returned: 'bg-yellow-900/30 text-yellow-400 light:bg-yellow-100 light:text-yellow-700',
 }
 
 function SubmissionCard({ sub, assignment }: { sub: AssignmentSubmission; assignment: Assignment }) {
@@ -32,7 +32,7 @@ function SubmissionCard({ sub, assignment }: { sub: AssignmentSubmission; assign
       <div className="flex items-start justify-between mb-2">
         <div>
           <p className="text-white font-medium">Attempt #{sub.attempt_number}</p>
-          <p className="text-navy-400 text-sm">
+          <p className="text-navy-400 light:text-gray-600 text-sm">
             {sub.student_email} · {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'Not submitted'}
           </p>
         </div>
@@ -66,16 +66,16 @@ function SubmissionCard({ sub, assignment }: { sub: AssignmentSubmission; assign
         <div className="mt-2 p-3 bg-navy-800/50 rounded-lg">
           {Array.isArray(sub.content_data.mcq_results) ? (
             <div className="space-y-2">
-              <p className="text-sm text-navy-300">
+              <p className="text-sm text-navy-300 light:text-gray-700">
                 MCQ score: {String(sub.content_data.mcq_score ?? '—')} / {String(sub.content_data.mcq_total ?? '—')}
               </p>
               {(sub.content_data.mcq_results as { prompt: string; correct: boolean; points: number }[]).map((r, idx) => (
                 <p key={idx} className="text-xs">
-                  <span className={r.correct ? 'text-green-400' : 'text-red-400'}>
+                  <span className={r.correct ? 'text-green-400 light:text-green-700' : 'text-red-400 light:text-red-700'}>
                     {r.correct ? '✓' : '✗'}
                   </span>{' '}
-                  <span className="text-navy-300">{r.prompt}</span>
-                  <span className="text-navy-500 ml-1">({r.points} pt)</span>
+                  <span className="text-navy-300 light:text-gray-700">{r.prompt}</span>
+                  <span className="text-navy-500 light:text-gray-600 ml-1">({r.points} pt)</span>
                 </p>
               ))}
             </div>
@@ -390,12 +390,12 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
       const wrong = r && !r.correct && marked
       if (correct) return 'bg-green-600 border-green-500 text-white'
       if (wrong) return 'bg-red-600 border-red-500 text-white'
-      return 'border-navy-600 text-navy-500'
+      return 'border-navy-600 text-navy-300 light:border-gray-500 light:text-gray-600'
     }
     if (!isStudent) {
-      return marked ? 'bg-green-600 border-green-500 text-white' : 'border-navy-600 text-navy-500'
+      return marked ? 'bg-green-600 border-green-500 text-white' : 'border-navy-600 text-navy-300 light:border-gray-500 light:text-gray-600'
     }
-    return marked ? 'bg-cyan-600 border-cyan-500 text-white' : 'border-navy-600 text-navy-400 hover:border-cyan-500'
+    return marked ? 'bg-cyan-600 border-cyan-500 text-white' : 'border-navy-600 text-navy-300 light:border-gray-500 light:text-gray-600 hover:border-cyan-500'
   }
 
   const toggle = (q: AssignmentQuestion, letter: string) => {
@@ -438,15 +438,15 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white font-semibold">Answer Sheet</h3>
+        <h3 className="text-white light:text-gray-900 font-semibold">Answer Sheet</h3>
         {!isStudent && (
-          <span className="text-xs text-navy-400">Green = correct answer (key)</span>
+          <span className="text-xs text-navy-400 light:text-gray-600">Green = correct answer (key)</span>
         )}
       </div>
       <div className="space-y-2.5">
         {questions.map((q, idx) => (
           <div key={q.id} className="flex items-center gap-3 py-1.5 border-b border-navy-800 last:border-0">
-            <span className="w-10 shrink-0 text-base text-navy-200 font-semibold">{idx + 1}.</span>
+            <span className="w-10 shrink-0 text-base text-navy-200 light:text-gray-900 font-semibold">{idx + 1}.</span>
             <div className="flex flex-wrap gap-2">
               {letters(q).map((letter) => (
                 <button
@@ -462,7 +462,7 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
                   {letter.toUpperCase()}
                 </button>
               ))}
-              {isMultiple(q) && <span className="text-[10px] text-navy-500 self-center">multi</span>}
+              {isMultiple(q) && <span className="text-[10px] text-navy-500 light:text-gray-600 self-center">multi</span>}
             </div>
           </div>
         ))}
@@ -481,15 +481,15 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
         </div>
       )}
       {finished && existing && (
-        <div className="mt-3 p-3 rounded-lg bg-green-900/20 border border-green-700/30 flex flex-wrap items-center gap-3">
-          <p className="text-sm text-green-400 font-medium flex items-center gap-2">
+        <div className="mt-3 p-3 rounded-lg bg-green-900/20 border border-green-700/30 light:bg-green-50 light:border-green-300 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-green-400 light:text-green-700 font-medium flex items-center gap-2">
             <CheckCircle size={16} />
             Score: {existing.score} ({String(existing.content_data.mcq_score)}/{String(existing.content_data.mcq_total)} points)
           </p>
           <button
             type="button"
             onClick={() => setPrintOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-green-700/50 text-green-400 text-sm hover:bg-green-900/30 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-green-700/50 text-green-400 light:border-green-600/60 light:text-green-700 text-sm hover:bg-green-900/30 light:hover:bg-green-100 transition-colors"
           >
             <Printer size={14} /> Print answer sheet
           </button>
@@ -525,7 +525,7 @@ function ExamPaper({ assignment, isStudent, existing }: {
     'hover:bg-navy-700 light:hover:bg-gray-100 disabled:opacity-40'
   const modeBtn = (active: boolean) =>
     `px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors ${active
-      ? 'border-cyan-500/60 bg-cyan-600/15 text-cyan-400 light:text-cyan-700'
+      ? 'border-cyan-500/60 bg-cyan-600/15 text-cyan-400 light:text-cyan-800'
       : 'border-navy-700 light:border-gray-300 text-navy-300 light:text-gray-600 hover:bg-navy-700 light:hover:bg-gray-100'}`
 
   return (
@@ -626,7 +626,7 @@ function ExamPageImage({ src, pageNumber, scale, mode }: {
             if (nw) setNaturalW(nw)
           }}
         />
-      </div>      <figcaption className="text-center text-xs text-navy-500 light:text-gray-500 py-1">Page {pageNumber}</figcaption>
+      </div>      <figcaption className="text-center text-xs text-navy-500 light:text-gray-700 py-1">Page {pageNumber}</figcaption>
     </figure>
   )
 }
@@ -673,7 +673,7 @@ function PageReview({ pageNumber, questions, existing }: {
               ? 'bg-green-600 border-green-500 text-white'
               : 'bg-red-600 border-red-500 text-white'
             if (key.includes(letter)) return 'border-cyan-500 ring-2 ring-cyan-500/40 text-cyan-400 light:text-cyan-700'
-            return 'border-navy-600 text-navy-500'
+            return 'border-navy-600 text-navy-500 light:border-gray-500 light:text-gray-600'
           }
           return (
             <div key={q.id} className="flex flex-wrap items-center gap-2">
@@ -703,7 +703,7 @@ function PageReview({ pageNumber, questions, existing }: {
           )
         })}
       </div>
-      <p className="text-[10px] text-navy-500 light:text-gray-500 mt-2">
+      <p className="text-[10px] text-navy-500 light:text-gray-600 mt-2">
         Green/red = your answer · cyan ring = correct answer
       </p>
     </div>
