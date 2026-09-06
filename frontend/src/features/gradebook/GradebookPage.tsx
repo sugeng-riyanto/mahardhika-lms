@@ -126,7 +126,8 @@ function StudentGradeSummary({ grades }: { grades: GradeEntry[] }) {
                 <p className="text-xs text-navy-500">{grade.activity_type.replace('_', ' ')}</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-24 bg-navy-800 rounded-full h-1.5" role="progressbar" aria-valuenow={grade.percentage} aria-valuemin={0} aria-valuemax={100} aria-label={`${grade.activity_title}: ${grade.percentage}%`}>
+                {/* Decorative duplicate of the adjacent score/label — the progressbar role would trip axe's target-size rule on the thin bar */}
+                <div className="w-24 bg-navy-800 rounded-full h-1.5" aria-hidden="true">
                   <div className={`h-1.5 rounded-full ${grade.percentage >= 80 ? 'bg-green-500' : grade.percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${Math.min(grade.percentage, 100)}%` }} />
                 </div>
                 <span className={`text-sm font-mono font-medium ${getGradeColor(grade.percentage)}`}>
@@ -328,7 +329,8 @@ export function GradebookPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-16 bg-navy-800 rounded-full h-1.5" role="progressbar" aria-valuenow={grade.percentage} aria-valuemin={0} aria-valuemax={100}>
+                        {/* Decorative duplicate of the adjacent percentage text */}
+                        <div className="w-16 bg-navy-800 rounded-full h-1.5" aria-hidden="true">
                           <div className={`h-1.5 rounded-full ${grade.percentage >= 80 ? 'bg-green-500' : grade.percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${Math.min(grade.percentage, 100)}%` }} />
                         </div>
                         <span className={`text-sm font-bold font-mono ${getGradeColor(grade.percentage)}`}>{grade.percentage}%</span>

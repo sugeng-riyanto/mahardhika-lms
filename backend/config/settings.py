@@ -169,9 +169,12 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
+    # Rate limits are for production only: the E2E suite makes thousands of
+    # calls per run, so local development (DEBUG=True) stays effectively
+    # unlimited while Render (DEBUG=False) keeps 100/hr anon, 1000/hr user.
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour',
+        'anon': '1000000/hour' if DEBUG else '100/hour',
+        'user': '10000000/hour' if DEBUG else '1000/hour',
     },
     'EXCEPTION_HANDLER': 'core.exceptions.custom_exception_handler',
 }

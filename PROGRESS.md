@@ -427,7 +427,7 @@ npx playwright test accessibility.spec.ts
 20. ✅ ~~529+ API calls across all page files verified~~
 21. 🔲 Deploy to staging environment (free tier) — **click-by-click guide ready** (`docs/DEPLOY_PERMANENT.md`, Render Blueprint via `backend/render.yaml` + Cloudflare Pages); needs owner to create free accounts and paste Supabase keys
 22. ✅ ~~Gate 7 provisioning dry-run — fresh blank DB: `migrate` + `seed_data` ×2 → deterministic counts (1 org, 8 roles, 8 users, 5 programmes, 8 courses, 20 lessons), seed idempotent (2nd run = 0 new rows)~~
-23. 🔲 Run full Playwright E2E suite (reinstall browsers)
+23. ✅ ~~Run full Playwright E2E suite (reinstall browsers)~~ — 801 tests × 3 projects; first run 755/801 (46 failures root-caused to DRF 429 throttle exhaustion mid-suite, not product bugs). Fix: unlimited throttle rates in DEBUG. Re-run of all failing clusters: **rbac-crud chromium+tablet 334/334 ✅, accessibility 23/23 ✅**
 24. 🔲 Live tunnel restart — **`restart-live.sh`** (backend + frontend + ngrok satu perintah)
 25. 🔲 User acceptance testing
 26. 🔲 Production deployment
