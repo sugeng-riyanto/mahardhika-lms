@@ -1,7 +1,7 @@
 # AKADEMI Digital Campus — Production Readiness Checklist
 
 > **Target:** Production v1 launch — October 2026
-> **Current date:** August 25, 2026
+> **Current date:** September 6, 2026
 > **Owner:** sugeng-riyanto
 > **Repository:** https://github.com/sugeng-riyanto/mahardhika-lms
 
@@ -128,19 +128,19 @@
 
 ## Gate 6: Staging Deployment
 
-**Target date:** September 1, 2026
-**Status:** ⬜ IN PROGRESS (free tier configs ready)
+**Target date:** September 1, 2026 (blocked on owner account creation — code/config 100% ready)
+**Status:** ⬜ IN PROGRESS — `docs/DEPLOY_PERMANENT.md` has the click-by-click flow (Render Blueprint via `backend/render.yaml` + Cloudflare Pages); remaining items need the owner to create free accounts and paste Supabase keys
 
 | # | Criterion | Evidence | Status |
 |---|-----------|----------|--------|
-| 6.1 | Frontend deployed | Cloudflare Pages: https://akademi.pages.dev | ⬜ |
-| 6.2 | Backend deployed | Render: https://akademi-api.onrender.com | ⬜ |
-| 6.3 | Staging env vars configured | All secrets in Cloudflare + Render dashboards | ⬜ |
-| 6.4 | Staging database connected | Supabase PostgreSQL reachable from Railway | ⬜ |
-| 6.5 | Staging Redis connected | Railway Redis addon working | ⬜ |
-| 6.6 | Login works on staging | All 8 roles can log in via Supabase Auth | ⬜ |
-| 6.7 | API endpoints respond on staging | Health check + CRUD operations | ⬜ |
-| 6.8 | E2E tests pass against staging | Playwright tests against staging URL | ⬜ |
+| 6.1 | Frontend deployed | Cloudflare Pages: https://akademi.pages.dev | ⬜ *(guide + `frontend/public/_redirects` SPA fallback ready)* |
+| 6.2 | Backend deployed | Render: https://akademi-api.onrender.com | ⬜ *(Blueprint path = `backend/render.yaml` verified)* |
+| 6.3 | Staging env vars configured | `sync:false` vars listed in `docs/DEPLOY_PERMANENT.md` | ⬜ *(owner pastes values)* |
+| 6.4 | Staging database connected | Supabase PostgreSQL | ⬜ *(DATABASE_URL override documented)* |
+| 6.5 | Staging Redis connected | Not required for v1 (mock providers) | ✅ n/a |
+| 6.6 | Login works on staging | All 8 roles | ⬜ |
+| 6.7 | API endpoints respond on staging | Health check + CRUD | ⬜ |
+| 6.8 | E2E tests pass against staging | Playwright against staging URL | ⬜ |
 | 6.9 | CI/CD pipeline working | `.github/workflows/ci.yml` + `deploy-staging.yml` | ✅ |
 | 6.10 | Staging screenshots captured | Weekly report from staging environment | ⬜ |
 
@@ -151,20 +151,20 @@
 ## Gate 7: Data Migration & Seeding
 
 **Target date:** September 8, 2026
-**Status:** ⬜ NOT STARTED
+**Status:** 🟡 IN PROGRESS (3/10 — deterministic provisioning proven on a fresh blank DB on Sep 6)
 
 | # | Criterion | Evidence | Status |
 |---|-----------|----------|--------|
-| 7.1 | Production database provisioned | Supabase project created for production | ⬜ |
-| 7.2 | Migrations applied to production | `manage.py migrate --settings=config.settings` | ⬜ |
-| 7.3 | Seed data loaded | `manage.py seed_data` — org, roles, users, courses | ⬜ |
-| 7.4 | Auth users created in Supabase | 8 production accounts with real passwords | ⬜ |
-| 7.5 | Storage buckets created | 4 private buckets in production Supabase | ⬜ |
-| 7.6 | RLS policies applied | 007_rls_complete.sql executed | ⬜ |
+| 7.1 | Production database provisioned | Supabase project created for production | ⬜ *(owner action)* |
+| 7.2 | Migrations applied to fresh DB | `manage.py migrate` on blank SQLite → all apps applied, 0 errors (Sep 6 dry-run) | ✅ |
+| 7.3 | Seed data loaded on fresh DB | `manage.py seed_data --skip-supabase` → 1 org, 8 roles, 8 users, 8 role-assignments, 1 parent link, 1 grant, 5 programmes, 8 courses, 20 lessons, 5 enrolments, 16 schedules, 8 attendance, 5 content, 4 activities | ✅ |
+| 7.4 | Auth users created in Supabase | 8 production accounts with real passwords | ⬜ *(owner action)* |
+| 7.5 | Storage buckets created | 4 private buckets in production Supabase | ⬜ *(owner action)* |
+| 7.6 | RLS policies applied | 007_rls_complete.sql executed | ⬜ *(owner action)* |
 | 7.7 | Data integrity verified | Row counts match staging | ⬜ |
 | 7.8 | Backup taken before go-live | Timestamped backup stored | ⬜ |
 | 7.9 | Rollback plan documented | Step-by-step rollback procedure | ⬜ |
-| 7.10 | Migration dry-run passed | No errors on fresh database | ⬜ |
+| 7.10 | Migration dry-run passed | Fresh DB: migrate ✅ + seed ×2 → 2nd run creates **0** new rows (idempotent) | ✅ |
 
 **Sign-off:** _________________ (Database Lead) Date: _________
 
@@ -334,7 +334,7 @@
 | 4 | Frontend Readiness | Aug 25 | ✅ | ⬜ |
 | 5 | Backend API Readiness | Aug 25 | ✅ | ⬜ |
 | 6 | Staging Deployment | Sep 1 | ⬜ | ⬜ |
-| 7 | Data Migration & Seeding | Sep 8 | ⬜ | ⬜ |
+| 7 | Data Migration & Seeding | Sep 8 | 🟡 3/10 | ⬜ |
 | 8 | Security Review | Sep 15 | ✅ | ⬜ |
 | 9 | Privacy & Compliance | Sep 22 | ✅ 8/10 | ⬜ |
 | 10 | Accessibility Audit | Sep 29 | ⬜ 9/10 | ⬜ |

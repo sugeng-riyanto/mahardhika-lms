@@ -1,6 +1,6 @@
 # AKADEMI Digital Campus — Progress Report
 
-**Last updated:** September 5, 2026 (content wizard, self-check-in selfie+GPS, certificate QR+blockchain, Google Drive embeds, 582 tests)
+**Last updated:** September 6, 2026 (email digest templates + SMTP wiring, delivery health card, restart-live.sh, Gate 7 fresh-DB dry-run passed, 584 tests)
 **Project:** Mahardhika LMS
 **Repository:** https://github.com/sugeng-riyanto/mahardhika-lms
 
@@ -16,7 +16,7 @@
 | Milestone 4 — Native Activities | ✅ Complete | Day 60-75 |
 | Milestone 5 — Essay & Canvas | ✅ Complete | Day 75-90 |
 | Milestone 6 — Operations | ✅ Complete | Day 90+ |
-| Milestone 7 — Release | 🟡 In Progress (all CRUD + export/import, content wizard, self-check-in, QR blockchain, 582 tests) | Dec 20, 2026 |
+| Milestone 7 — Release | 🟡 In Progress (all CRUD + export/import, content wizard, self-check-in, QR blockchain, email digests + SMTP, 584 tests) | Dec 20, 2026 |
 
 ---
 
@@ -292,7 +292,7 @@ npx playwright test accessibility.spec.ts
 | activities | 13/13 | ✅ |
 | canvas | 22/22 | ✅ |
 | content.lifecycle | 27/27 | ✅ |
-| notifications | 51/51 | ✅ |
+| notifications | 70/70 | ✅ |
 | audit.mixin | 10/10 | ✅ |
 | sponsorship.access | 7/7 | ✅ |
 | assignments | 38/38 | ✅ |
@@ -302,7 +302,7 @@ npx playwright test accessibility.spec.ts
 | gradebook | 30/30 | ✅ |
 | essays | 42/42 | ✅ |
 | safeguarding | 29/29 | ✅ |
-| **Total** | **582** | **✅** |
+| **Total** | **584** | **✅** |
 
 ---
 
@@ -425,10 +425,12 @@ npx playwright test accessibility.spec.ts
 18. ✅ ~~Face thumbnail cleanup command (privacy: auto-delete after 30 days)~~
 19. ✅ ~~All pages connected to real API (zero mock data)~~
 20. ✅ ~~529+ API calls across all page files verified~~
-21. 🔲 Deploy to staging environment (free tier: Cloudflare + Render)
-13. 🔲 Run full Playwright E2E suite (reinstall browsers)
-14. 🔲 User acceptance testing
-15. 🔲 Production deployment
+21. 🔲 Deploy to staging environment (free tier) — **click-by-click guide ready** (`docs/DEPLOY_PERMANENT.md`, Render Blueprint via `backend/render.yaml` + Cloudflare Pages); needs owner to create free accounts and paste Supabase keys
+22. ✅ ~~Gate 7 provisioning dry-run — fresh blank DB: `migrate` + `seed_data` ×2 → deterministic counts (1 org, 8 roles, 8 users, 5 programmes, 8 courses, 20 lessons), seed idempotent (2nd run = 0 new rows)~~
+23. 🔲 Run full Playwright E2E suite (reinstall browsers)
+24. 🔲 Live tunnel restart — **`restart-live.sh`** (backend + frontend + ngrok satu perintah)
+25. 🔲 User acceptance testing
+26. 🔲 Production deployment
 
 ---
 
