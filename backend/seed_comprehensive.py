@@ -229,6 +229,30 @@ for act in ACT.objects.filter(status='published')[:3]:
         if created: gc += 1
 print(f"  + {gc} grades")
 
+# 6b. CERTIFICATES (blockchain-verified, QR-ready)
+print("\n=== Certificates ===")
+cert_count = 0
+if student:
+    for idx, course in enumerate(courses[:2]):
+        cert, created = Certificate.objects.get_or_create(
+            recipient=student, course=course, title=f'Completion: {course.title}',
+            defaults={
+                'organisation': org,
+                'programme': course.programme,
+                'description': f'Certificate of completion for {course.title}.',
+                'recipient_name': student.full_name or student.email,
+                'recipient_email': student.email,
+                'issued_date': (now - timedelta(days=3 - idx)).date(),
+                'completion_date': (now - timedelta(days=4 - idx)).date(),
+                'issued_by': instructor,
+                'status': 'active',
+            }
+        )
+        if created:
+            cert_count += 1
+            print(f"  + {cert.certificate_number} -> {course.title}")
+print(f"  + {cert_count} certificates")
+
 # 7. PROGRESS
 print("\n=== Progress ===")
 pc = 0
@@ -328,6 +352,7 @@ for app_label, model_name in [
     ('essays', 'EssayQuestion'), ('essays', 'EssayResponse'),
     ('gradebook', 'Grade'), ('progress', 'CourseProgress'),
     ('content', 'ContentItem'), ('notifications', 'Notification'),
+    ('certificates', 'Certificate'),
 ]:
     m = django.apps.apps.get_model(app_label, model_name)
     print(f"  {model_name}: {m.objects.count()}")
