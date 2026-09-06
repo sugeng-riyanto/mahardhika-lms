@@ -7,8 +7,8 @@ Assignment views with RBAC filtering.
 """
 from django.utils import timezone
 from rest_framework import viewsets, serializers, status
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from core.audit_mixin import AuditLogMixin
 from assignments.models import Assignment, AssignmentQuestion, AssignmentSubmission
@@ -220,6 +220,7 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'created_at', 'updated_at', 'student', 'status', 'score',
             'feedback', 'feedback_files', 'submitted_at', 'graded_at', 'graded_by',
+            'verify_hash',
         ]
 
 
@@ -425,3 +426,40 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
         submission.feedback = feedback
         submission.save(update_fields=['status', 'feedback', 'updated_at'])
         return Response(AssignmentSubmissionSerializer(submission).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_submission(request, verify_hash):
+    """Public, unauthenticated verification of a submission record.
+
+    Returns only a read-only snapshot — never the answers, the key, or
+    internal content — so the hash can be shared (e.g. via a printed QR)
+    without leaking anything beyond the record itself.
+    """
+    try:
+        sub = AssignmentSubmission.objects.select_related(
+            'assignment', 'assignment__course', 'student',
+            'assignment__organisation',
+        ).get(verify_hash=verify_hash)
+    except AssignmentSubmission.DoesNotExist:
+        return Response(
+            {'valid': False, 'detail': 'Submission record not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response({
+        'valid': True,
+        'verify_hash': sub.verify_hash,
+        'assignment_title': sub.assignment.title,
+        'course_title': sub.assignment.course.title,
+        'organisation': sub.assignment.organisation.name,
+        'student_email': sub.student.email,
+        'student_name': sub.student.full_name,
+        'status': sub.status,
+        'score': sub.score,
+        'attempt_number': sub.attempt_number,
+        'submitted_at': sub.submitted_at,
+        'graded_at': sub.graded_at,
+        'task_type': sub.assignment.task_type,
+    })

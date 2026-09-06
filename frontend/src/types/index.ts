@@ -419,6 +419,7 @@ export interface AssignmentSubmission {
   graded_at: string | null;
   graded_by: string | null;
   graded_by_email: string | null;
+  verify_hash?: string;
   created_at: string;
   updated_at: string;
 }

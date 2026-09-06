@@ -45,6 +45,7 @@ import { ReportsPage } from '@/features/reports/ReportsPage'
 import { FinancePage } from '@/features/finance/FinancePage'
 import { CertificatePage } from '@/features/certificates/CertificatePage'
 import { VerifyCertificatePage } from '@/features/certificates/VerifyCertificatePage'
+import { VerifySubmissionPage } from '@/features/assignments/VerifySubmissionPage'
 import { PrivacyNoticePage } from '@/features/privacy/PrivacyNoticePage'
 import { ConsentManagementPage } from '@/features/privacy/ConsentManagementPage'
 
@@ -55,6 +56,7 @@ export function AppRouter() {
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
       <Route path="/verify-certificate/:code" element={<VerifyCertificatePage />} />
+      <Route path="/verify-submission/:hash" element={<VerifySubmissionPage />} />
 
       {/* Protected routes */}
       <Route path="/" element={<ProtectedRoute><Layout><Outlet /></Layout></ProtectedRoute>}>

@@ -1,7 +1,21 @@
 import { useEffect, useState } from 'react'
 import { X, Printer } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { apiClient } from '@/api/client'
 import type { Assignment, AssignmentQuestion, AssignmentSubmission, EssayResponse } from '@/types'
+
+// Mahardhika logo mark for the QR centre (admin can override via org_logo)
+const DEFAULT_LOGO = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#0891b2"/><text x="50" y="62" font-family="Arial,sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">A</text></svg>'
+)
+
+function getOrgLogo(): string {
+  try {
+    return localStorage.getItem('org_logo') || DEFAULT_LOGO
+  } catch {
+    return DEFAULT_LOGO
+  }
+}
 
 interface McqResult {
   question_id: string
@@ -121,16 +135,36 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
 
         {/* The printable sheet */}
         <div className="p-6 sm:p-8">
-          <header className="border-b-2 border-gray-900 pb-3 mb-4">
-            <h1 className="text-lg font-bold text-gray-900">{assignment.title}</h1>
-            <p className="text-sm text-gray-700 mt-1">
-              Answer Sheet — {submission.student_email || 'Student'}
-            </p>
-            <p className="text-sm text-gray-700">
-              Score: {score ?? '—'}
-              {mcqScore !== undefined && mcqTotal !== undefined && ` (${mcqScore}/${mcqTotal} points)`}
-              {submission.submitted_at && ` · Submitted ${new Date(submission.submitted_at).toLocaleDateString()}`}
-            </p>
+          <header className="border-b-2 border-gray-900 pb-3 mb-4 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">{assignment.title}</h1>
+              <p className="text-sm text-gray-700 mt-1">
+                Answer Sheet — {submission.student_email || 'Student'}
+              </p>
+              <p className="text-sm text-gray-700">
+                Score: {score ?? '—'}
+                {mcqScore !== undefined && mcqTotal !== undefined && ` (${mcqScore}/${mcqTotal} points)`}
+                {submission.submitted_at && ` · Submitted ${new Date(submission.submitted_at).toLocaleDateString()}`}
+              </p>
+            </div>
+            {submission.verify_hash && (
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className="bg-white p-1.5 border border-gray-300 rounded">
+                  <QRCodeSVG
+                    value={`${window.location.origin}/verify-submission/${submission.verify_hash}`}
+                    size={88}
+                    level="H"
+                    imageSettings={{
+                      src: getOrgLogo(),
+                      height: 20,
+                      width: 20,
+                      excavate: true,
+                    }}
+                  />
+                </div>
+                <span className="text-[9px] text-gray-600 text-center">Scan to verify this record</span>
+              </div>
+            )}
           </header>
 
           {Array.from({ length: pageCount }, (_, i) => i + 1).map((pageNo) => {

@@ -99,6 +99,33 @@ class AssignmentAPITestBase(TestCase):
     def auth(self, user):
         self.client.force_authenticate(user=user)
 
+    def _create_mcq_assignment(self, task_type='mcq', status='published'):
+        payload = {
+            'course': str(self.course.id),
+            'title': 'Quiz 1',
+            'task_type': task_type,
+            'max_score': 100,
+            'status': status,
+            'questions': [
+                {
+                    'question_type': 'multiple_choice',
+                    'prompt': 'What is 2+2?',
+                    'options': [{'id': 'a', 'text': '3'}, {'id': 'b', 'text': '4'}, {'id': 'c', 'text': '5'}],
+                    'correct_answer': ['b'],
+                    'points': 5,
+                },
+                {
+                    'question_type': 'true_false',
+                    'prompt': 'The sky is blue.',
+                    'options': [{'id': 'a', 'text': 'True'}, {'id': 'b', 'text': 'False'}],
+                    'correct_answer': ['a'],
+                    'points': 5,
+                },
+            ],
+        }
+        self.auth(self.instructor)
+        return self.client.post('/api/v1/assignments/', payload, format='json')
+
 
 class AssignmentListTests(AssignmentAPITestBase):
     """Test listing and creating assignments."""
@@ -242,33 +269,6 @@ class SubmissionTests(AssignmentAPITestBase):
 
 class AssignmentTaskTypeTests(AssignmentAPITestBase):
     """Instructors can assign MCQ, essay, and combined tasks."""
-
-    def _create_mcq_assignment(self, task_type='mcq', status='published'):
-        payload = {
-            'course': str(self.course.id),
-            'title': 'Quiz 1',
-            'task_type': task_type,
-            'max_score': 100,
-            'status': status,
-            'questions': [
-                {
-                    'question_type': 'multiple_choice',
-                    'prompt': 'What is 2+2?',
-                    'options': [{'id': 'a', 'text': '3'}, {'id': 'b', 'text': '4'}, {'id': 'c', 'text': '5'}],
-                    'correct_answer': ['b'],
-                    'points': 5,
-                },
-                {
-                    'question_type': 'true_false',
-                    'prompt': 'The sky is blue.',
-                    'options': [{'id': 'a', 'text': 'True'}, {'id': 'b', 'text': 'False'}],
-                    'correct_answer': ['a'],
-                    'points': 5,
-                },
-            ],
-        }
-        self.auth(self.instructor)
-        return self.client.post('/api/v1/assignments/', payload, format='json')
 
     def test_instructor_creates_mcq_with_questions(self):
         res = self._create_mcq_assignment()
@@ -619,3 +619,61 @@ class AssignmentRbacWriteTests(AssignmentAPITestBase):
         res = self.client.delete(f"/api/v1/assignments/submissions/{sub.data['id']}/")
         # 403 (rights denied) or 404 (queryset hides it) — both deny
         self.assertIn(res.status_code, (403, 404))
+
+
+class SubmissionVerifyHashTests(AssignmentAPITestBase):
+    """verify_hash generation and the public verification endpoint."""
+
+    def test_verify_hash_generated_and_exposed(self):
+        self.auth(self.student)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(self.assignment.id),
+            'content_data': {'response': 'my work'},
+        }, format='json')
+        self.assertEqual(sub.status_code, 201, sub.data)
+        self.assertTrue(sub.data.get('verify_hash'))
+        self.assertEqual(len(sub.data['verify_hash']), 32)
+        stored = AssignmentSubmission.objects.get(id=sub.data['id'])
+        self.assertEqual(stored.verify_hash, sub.data['verify_hash'])
+
+    def test_verify_hash_stable_across_updates(self):
+        self.auth(self.student)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(self.assignment.id),
+            'content_data': {'response': 'v1'},
+        }, format='json')
+        h1 = sub.data['verify_hash']
+        self.auth(self.instructor)
+        self.client.post(f"/api/v1/assignments/submissions/{sub.data['id']}/submit/")
+        updated = AssignmentSubmission.objects.get(id=sub.data['id'])
+        self.assertEqual(updated.verify_hash, h1)
+
+    def test_public_verify_returns_snapshot_without_key(self):
+        self._create_mcq_assignment()
+        self.auth(self.student)
+        assignment = Assignment.objects.get(title='Quiz 1')
+        qid = str(assignment.questions.first().id)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(assignment.id),
+            'content_data': {'mcq_answers': {qid: 'b'}},
+        }, format='json')
+        self.assertEqual(sub.status_code, 201, sub.data)
+        # No auth — public verification
+        self.client.force_authenticate(user=None)
+        res = self.client.get(f"/api/v1/assignments/submissions/verify/{sub.data['verify_hash']}/")
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.data['valid'])
+        self.assertEqual(res.data['assignment_title'], 'Quiz 1')
+        self.assertEqual(res.data['student_email'], 'student@test.com')
+        self.assertEqual(float(res.data['score']), 50.0)
+        # The snapshot must never expose answers or the answer key
+        body = str(res.data)
+        self.assertNotIn('correct_answer', body)
+        self.assertNotIn('mcq_answers', body)
+        self.assertNotIn('mcq_results', body)
+
+    def test_public_verify_unknown_hash_404(self):
+        self.client.force_authenticate(user=None)
+        res = self.client.get('/api/v1/assignments/submissions/verify/deadbeefdeadbeefdeadbeefdeadbeef/')
+        self.assertEqual(res.status_code, 404)
+        self.assertFalse(res.data['valid'])

@@ -1,3 +1,5 @@
+import hashlib
+
 from django.db import models
 from core.models import TimestampedModel
 
@@ -160,11 +162,24 @@ class AssignmentSubmission(TimestampedModel):
         'identity.User', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='submissions_graded',
     )
+    verify_hash = models.CharField(
+        max_length=64, unique=True, null=True, blank=True, db_index=True,
+        help_text='Public verification hash for this submission record',
+    )
 
     class Meta:
         db_table = 'assignment_submissions'
         unique_together = ['assignment', 'student', 'attempt_number']
         ordering = ['-submitted_at']
+
+    def save(self, *args, **kwargs):
+        if not self.verify_hash:
+            payload = (
+                f'{self.assignment_id}|{self.student_id}|'
+                f'{self.attempt_number}|{self.created_at.isoformat() if self.created_at else ""}'
+            )
+            self.verify_hash = hashlib.sha256(payload.encode()).hexdigest()[:32]
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.student.email} - {self.assignment.title} (attempt {self.attempt_number})'

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
 from core.views import health_check
+from assignments.views import verify_submission
 
 
 def root_redirect(request):
@@ -74,7 +75,10 @@ urlpatterns = [
     path('api/v1/attempts/', include('attempts.urls')),
     path('api/v1/grades/', include('gradebook.urls')),
     path('api/v1/audit-events/', include('audit.urls')),
-    path('api/v1/attendance/', include('attendance.urls')),
+    path('api/v1/attendance/', include('attendance.urls')),    path('api/v1/assignments/submissions/verify/<str:verify_hash>/',
+        verify_submission,
+        name='submission-verify',
+    ),
     path('api/v1/assignments/submissions/', include('assignments.urls_submissions')),
     path('api/v1/assignments/', include('assignments.urls')),
     path('api/v1/sponsorship-programmes/', include('sponsorship.urls')),
