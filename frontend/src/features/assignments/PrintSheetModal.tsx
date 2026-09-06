@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { X, Printer } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { apiClient } from '@/api/client'
+import { t } from '@/i18n/translations'
 import type { Assignment, AssignmentQuestion, AssignmentSubmission, EssayResponse } from '@/types'
 
 // Mahardhika logo mark for the QR centre (admin can override via org_logo)
@@ -60,21 +61,30 @@ function Bubble({ letter, marked, correct, keyed }: {
 }
 
 const ESSAY_STATUS: Record<string, string> = {
-  draft: 'Draft',
-  submitted: 'Submitted',
-  locked: 'Locked',
-  grading: 'Being graded',
-  returned: 'Returned',
-  resubmitted: 'Resubmitted',
-  finalised: 'Graded',
+  draft: 'examPrint.status.draft',
+  submitted: 'examPrint.status.submitted',
+  locked: 'examPrint.status.locked',
+  grading: 'examPrint.status.grading',
+  returned: 'examPrint.status.returned',
+  resubmitted: 'examPrint.status.resubmitted',
+  finalised: 'examPrint.status.finalised',
 }
 
 export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStudent = false }: PrintSheetModalProps) {
   const [essayResponses, setEssayResponses] = useState<Record<string, EssayResponse | undefined>>({})
   const [loadingEssays, setLoadingEssays] = useState(false)
+  const [, setLangVersion] = useState(0)
 
   const essayQs = assignment.essay_question_titles || []
   const essayIds = assignment.essay_questions || []
+
+  // Re-render with fresh translations if the language changes while open.
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = () => setLangVersion((v) => v + 1)
+    window.addEventListener('languageChanged', handler)
+    return () => window.removeEventListener('languageChanged', handler)
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen || essayIds.length === 0) return
@@ -113,20 +123,20 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
       <div id="print-sheet" className="bg-white text-black rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto print-sheet-paper">
         {/* Toolbar — hidden when printing */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between print:hidden">
-          <h3 className="font-semibold text-gray-900">Print answer sheet</h3>
+          <h3 className="font-semibold text-gray-900">{t('examPrint.title')}</h3>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-700"
             >
-              <Printer size={14} /> Print
+              <Printer size={14} /> {t('examPrint.print')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100"
-              aria-label="Close print preview"
+              aria-label={t('examPrint.close')}
             >
               <X size={16} />
             </button>
@@ -139,12 +149,12 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
             <div>
               <h1 className="text-lg font-bold text-gray-900">{assignment.title}</h1>
               <p className="text-sm text-gray-700 mt-1">
-                Answer Sheet — {submission.student_email || 'Student'}
+                {t('examPrint.answerSheet')}{submission.student_email || 'Student'}
               </p>
               <p className="text-sm text-gray-700">
-                Score: {score ?? '—'}
-                {mcqScore !== undefined && mcqTotal !== undefined && ` (${mcqScore}/${mcqTotal} points)`}
-                {submission.submitted_at && ` · Submitted ${new Date(submission.submitted_at).toLocaleDateString()}`}
+                {t('examPrint.score')}{score ?? '—'}
+                {mcqScore !== undefined && mcqTotal !== undefined && ` (${mcqScore}/${mcqTotal})`}
+                {submission.submitted_at && `${t('examPrint.submittedOn')}${new Date(submission.submitted_at).toLocaleDateString()}`}
               </p>
             </div>
             {submission.verify_hash && (
@@ -162,7 +172,7 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
                     }}
                   />
                 </div>
-                <span className="text-[9px] text-gray-600 text-center">Scan to verify this record</span>
+                <span className="text-[9px] text-gray-600 text-center">{t('examPrint.scanToVerify')}</span>
               </div>
             )}
           </header>
@@ -173,7 +183,7 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
             return (
               <section key={pageNo} className="mb-4">
                 <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
-                  Page {pageNo}
+                  {t('examPrint.page')}{pageNo}
                 </h2>
                 <table className="w-full text-sm">
                   <tbody>
@@ -204,7 +214,7 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
                           </td>
                           <td className="py-1.5 align-top text-right whitespace-nowrap">
                             <span className={correct ? 'text-gray-900 font-semibold' : 'text-gray-700'}>
-                              {correct ? '✓' : '✗'} {r?.points ?? q.points} pt
+                              {correct ? '✓' : '✗'} {r?.points ?? q.points} {t('examPrint.pt')}
                             </span>
                           </td>
                         </tr>
@@ -219,12 +229,12 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
           {essayIds.length > 0 && (
             <section className="mt-5 pt-4 border-t border-gray-300">
               <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
-                Essay Part
+                {t('examPrint.essayPart')}
               </h2>
               {loadingEssays ? (
-                <p className="text-sm text-gray-600">Loading essay responses…</p>
+                <p className="text-sm text-gray-600">{t('examPrint.loadingEssays')}</p>
               ) : essayQs.length === 0 ? (
-                <p className="text-sm text-gray-600">No essay questions on this exam.</p>
+                <p className="text-sm text-gray-600">{t('examPrint.noEssays')}</p>
               ) : (
                 <div className="space-y-4">
                   {essayQs.map((q) => {
@@ -235,17 +245,17 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h3 className="text-sm font-semibold text-gray-900">{q.title}</h3>
                           <span className="text-xs text-gray-600 whitespace-nowrap">
-                            {q.marks} pts
+                            {q.marks} {t('examPrint.pt')}
                           </span>
                         </div>
                         {!r ? (
-                          <p className="text-sm text-gray-600">No response submitted.</p>
+                          <p className="text-sm text-gray-600">{t('examPrint.noResponse')}</p>
                         ) : (
                           <>
                             <p className="text-xs text-gray-600 mb-2">
-                              Status: {ESSAY_STATUS[r.status] || r.status}
-                              {r.submitted_at && ` · Submitted ${new Date(r.submitted_at).toLocaleDateString()}`}
-                              {r.is_late && ' · Late'}
+                              {t('examPrint.status')}{t(ESSAY_STATUS[r.status] || r.status) || r.status}
+                              {r.submitted_at && `${t('examPrint.submittedOn')}${new Date(r.submitted_at).toLocaleDateString()}`}
+                              {r.is_late && t('examPrint.late')}
                             </p>
                             {r.typed_answer ? (
                               <div className="text-sm text-gray-800 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded p-2 mb-2">
@@ -253,20 +263,20 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
                               </div>
                             ) : (
                               <p className="text-sm text-gray-600 italic mb-2">
-                                Answered on the annotation canvas.
+                                {t('examPrint.canvasOnly')}
                               </p>
                             )}
                             {showFeedback && (
                               <div className="text-sm">
                                 {r.total_score !== null && (
                                   <p className="text-gray-900 font-semibold">
-                                    Score: {r.total_score}/{q.marks}
+                                    {t('examPrint.score')}{r.total_score}/{q.marks}
                                     {r.percentage !== null && ` (${r.percentage}% · ${r.letter_grade})`}
                                   </p>
                                 )}
                                 {r.overall_feedback && (
                                   <p className="text-gray-700 mt-1">
-                                    <span className="font-semibold">Feedback:</span>{' '}
+                                    <span className="font-semibold">{t('examPrint.feedback')}</span>{' '}
                                     {r.overall_feedback}
                                   </p>
                                 )}
@@ -283,8 +293,7 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStu
           )}
 
           <footer className="mt-4 pt-3 border-t border-gray-300 text-xs text-gray-600">
-            Legend: solid bubble = student's answer (green ✓ correct, red ✗ wrong) · dashed bubble =
-            correct answer · blank = unanswered.
+            {t('examPrint.legend')}
           </footer>
         </div>
       </div>
