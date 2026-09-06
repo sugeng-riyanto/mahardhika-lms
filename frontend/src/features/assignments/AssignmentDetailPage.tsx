@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import {
   ClipboardList, Clock, FileText, Users, CheckCircle, Send,
   ArrowLeft, Star, MessageSquare, AlertCircle, Upload, X, Loader2,
-  ZoomIn, ZoomOut, Printer,
+  ZoomIn, ZoomOut, Printer, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { videoEmbedUrl } from '@/utils/videoEmbed'
@@ -508,10 +508,12 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
   )
 }
 
-function ExamPaper({ assignment, isStudent, existing }: {
+function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet }: {
   assignment: Assignment
   isStudent: boolean
   existing?: AssignmentSubmission | null
+  showSheet: boolean
+  onToggleSheet: () => void
 }) {
   const pages = assignment.exam_pages || []
   const [scale, setScale] = useState(1) // multiplier on top of the base mode
@@ -541,6 +543,16 @@ function ExamPaper({ assignment, isStudent, existing }: {
 
         {/* Zoom toolbar — responsive, wraps on small screens */}
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Zoom controls">
+          <button
+            type="button"
+            onClick={onToggleSheet}
+            className={toolbarBtn}
+            aria-label={showSheet ? 'Hide answer sheet' : 'Show answer sheet'}
+            title={showSheet ? 'Hide answer sheet' : 'Show answer sheet'}
+          >
+            {showSheet ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+          </button>
+          <span className="w-px h-5 bg-navy-700 light:bg-gray-300 hidden sm:block" />
           <button type="button" onClick={zoomOut} disabled={scale <= 0.5} className={toolbarBtn} aria-label="Zoom out">
             <ZoomOut size={16} />
           </button>
@@ -717,15 +729,30 @@ function ExamView({ assignment, isStudent, existing }: {
   isStudent: boolean
   existing?: AssignmentSubmission | null
 }) {
+  const [showSheet, setShowSheet] = useState(true)
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] gap-5 items-start">
-      {/* Left sidebar: answer sheet */}
-      <aside className="lg:sticky lg:top-20">
-        <ExamAnswerSheet assignment={assignment} existing={existing} isStudent={isStudent} />
-      </aside>
+    <div className="space-y-3">
+      <div
+        className={`grid grid-cols-1 gap-5 items-start ${
+          showSheet ? 'lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]' : ''
+        }`}
+      >
+        {/* Left sidebar: answer sheet (collapsible — paper takes the full width when hidden) */}
+        {showSheet && (
+          <aside className="lg:sticky lg:top-20">
+            <ExamAnswerSheet assignment={assignment} existing={existing} isStudent={isStudent} />
+          </aside>
+        )}
 
-      {/* Main: the exam paper pages */}
-      <ExamPaper assignment={assignment} isStudent={isStudent} existing={existing} />
+        {/* Main: the exam paper pages */}
+        <ExamPaper
+          assignment={assignment}
+          isStudent={isStudent}
+          existing={existing}
+          showSheet={showSheet}
+          onToggleSheet={() => setShowSheet((v) => !v)}
+        />
+      </div>
     </div>
   )
 }
