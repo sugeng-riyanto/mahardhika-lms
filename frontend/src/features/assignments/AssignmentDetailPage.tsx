@@ -501,6 +501,7 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
           submission={existing}
           isOpen={printOpen}
           onClose={() => setPrintOpen(false)}
+          isStudent
         />
       )}
     </div>

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { X, Printer } from 'lucide-react'
-import type { Assignment, AssignmentQuestion, AssignmentSubmission } from '@/types'
+import { apiClient } from '@/api/client'
+import type { Assignment, AssignmentQuestion, AssignmentSubmission, EssayResponse } from '@/types'
 
 interface McqResult {
   question_id: string
@@ -15,6 +17,8 @@ interface PrintSheetModalProps {
   submission: AssignmentSubmission
   isOpen: boolean
   onClose: () => void
+  /** When true (student printing their own sheet), unreleased feedback stays hidden. */
+  isStudent?: boolean
 }
 
 function Bubble({ letter, marked, correct, keyed }: {
@@ -41,7 +45,45 @@ function Bubble({ letter, marked, correct, keyed }: {
   )
 }
 
-export function PrintSheetModal({ assignment, submission, isOpen, onClose }: PrintSheetModalProps) {
+const ESSAY_STATUS: Record<string, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted',
+  locked: 'Locked',
+  grading: 'Being graded',
+  returned: 'Returned',
+  resubmitted: 'Resubmitted',
+  finalised: 'Graded',
+}
+
+export function PrintSheetModal({ assignment, submission, isOpen, onClose, isStudent = false }: PrintSheetModalProps) {
+  const [essayResponses, setEssayResponses] = useState<Record<string, EssayResponse | undefined>>({})
+  const [loadingEssays, setLoadingEssays] = useState(false)
+
+  const essayQs = assignment.essay_question_titles || []
+  const essayIds = assignment.essay_questions || []
+
+  useEffect(() => {
+    if (!isOpen || essayIds.length === 0) return
+    let cancelled = false
+    setLoadingEssays(true)
+    ;(async () => {
+      const map: Record<string, EssayResponse | undefined> = {}
+      for (const qid of essayIds) {
+        try {
+          const data = await apiClient.get<{ results: EssayResponse[] }>(
+            `/essays/responses/?question=${qid}&student=${submission.student}`
+          )
+          map[qid] = (data.results || [])[0]
+        } catch {
+          map[qid] = undefined
+        }
+      }
+      if (!cancelled) setEssayResponses(map)
+      setLoadingEssays(false)
+    })()
+    return () => { cancelled = true }
+  }, [isOpen, submission.student, essayIds])
+
   if (!isOpen) return null
 
   const questions: AssignmentQuestion[] = assignment.questions || []
@@ -139,6 +181,72 @@ export function PrintSheetModal({ assignment, submission, isOpen, onClose }: Pri
               </section>
             )
           })}
+
+          {essayIds.length > 0 && (
+            <section className="mt-5 pt-4 border-t border-gray-300">
+              <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
+                Essay Part
+              </h2>
+              {loadingEssays ? (
+                <p className="text-sm text-gray-600">Loading essay responses…</p>
+              ) : essayQs.length === 0 ? (
+                <p className="text-sm text-gray-600">No essay questions on this exam.</p>
+              ) : (
+                <div className="space-y-4">
+                  {essayQs.map((q) => {
+                    const r = essayResponses[q.id]
+                    const showFeedback = r && (!isStudent || r.feedback_released)
+                    return (
+                      <div key={q.id} className="border border-gray-300 rounded-lg p-3">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3 className="text-sm font-semibold text-gray-900">{q.title}</h3>
+                          <span className="text-xs text-gray-600 whitespace-nowrap">
+                            {q.marks} pts
+                          </span>
+                        </div>
+                        {!r ? (
+                          <p className="text-sm text-gray-600">No response submitted.</p>
+                        ) : (
+                          <>
+                            <p className="text-xs text-gray-600 mb-2">
+                              Status: {ESSAY_STATUS[r.status] || r.status}
+                              {r.submitted_at && ` · Submitted ${new Date(r.submitted_at).toLocaleDateString()}`}
+                              {r.is_late && ' · Late'}
+                            </p>
+                            {r.typed_answer ? (
+                              <div className="text-sm text-gray-800 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded p-2 mb-2">
+                                {r.typed_answer}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-600 italic mb-2">
+                                Answered on the annotation canvas.
+                              </p>
+                            )}
+                            {showFeedback && (
+                              <div className="text-sm">
+                                {r.total_score !== null && (
+                                  <p className="text-gray-900 font-semibold">
+                                    Score: {r.total_score}/{q.marks}
+                                    {r.percentage !== null && ` (${r.percentage}% · ${r.letter_grade})`}
+                                  </p>
+                                )}
+                                {r.overall_feedback && (
+                                  <p className="text-gray-700 mt-1">
+                                    <span className="font-semibold">Feedback:</span>{' '}
+                                    {r.overall_feedback}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          )}
 
           <footer className="mt-4 pt-3 border-t border-gray-300 text-xs text-gray-600">
             Legend: solid bubble = student's answer (green ✓ correct, red ✗ wrong) · dashed bubble =
