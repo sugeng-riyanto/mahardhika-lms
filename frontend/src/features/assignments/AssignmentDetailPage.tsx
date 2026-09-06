@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   ClipboardList, Clock, FileText, Users, CheckCircle, Send,
   ArrowLeft, Star, MessageSquare, AlertCircle, Upload, X, Loader2,
   ZoomIn, ZoomOut, Printer, PanelLeftClose, PanelLeftOpen,
+  ChevronLeft, ChevronRight, Save, WifiOff,
 } from 'lucide-react'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { videoEmbedUrl } from '@/utils/videoEmbed'
@@ -344,15 +345,18 @@ function EssayTaskSection({ assignment, isStudent }: { assignment: Assignment; i
   )
 }
 
-function ExamAnswerSheet({ assignment, existing, isStudent }: {
+function ExamAnswerSheet({ assignment, existing, isStudent, answers, onToggle, onSubmit, submitting, submitError, draftStatus }: {
   assignment: Assignment
   existing?: AssignmentSubmission | null
   isStudent: boolean
+  answers: Record<string, string | string[]>
+  onToggle: (q: AssignmentQuestion, letter: string) => void
+  onSubmit: () => void
+  submitting: boolean
+  submitError: string
+  draftStatus: 'idle' | 'saved' | 'offline'
 }) {
   const questions: AssignmentQuestion[] = assignment.questions || []
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
   const [printOpen, setPrintOpen] = useState(false)
 
   const results = (existing?.content_data?.mcq_results as
@@ -398,43 +402,6 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
     return marked ? 'bg-cyan-600 border-cyan-500 text-white' : 'border-navy-600 text-navy-300 light:border-gray-500 light:text-gray-600 hover:border-cyan-500'
   }
 
-  const toggle = (q: AssignmentQuestion, letter: string) => {
-    if (isMultiple(q)) {
-      const cur = Array.isArray(answers[q.id]) ? (answers[q.id] as string[]) : []
-      setAnswers((prev) => ({
-        ...prev,
-        [q.id]: cur.includes(letter) ? cur.filter((x) => x !== letter) : [...cur, letter],
-      }))
-    } else {
-      setAnswers((prev) => ({ ...prev, [q.id]: letter }))
-    }
-  }
-
-  const handleSubmit = async () => {
-    const missing = questions.filter((q) => {
-      const a = answers[q.id]
-      if (isMultiple(q)) return !a || (a as string[]).length === 0
-      return !a
-    })
-    if (missing.length > 0) {
-      setError('Answer every question on the sheet before submitting.')
-      return
-    }
-    setSubmitting(true)
-    setError('')
-    try {
-      await apiClient.post('/assignments/submissions/', {
-        assignment: assignment.id,
-        content_data: { mcq_answers: answers },
-      })
-      window.location.reload()
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Submission failed')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-3">
@@ -453,7 +420,7 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
                   key={letter}
                   type="button"
                   disabled={finished || !isStudent}
-                  onClick={() => toggle(q, letter)}
+                  onClick={() => onToggle(q, letter)}
                   className={`w-11 h-11 rounded-full border-2 text-base font-bold flex items-center justify-center transition-colors ${
                     bubbleClass(q, letter)
                   } ${isStudent && !finished ? 'cursor-pointer' : 'cursor-default'}`}
@@ -469,15 +436,21 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
       </div>
       {isStudent && !finished && (
         <div className="mt-3">
-          {error && <p className="text-red-400 text-sm mb-2">{error}</p>}
+          {submitError && <p className="text-red-400 text-sm mb-2">{submitError}</p>}
           <button
-            onClick={handleSubmit}
+            onClick={onSubmit}
             disabled={submitting}
             className="btn-primary flex items-center gap-2"
           >
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             {submitting ? 'Submitting...' : 'Submit Exam'}
           </button>
+          <p className="text-xs text-navy-500 light:text-gray-600 mt-2 flex items-center gap-1">
+            <Save size={12} />
+            {draftStatus === 'offline'
+              ? 'No connection — your answers are saved and will submit automatically when the connection returns.'
+              : 'Answers are saved automatically on this device.'}
+          </p>
         </div>
       )}
       {finished && existing && (
@@ -508,16 +481,21 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
   )
 }
 
-function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet }: {
+function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet, onSubmit, submitting, submitError, draftStatus }: {
   assignment: Assignment
   isStudent: boolean
   existing?: AssignmentSubmission | null
   showSheet: boolean
   onToggleSheet: () => void
+  onSubmit?: () => void
+  submitting: boolean
+  submitError: string
+  draftStatus: 'idle' | 'saved' | 'offline'
 }) {
   const pages = assignment.exam_pages || []
+  const [pageIdx, setPageIdx] = useState(0)
   const [scale, setScale] = useState(1) // multiplier on top of the base mode
-  const [mode, setMode] = useState<'fit' | 'actual'>('fit')
+  const [mode, setMode] = useState<'width' | 'height' | 'actual'>('height')
 
   const zoomIn = () => setScale((s) => Math.min(3, Math.round(s * 1.25 * 100) / 100))
   const zoomOut = () => setScale((s) => Math.max(0.5, Math.round(s * 0.8 * 100) / 100))
@@ -541,8 +519,8 @@ function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet }
           </span>
         </div>
 
-        {/* Zoom toolbar — responsive, wraps on small screens */}
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Zoom controls">
+        {/* Toolbar — sheet toggle, page navigation, zoom — wraps on small screens */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={onToggleSheet}
@@ -553,6 +531,31 @@ function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet }
             {showSheet ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
           </button>
           <span className="w-px h-5 bg-navy-700 light:bg-gray-300 hidden sm:block" />
+
+          {/* One page at a time — next / previous */}
+          <button
+            type="button"
+            onClick={() => setPageIdx((i) => Math.max(0, i - 1))}
+            disabled={pageIdx === 0 || pages.length === 0}
+            className={toolbarBtn}
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-xs font-medium text-navy-300 light:text-gray-600 whitespace-nowrap">
+            {pages.length === 0 ? '0 / 0' : `${pageIdx + 1} / ${pages.length}`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPageIdx((i) => Math.min(pages.length - 1, i + 1))}
+            disabled={pageIdx >= pages.length - 1 || pages.length === 0}
+            className={toolbarBtn}
+            aria-label="Next page"
+          >
+            <ChevronRight size={16} />
+          </button>
+          <span className="w-px h-5 bg-navy-700 light:bg-gray-300 hidden sm:block" />
+
           <button type="button" onClick={zoomOut} disabled={scale <= 0.5} className={toolbarBtn} aria-label="Zoom out">
             <ZoomOut size={16} />
           </button>
@@ -565,10 +568,17 @@ function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet }
           <span className="w-px h-5 bg-navy-700 light:bg-gray-300 hidden sm:block" />
           <button
             type="button"
-            onClick={() => { setMode('fit'); setScale(1) }}
-            className={modeBtn(mode === 'fit' && scale === 1)}
+            onClick={() => { setMode('width'); setScale(1) }}
+            className={modeBtn(mode === 'width' && scale === 1)}
           >
             Fit width
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('height'); setScale(1) }}
+            className={modeBtn(mode === 'height' && scale === 1)}
+          >
+            Fit page
           </button>
           <button
             type="button"
@@ -584,25 +594,47 @@ function ExamPaper({ assignment, isStudent, existing, showSheet, onToggleSheet }
         <p className="text-navy-500 light:text-gray-500 text-sm">No exam pages available.</p>
       ) : (
         <div className={mode === 'actual' ? 'overflow-x-auto' : ''}>
-          <div className={`space-y-4 ${mode === 'actual' ? 'min-w-max' : ''}`}>
-            {pages.map((page, i) => (
-              <div key={i} className="space-y-2">
-                <ExamPageImage
-                  src={page}
-                  pageNumber={i + 1}
-                  scale={scale}
-                  mode={mode}
-                />
-                {isStudent && existing && (
-                  <PageReview
-                    pageNumber={i + 1}
-                    questions={assignment.questions || []}
-                    existing={existing}
-                  />
-                )}
-              </div>
-            ))}
+          <div className={`space-y-2 ${mode === 'actual' ? 'min-w-max' : ''}`}>
+            <ExamPageImage
+              src={pages[pageIdx]}
+              pageNumber={pageIdx + 1}
+              scale={scale}
+              mode={mode}
+            />
+            {isStudent && existing && (
+              <PageReview
+                pageNumber={pageIdx + 1}
+                questions={assignment.questions || []}
+                existing={existing}
+              />
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Students can submit straight from the enlarged paper view */}
+      {onSubmit && (
+        <div className="pt-3 border-t border-navy-700 light:border-gray-200 flex flex-wrap items-center gap-3">
+          {draftStatus === 'offline' && (
+            <p className="text-sm text-yellow-400 light:text-yellow-700 flex items-center gap-1.5 w-full">
+              <WifiOff size={14} />
+              No connection — your answers are saved on this device and will submit automatically when the connection returns.
+            </p>
+          )}
+          {submitError && <p className="text-red-400 text-sm">{submitError}</p>}
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={submitting}
+            className="btn-primary flex items-center gap-2"
+          >
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {submitting ? 'Submitting...' : 'Submit Exam'}
+          </button>
+          <span className="text-xs text-navy-500 light:text-gray-600 flex items-center gap-1">
+            <Save size={12} />
+            {draftStatus === 'offline' ? 'Retrying automatically…' : 'Answers are saved automatically.'}
+          </span>
         </div>
       )}
 
@@ -619,9 +651,11 @@ function ExamPageImage({ src, pageNumber, scale, mode }: {
   src: string
   pageNumber: number
   scale: number
-  mode: 'fit' | 'actual'
+  mode: 'width' | 'height' | 'actual'
 }) {
   const [naturalW, setNaturalW] = useState<number | null>(null)
+  // 'height' fits the page to the viewport height — the big ZipGrade-style
+  // view; 'width' fills the column; 'actual' renders at natural pixels.
   const width = mode === 'actual' && naturalW ? Math.round(naturalW * scale) : undefined
   return (
     <figure className="rounded-lg overflow-hidden border border-navy-700 light:border-gray-300 bg-navy-950 light:bg-gray-100">
@@ -631,15 +665,17 @@ function ExamPageImage({ src, pageNumber, scale, mode }: {
           alt={`Exam page ${pageNumber}`}
           className="h-auto mx-auto"
           style={{
-            width: width !== undefined ? `${width}px` : `${scale * 100}%`,
-            maxWidth: width !== undefined ? 'none' : undefined,
+            width: width !== undefined ? `${width}px` : mode === 'width' ? `${scale * 100}%` : undefined,
+            height: mode === 'height' ? `${scale * 72}vh` : undefined,
+            maxWidth: mode === 'height' ? '100%' : width !== undefined ? 'none' : undefined,
           }}
           onLoad={(e) => {
             const nw = e.currentTarget.naturalWidth
             if (nw) setNaturalW(nw)
           }}
         />
-      </div>      <figcaption className="text-center text-xs text-navy-500 light:text-gray-700 py-1">Page {pageNumber}</figcaption>
+      </div>
+      <figcaption className="text-center text-xs text-navy-500 light:text-gray-700 py-1">Page {pageNumber}</figcaption>
     </figure>
   )
 }
@@ -729,28 +765,170 @@ function ExamView({ assignment, isStudent, existing }: {
   isStudent: boolean
   existing?: AssignmentSubmission | null
 }) {
+  const questions: AssignmentQuestion[] = assignment.questions || []
+  const results = (existing?.content_data?.mcq_results as
+    | { question_id: string; correct: boolean }[]
+    | undefined) || null
+  const finished = Boolean(isStudent && existing && results)
+
   const [showSheet, setShowSheet] = useState(true)
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
+  const [draftStatus, setDraftStatus] = useState<'idle' | 'saved' | 'offline'>('idle')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [retryTick, setRetryTick] = useState(0)
+  const answersRef = useRef(answers)
+  answersRef.current = answers
+
+  const isMultiple = (q: AssignmentQuestion): boolean => q.question_type === 'multiple_select'
+
+  // Restore a previously saved draft when the student opens the exam again.
+  useEffect(() => {
+    if (!isStudent || finished) return
+    try {
+      const raw = localStorage.getItem(`exam_draft_${assignment.id}`)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { answers?: Record<string, string | string[]> }
+        if (parsed && parsed.answers) setAnswers(parsed.answers)
+      }
+    } catch { /* corrupted draft — ignore */ }
+  }, [assignment.id, isStudent, finished])
+
+  // Auto-save answers LOCALLY (this device) as the student fills the sheet, so
+  // nothing is lost on a weak or dropped connection. The server POST happens
+  // only on submit — posting per bubble would mint a graded submission per
+  // click and hit the max-attempts gate.
+  useEffect(() => {
+    if (!isStudent || finished) return
+    setDraftStatus('saved')
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(`exam_draft_${assignment.id}`, JSON.stringify({
+          answers,
+          savedAt: new Date().toISOString(),
+        }))
+      } catch { /* storage full — ignore */ }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [answers, assignment.id, isStudent, finished])
+
+  const toggle = (q: AssignmentQuestion, letter: string) => {
+    setAnswers((prev) => {
+      if (isMultiple(q)) {
+        const cur = Array.isArray(prev[q.id]) ? (prev[q.id] as string[]) : []
+        return {
+          ...prev,
+          [q.id]: cur.includes(letter) ? cur.filter((x) => x !== letter) : [...cur, letter],
+        }
+      }
+      return { ...prev, [q.id]: letter }
+    })
+  }
+
+  const attemptPost = useCallback(async (): Promise<'ok' | 'network' | 'error'> => {
+    try {
+      await apiClient.post('/assignments/submissions/', {
+        assignment: assignment.id,
+        content_data: { mcq_answers: answersRef.current },
+      })
+      try { localStorage.removeItem(`exam_draft_${assignment.id}`) } catch { /* ignore */ }
+      window.location.reload()
+      return 'ok'
+    } catch (err) {
+      const apiErr = err as { status?: number; detail?: string }
+      if (apiErr.status) {
+        // A real server rejection (validation, max attempts) — show it, do not retry.
+        setSubmitError(apiErr.detail || 'Submission failed')
+        return 'error'
+      }
+      return 'network' // dropped connection — retryable
+    }
+  }, [assignment.id])
+
+  const submitExam = useCallback(async () => {
+    if (submitting) return
+    const missing = questions.filter((q) => {
+      const a = answersRef.current[q.id]
+      if (isMultiple(q)) return !a || (a as string[]).length === 0
+      return !a
+    })
+    if (missing.length > 0) {
+      setSubmitError('Answer every question on the sheet before submitting.')
+      return
+    }
+    setSubmitError('')
+    setSubmitting(true)
+    const res = await attemptPost()
+    if (res === 'ok') return
+    setSubmitting(false)
+    if (res === 'network') {
+      // Offline — answers stay saved locally and submit automatically later.
+      setDraftStatus('offline')
+    }
+  }, [questions, submitting, attemptPost])
+
+  // While offline, retry automatically every 5s and immediately on reconnect.
+  useEffect(() => {
+    if (draftStatus !== 'offline') return
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      if (cancelled) return
+      setSubmitting(true)
+      const res = await attemptPost()
+      if (cancelled) return
+      setSubmitting(false)
+      if (res === 'network') setRetryTick((t) => t + 1)
+      // 'ok' reloads; 'error' (server rejection) stops the retry loop.
+    }, 5000)
+    const onOnline = async () => {
+      if (cancelled) return
+      setSubmitting(true)
+      const res = await attemptPost()
+      if (!cancelled && res === 'network') setSubmitting(false)
+    }
+    window.addEventListener('online', onOnline)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [draftStatus, retryTick, attemptPost])
+
   return (
     <div className="space-y-3">
       <div
         className={`grid grid-cols-1 gap-5 items-start ${
-          showSheet ? 'lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]' : ''
+          showSheet ? 'lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]' : ''
         }`}
       >
         {/* Left sidebar: answer sheet (collapsible — paper takes the full width when hidden) */}
         {showSheet && (
           <aside className="lg:sticky lg:top-20">
-            <ExamAnswerSheet assignment={assignment} existing={existing} isStudent={isStudent} />
+            <ExamAnswerSheet
+              assignment={assignment}
+              existing={existing}
+              isStudent={isStudent}
+              answers={answers}
+              onToggle={toggle}
+              onSubmit={submitExam}
+              submitting={submitting}
+              submitError={submitError}
+              draftStatus={draftStatus}
+            />
           </aside>
         )}
 
-        {/* Main: the exam paper pages */}
+        {/* Main: the exam paper — one page at a time, large, with next/previous */}
         <ExamPaper
           assignment={assignment}
           isStudent={isStudent}
           existing={existing}
           showSheet={showSheet}
           onToggleSheet={() => setShowSheet((v) => !v)}
+          onSubmit={isStudent && !finished ? submitExam : undefined}
+          submitting={submitting}
+          submitError={submitError}
+          draftStatus={draftStatus}
         />
       </div>
     </div>
