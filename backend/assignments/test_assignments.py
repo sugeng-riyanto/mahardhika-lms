@@ -516,3 +516,106 @@ class AssignmentExamTests(AssignmentAPITestBase):
         self.assertEqual(res.data['status'], 'graded')
         self.assertEqual(float(res.data['score']), 50.0)
         self.assertEqual(res.data['content_data']['mcq_score'], 5)
+
+
+class AssignmentRbacWriteTests(AssignmentAPITestBase):
+    """CRUD write enforcement: only instructor+ may edit/delete assignments."""
+
+    def test_student_cannot_edit_assignment(self):
+        self.auth(self.student)
+        res = self.client.patch(
+            f'/api/v1/assignments/{self.assignment.id}/',
+            {'title': 'Hacked'}, format='json',
+        )
+        self.assertEqual(res.status_code, 403)
+
+    def test_student_cannot_delete_assignment(self):
+        self.auth(self.student)
+        res = self.client.delete(f'/api/v1/assignments/{self.assignment.id}/')
+        self.assertEqual(res.status_code, 403)
+        self.assertTrue(Assignment.objects.filter(id=self.assignment.id).exists())
+
+    def test_parent_cannot_delete_assignment(self):
+        self.auth(self.parent)
+        res = self.client.delete(f'/api/v1/assignments/{self.assignment.id}/')
+        # 403 (rights denied) or 404 (queryset hides it) — both deny
+        self.assertIn(res.status_code, (403, 404))
+
+    def test_student_cannot_edit_question_key(self):
+        self.auth(self.instructor)
+        self.client.post('/api/v1/assignments/', {
+            'course': str(self.course.id),
+            'title': 'Key Quiz',
+            'task_type': 'mcq',
+            'status': 'published',
+            'questions': [{
+                'question_type': 'multiple_choice',
+                'prompt': 'Q?',
+                'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                'correct_answer': ['a'],
+                'points': 1,
+            }],
+        }, format='json')
+        quiz = Assignment.objects.get(title='Key Quiz')
+        qid = str(quiz.questions.first().id)
+        self.auth(self.student)
+        res = self.client.patch(f'/api/v1/assignments/{quiz.id}/', {
+            'questions': [{
+                'question_type': 'multiple_choice',
+                'prompt': 'Q?',
+                'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                'correct_answer': ['b'],  # student tries to change the key
+                'points': 1,
+            }],
+        }, format='json')
+        self.assertEqual(res.status_code, 403)
+        # Key unchanged
+        self.assertEqual(quiz.questions.first().correct_answer, ['a'])
+
+    def test_student_can_delete_own_draft_submission(self):
+        self.auth(self.student)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(self.assignment.id),
+            'content_data': {'response': 'draft work'},
+        }, format='json')
+        self.assertEqual(sub.status_code, 201, sub.data)
+        res = self.client.delete(f"/api/v1/assignments/submissions/{sub.data['id']}/")
+        self.assertEqual(res.status_code, 204)
+
+    def test_student_cannot_delete_graded_submission(self):
+        self.auth(self.instructor)
+        self.client.post('/api/v1/assignments/', {
+            'course': str(self.course.id),
+            'title': 'Graded Quiz',
+            'task_type': 'mcq',
+            'status': 'published',
+            'questions': [{
+                'question_type': 'multiple_choice',
+                'prompt': 'Q?',
+                'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                'correct_answer': ['a'],
+                'points': 5,
+            }],
+        }, format='json')
+        quiz = Assignment.objects.get(title='Graded Quiz')
+        qid = str(quiz.questions.first().id)
+        self.auth(self.student)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(quiz.id),
+            'content_data': {'mcq_answers': {qid: 'a'}},
+        }, format='json')
+        self.assertEqual(sub.status_code, 201, sub.data)
+        self.assertEqual(sub.data['status'], 'graded')
+        res = self.client.delete(f"/api/v1/assignments/submissions/{sub.data['id']}/")
+        self.assertEqual(res.status_code, 403)
+
+    def test_student_cannot_delete_others_submission(self):
+        self.auth(self.student)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(self.assignment.id),
+            'content_data': {'response': 'mine'},
+        }, format='json')
+        self.auth(self.other_student)
+        res = self.client.delete(f"/api/v1/assignments/submissions/{sub.data['id']}/")
+        # 403 (rights denied) or 404 (queryset hides it) — both deny
+        self.assertIn(res.status_code, (403, 404))

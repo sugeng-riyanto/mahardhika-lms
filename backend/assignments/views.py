@@ -144,9 +144,15 @@ class AssignmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
         serializer.save(organisation=org, created_by=self.request.user)
 
     def perform_update(self, serializer):
+        if not _has_any_role(self.request.user, ['owner', 'admin', 'instructor']):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only instructors and above can edit assignments.')
         serializer.save()
 
     def perform_destroy(self, instance):
+        if not _has_any_role(self.request.user, ['owner', 'admin', 'instructor']):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only instructors and above can delete assignments.')
         instance.delete()
 
     @action(detail=True, methods=['post'])
@@ -340,6 +346,16 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
         serializer.save()
 
     def perform_destroy(self, instance):
+        user = self.request.user
+        if instance.student == user:
+            # Students may delete their own work only while it is still a draft
+            # (before submitting/grading), so grades and records stay intact.
+            if instance.status != 'draft':
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('Only draft submissions can be deleted.')
+        elif not _has_any_role(user, ['owner', 'admin', 'instructor']):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Not authorized to delete this submission.')
         instance.delete()
 
     @action(detail=True, methods=['post'])

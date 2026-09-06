@@ -443,18 +443,18 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
           <span className="text-xs text-navy-400">Green = correct answer (key)</span>
         )}
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2.5">
         {questions.map((q, idx) => (
-          <div key={q.id} className="flex items-center gap-2 py-1 border-b border-navy-800 last:border-0">
-            <span className="w-8 shrink-0 text-sm text-navy-300 font-medium">{idx + 1}.</span>
-            <div className="flex flex-wrap gap-1.5">
+          <div key={q.id} className="flex items-center gap-3 py-1.5 border-b border-navy-800 last:border-0">
+            <span className="w-10 shrink-0 text-base text-navy-200 font-semibold">{idx + 1}.</span>
+            <div className="flex flex-wrap gap-2">
               {letters(q).map((letter) => (
                 <button
                   key={letter}
                   type="button"
                   disabled={finished || !isStudent}
                   onClick={() => toggle(q, letter)}
-                  className={`w-9 h-9 rounded-full border text-sm font-semibold flex items-center justify-center transition-colors ${
+                  className={`w-11 h-11 rounded-full border-2 text-base font-bold flex items-center justify-center transition-colors ${
                     bubbleClass(q, letter)
                   } ${isStudent && !finished ? 'cursor-pointer' : 'cursor-default'}`}
                   aria-label={`Question ${idx + 1} option ${letter.toUpperCase()}`}
@@ -681,11 +681,11 @@ function PageReview({ pageNumber, questions, existing }: {
                 {r?.correct ? '✓' : '✗'}
               </span>
               <span className="w-7 shrink-0 text-xs text-navy-400">Q{q.order + 1}</span>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {(q.options || []).map((o) => (
                   <span
                     key={o.id}
-                    className={`w-7 h-7 rounded-full border text-xs font-semibold flex items-center justify-center ${bubble(o.id)}`}
+                    className={`w-8 h-8 rounded-full border text-sm font-semibold flex items-center justify-center ${bubble(o.id)}`}
                   >
                     {o.id.toUpperCase()}
                   </span>
@@ -717,7 +717,7 @@ function ExamView({ assignment, isStudent, existing }: {
   existing?: AssignmentSubmission | null
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-4 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] gap-5 items-start">
       {/* Left sidebar: answer sheet */}
       <aside className="lg:sticky lg:top-20">
         <ExamAnswerSheet assignment={assignment} existing={existing} isStudent={isStudent} />
