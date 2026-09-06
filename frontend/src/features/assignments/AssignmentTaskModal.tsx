@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
-import { X, Save, Loader2, Plus, Trash2, HelpCircle, FileText, ListChecks, PenLine } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { X, Save, Loader2, Plus, Trash2, HelpCircle, FileText, ListChecks, PenLine, Upload, Download } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useCourses, useEssayQuestions } from '@/api/hooks'
+import { parseQuestionsCsv, buildQuestionCsvTemplate } from '@/utils/assignmentCsv'
 import type { Assignment, AssignmentQuestion } from '@/types'
 
 export type TaskType = 'file' | 'mcq' | 'essay' | 'combined'
@@ -19,6 +20,7 @@ interface DraftQuestion {
   optionTexts: string[]
   correct: string[]
   points: number
+  explanation: string
 }
 
 interface AssignmentTaskModalProps {
@@ -32,7 +34,7 @@ interface AssignmentTaskModalProps {
 const OPTION_LETTERS = ['a', 'b', 'c', 'd', 'e', 'f']
 
 function emptyQuestion(): DraftQuestion {
-  return { question_type: 'multiple_choice', prompt: '', optionTexts: ['', '', '', ''], correct: [], points: 1 }
+  return { question_type: 'multiple_choice', prompt: '', optionTexts: ['', '', '', ''], correct: [], points: 1, explanation: '' }
 }
 
 function toDraftQuestions(questions?: AssignmentQuestion[]): DraftQuestion[] {
@@ -46,6 +48,7 @@ function toDraftQuestions(questions?: AssignmentQuestion[]): DraftQuestion[] {
     }),
     correct: Array.isArray(q.correct_answer) ? q.correct_answer : [],
     points: q.points,
+    explanation: q.explanation || '',
   }))
 }
 
@@ -69,6 +72,9 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
   const [essayIds, setEssayIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [importMsg, setImportMsg] = useState('')
+  const [importing, setImporting] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -131,6 +137,54 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
     return ''
   }
 
+  const handleTemplateDownload = () => {
+    const blob = new Blob(['\uFEFF' + buildQuestionCsvTemplate()], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'mcq-questions-template.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleQuestionsImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportMsg('')
+    try {
+      const text = await file.text()
+      const { questions: parsed, errors } = parseQuestionsCsv(text)
+      if (parsed.length === 0) {
+        setImportMsg(errors.length ? `Import failed: ${errors.join(' ')}` : 'Import failed: no valid questions found.')
+        return
+      }
+      const draft: DraftQuestion[] = parsed.map((q) => ({
+        question_type: q.question_type,
+        prompt: q.prompt,
+        optionTexts: q.optionTexts,
+        correct: q.correct,
+        points: q.points,
+        explanation: q.explanation,
+      }))
+      // Replace the auto-added empty question with the imported batch; otherwise append.
+      setQuestions((prev) =>
+        prev.length === 1 && !prev[0].prompt.trim() && prev[0].correct.length === 0
+          ? draft
+          : [...prev, ...draft]
+      )
+      setImportMsg(`Imported ${draft.length} question${draft.length !== 1 ? 's' : ''} from CSV.`)
+      if (errors.length) setImportMsg((m) => `${m} Skipped ${errors.length} row${errors.length !== 1 ? 's' : ''}: ${errors.join(' | ')}`)
+    } catch (err) {
+      setImportMsg(err instanceof Error ? `Import failed: ${err.message}` : 'Import failed')
+    } finally {
+      setImporting(false)
+      if (csvInputRef.current) csvInputRef.current.value = ''
+    }
+  }
+
   const handleSave = async () => {
     const err = validate()
     if (err) {
@@ -159,6 +213,7 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
             .filter((o) => o.text),
           correct_answer: q.correct,
           points: Number(q.points) || 1,
+          explanation: q.explanation || '',
         }))
       }
       if (showEssay) payload.essay_questions = essayIds
@@ -265,16 +320,40 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
           {/* MCQ question builder */}
           {showMcq && (
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <h3 className="text-sm font-semibold text-white">Questions ({questions.length})</h3>
-                <button
-                  type="button"
-                  onClick={() => setQuestions((prev) => [...prev, emptyQuestion()])}
-                  className="btn-secondary text-xs flex items-center gap-1 px-2 py-1"
-                >
-                  <Plus size={14} /> Add Question
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTemplateDownload}
+                    className="btn-secondary text-xs flex items-center gap-1 px-2 py-1"
+                  >
+                    <Download size={14} /> CSV Template
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => csvInputRef.current?.click()}
+                    disabled={importing}
+                    className="btn-secondary text-xs flex items-center gap-1 px-2 py-1"
+                  >
+                    {importing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                    {importing ? 'Importing...' : 'Import CSV'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuestions((prev) => [...prev, emptyQuestion()])}
+                    className="btn-secondary text-xs flex items-center gap-1 px-2 py-1"
+                  >
+                    <Plus size={14} /> Add Question
+                  </button>
+                </div>
               </div>
+              <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleQuestionsImport} />
+              {importMsg && (
+                <p className={`text-xs mb-2 ${importMsg.startsWith('Imported') ? 'text-green-400' : 'text-red-400'}`}>
+                  {importMsg}
+                </p>
+              )}
               {questions.length === 0 && (
                 <p className="text-xs text-navy-500 mb-2">Add at least one question to build the quiz.</p>
               )}
@@ -359,6 +438,12 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
                           )
                         })}
                       </div>
+                      <input
+                        className="input-field w-full text-sm mt-2"
+                        value={q.explanation}
+                        onChange={(e) => updateQuestion(qIdx, { explanation: e.target.value })}
+                        placeholder="Explanation (shown after submission, optional)"
+                      />
                       <p className="text-xs text-navy-500 mt-2">
                         {isMultiple
                           ? 'Tick every correct option (multiple select)'
