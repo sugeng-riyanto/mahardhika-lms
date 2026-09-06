@@ -467,7 +467,11 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
   )
 }
 
-function ExamPaper({ assignment, isStudent }: { assignment: Assignment; isStudent: boolean }) {
+function ExamPaper({ assignment, isStudent, existing }: {
+  assignment: Assignment
+  isStudent: boolean
+  existing?: AssignmentSubmission | null
+}) {
   const pages = assignment.exam_pages || []
   const [scale, setScale] = useState(1) // multiplier on top of the base mode
   const [mode, setMode] = useState<'fit' | 'actual'>('fit')
@@ -529,13 +533,21 @@ function ExamPaper({ assignment, isStudent }: { assignment: Assignment; isStuden
         <div className={mode === 'actual' ? 'overflow-x-auto' : ''}>
           <div className={`space-y-4 ${mode === 'actual' ? 'min-w-max' : ''}`}>
             {pages.map((page, i) => (
-              <ExamPageImage
-                key={i}
-                src={page}
-                pageNumber={i + 1}
-                scale={scale}
-                mode={mode}
-              />
+              <div key={i} className="space-y-2">
+                <ExamPageImage
+                  src={page}
+                  pageNumber={i + 1}
+                  scale={scale}
+                  mode={mode}
+                />
+                {isStudent && existing && (
+                  <PageReview
+                    pageNumber={i + 1}
+                    questions={assignment.questions || []}
+                    existing={existing}
+                  />
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -574,11 +586,90 @@ function ExamPageImage({ src, pageNumber, scale, mode }: {
             if (nw) setNaturalW(nw)
           }}
         />
-      </div>
-      <figcaption className="text-center text-xs text-navy-500 light:text-gray-500 py-1">Page {pageNumber}</figcaption>
+      </div>      <figcaption className="text-center text-xs text-navy-500 light:text-gray-500 py-1">Page {pageNumber}</figcaption>
     </figure>
   )
 }
+
+interface McqResult {
+  question_id: string
+  prompt?: string
+  answer?: string | string[]
+  correct: boolean
+  key?: string[]
+  points?: number
+  explanation?: string
+}
+
+/**
+ * Post-submission review for students: the bubbles they marked on this PDF
+ * page, coloured against the key (green = right, red = wrong, ring = the
+ * correct answer they missed).
+ */
+function PageReview({ pageNumber, questions, existing }: {
+  pageNumber: number
+  questions: AssignmentQuestion[]
+  existing: AssignmentSubmission
+}) {
+  const results = (existing.content_data?.mcq_results as McqResult[] | undefined) || []
+  const answers = (existing.content_data?.mcq_answers ?? {}) as Record<string, string | string[]>
+  const onPage = questions.filter((q) => (q.page || 1) === pageNumber)
+  if (onPage.length === 0) return null
+
+  return (
+    <div className="rounded-lg border border-navy-700 light:border-gray-300 bg-navy-900/70 light:bg-gray-50 p-3">
+      <p className="text-xs font-medium text-navy-300 light:text-gray-600 mb-2">
+        Review — your marks on this page
+      </p>
+      <div className="space-y-2">
+        {onPage.map((q) => {
+          const r = results.find((res) => res.question_id === q.id)
+          const mine = answers[q.id]
+          const mineArr = Array.isArray(mine) ? mine : mine ? [mine] : []
+          const key = r?.key || []
+          const bubble = (letter: string) => {
+            const marked = mineArr.includes(letter)
+            if (marked) return r?.correct
+              ? 'bg-green-600 border-green-500 text-white'
+              : 'bg-red-600 border-red-500 text-white'
+            if (key.includes(letter)) return 'border-cyan-500 ring-2 ring-cyan-500/40 text-cyan-400 light:text-cyan-700'
+            return 'border-navy-600 text-navy-500'
+          }
+          return (
+            <div key={q.id} className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-navy-300 light:text-gray-600 font-medium">
+                {r?.correct ? '✓' : '✗'}
+              </span>
+              <span className="w-7 shrink-0 text-xs text-navy-400">Q{q.order + 1}</span>
+              <div className="flex flex-wrap gap-1">
+                {(q.options || []).map((o) => (
+                  <span
+                    key={o.id}
+                    className={`w-7 h-7 rounded-full border text-xs font-semibold flex items-center justify-center ${bubble(o.id)}`}
+                  >
+                    {o.id.toUpperCase()}
+                  </span>
+                ))}
+              </div>
+              <span className="text-xs text-navy-400 light:text-gray-500">
+                {r ? `${r.points ?? q.points} pt` : `${q.points} pt`}
+              </span>
+              {r?.explanation && (
+                <span className="text-xs text-navy-500 light:text-gray-500 w-full">
+                  {r.explanation}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-[10px] text-navy-500 light:text-gray-500 mt-2">
+        Green/red = your answer · cyan ring = correct answer
+      </p>
+    </div>
+  )
+}
+
 
 function ExamView({ assignment, isStudent, existing }: {
   assignment: Assignment
@@ -593,7 +684,7 @@ function ExamView({ assignment, isStudent, existing }: {
       </aside>
 
       {/* Main: the exam paper pages */}
-      <ExamPaper assignment={assignment} isStudent={isStudent} />
+      <ExamPaper assignment={assignment} isStudent={isStudent} existing={existing} />
     </div>
   )
 }

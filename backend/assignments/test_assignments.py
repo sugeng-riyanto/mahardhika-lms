@@ -397,6 +397,61 @@ class AssignmentTaskTypeTests(AssignmentAPITestBase):
         self.assertEqual(results[0]['content_data']['text'], 'for this task')
 
 
+
+    def test_question_page_saved_and_returned(self):
+        self.auth(self.instructor)
+        res = self.client.post('/api/v1/assignments/', {
+            'course': str(self.course.id),
+            'title': 'Exam with pages',
+            'task_type': 'exam',
+            'max_score': 100,
+            'status': 'published',
+            'questions': [
+                {
+                    'question_type': 'multiple_choice',
+                    'prompt': 'P1 Q',
+                    'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                    'correct_answer': ['a'],
+                    'points': 1,
+                    'page': 1,
+                },
+                {
+                    'question_type': 'multiple_choice',
+                    'prompt': 'P2 Q',
+                    'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                    'correct_answer': ['b'],
+                    'points': 1,
+                    'page': 2,
+                },
+            ],
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        qs = Assignment.objects.get(title='Exam with pages').questions.all()
+        self.assertEqual(qs.get(prompt='P1 Q').page, 1)
+        self.assertEqual(qs.get(prompt='P2 Q').page, 2)
+        self.auth(self.instructor)
+        item = self.client.get(f'/api/v1/assignments/{Assignment.objects.get(title="Exam with pages").id}/')
+        pages = [q['page'] for q in item.data['questions']]
+        self.assertEqual(pages, [1, 2])
+
+    def test_mcq_results_include_key_for_review(self):
+        self._create_mcq_assignment()
+        self.auth(self.student)
+        assignment = Assignment.objects.get(title='Quiz 1')
+        res = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(assignment.id),
+            'content_data': {'mcq_answers': {
+                str(assignment.questions.get(order=0).id): 'b',
+                str(assignment.questions.get(order=1).id): 'a',
+            }},
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        results = res.data['content_data']['mcq_results']
+        self.assertEqual(results[0]['key'], ['b'])
+        self.assertEqual(results[1]['key'], ['a'])
+        self.assertTrue(results[0]['correct'])
+
+
 class AssignmentExamTests(AssignmentAPITestBase):
     """Exam tasks: PDF pages on the assignment, answer key auto-grading."""
 

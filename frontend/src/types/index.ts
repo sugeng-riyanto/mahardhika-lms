@@ -365,6 +365,7 @@ export interface AssignmentQuestion {
   explanation?: string;
   points: number;
   order: number;
+  page?: number;
 }
 
 export interface Assignment {

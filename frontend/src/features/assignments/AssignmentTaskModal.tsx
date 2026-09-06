@@ -23,6 +23,7 @@ interface DraftQuestion {
   correct: string[]
   points: number
   explanation: string
+  page: number
 }
 
 interface AssignmentTaskModalProps {
@@ -35,8 +36,8 @@ interface AssignmentTaskModalProps {
 
 const OPTION_LETTERS = ['a', 'b', 'c', 'd', 'e', 'f']
 
-function emptyQuestion(): DraftQuestion {
-  return { question_type: 'multiple_choice', prompt: '', optionTexts: ['', '', '', ''], correct: [], points: 1, explanation: '' }
+function emptyQuestion(page = 1): DraftQuestion {
+  return { question_type: 'multiple_choice', prompt: '', optionTexts: ['', '', '', ''], correct: [], points: 1, explanation: '', page }
 }
 
 function toDraftQuestions(questions?: AssignmentQuestion[]): DraftQuestion[] {
@@ -51,6 +52,7 @@ function toDraftQuestions(questions?: AssignmentQuestion[]): DraftQuestion[] {
     correct: Array.isArray(q.correct_answer) ? q.correct_answer : [],
     points: q.points,
     explanation: q.explanation || '',
+    page: q.page || 1,
   }))
 }
 
@@ -177,6 +179,7 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
         correct: q.correct,
         points: q.points,
         explanation: q.explanation,
+        page: 1,
       }))
       // Replace the auto-added empty question with the imported batch; otherwise append.
       setQuestions((prev) =>
@@ -227,6 +230,7 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
           correct_answer: q.correct,
           points: Number(q.points) || 1,
           explanation: q.explanation || '',
+          page: Number(q.page) || 1,
         }))
       }
       if (showEssay) payload.essay_questions = essayIds
@@ -379,7 +383,10 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
                   </button>
                   <button
                     type="button"
-                    onClick={() => setQuestions((prev) => [...prev, emptyQuestion()])}
+                    onClick={() => setQuestions((prev) => [
+                      ...prev,
+                      emptyQuestion(prev.length > 0 ? prev[prev.length - 1].page || 1 : 1),
+                    ])}
                     className="btn-secondary text-xs flex items-center gap-1 px-2 py-1"
                   >
                     <Plus size={14} /> Add Question
@@ -476,12 +483,27 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
                           )
                         })}
                       </div>
-                      <input
-                        className="input-field w-full text-sm mt-2"
-                        value={q.explanation}
-                        onChange={(e) => updateQuestion(qIdx, { explanation: e.target.value })}
-                        placeholder="Explanation (shown after submission, optional)"
-                      />
+                      <div className="mt-2 flex items-center gap-2">
+                        {taskType === 'exam' && (
+                          <label className="flex items-center gap-1.5 text-xs text-navy-400">
+                            PDF page
+                            <input
+                              type="number"
+                              min={1}
+                              className="input-field text-sm w-16"
+                              value={q.page}
+                              onChange={(e) => updateQuestion(qIdx, { page: Math.max(1, Number(e.target.value) || 1) })}
+                              title="PDF page this question appears on"
+                            />
+                          </label>
+                        )}
+                        <input
+                          className="input-field w-full text-sm"
+                          value={q.explanation}
+                          onChange={(e) => updateQuestion(qIdx, { explanation: e.target.value })}
+                          placeholder="Explanation (shown after submission, optional)"
+                        />
+                      </div>
                       <p className="text-xs text-navy-500 mt-2">
                         {isMultiple
                           ? 'Tick every correct option (multiple select)'

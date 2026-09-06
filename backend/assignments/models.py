@@ -111,6 +111,10 @@ class AssignmentQuestion(TimestampedModel):
     explanation = models.TextField(blank=True, default='', help_text='Explanation shown after submission')
     points = models.PositiveIntegerField(default=1)
     order = models.PositiveIntegerField(default=0)
+    page = models.PositiveIntegerField(
+        default=1,
+        help_text='PDF page number this question appears on (exam tasks)',
+    )
 
     class Meta:
         db_table = 'assignment_questions'

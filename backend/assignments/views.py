@@ -275,6 +275,7 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
                 'prompt': q.prompt[:200],
                 'answer': answer,
                 'correct': is_correct,
+                'key': [str(c).lower() for c in (q.correct_answer or [])],
                 'points': q.points,
                 'explanation': q.explanation,
             })
