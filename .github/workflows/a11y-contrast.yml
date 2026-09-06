@@ -1,0 +1,113 @@
+name: Accessibility — WCAG AA Contrast
+
+# Guards against NEW color-contrast regressions on the audited pages.
+# The spec (frontend/e2e/contrast-a11y.spec.ts) runs axe's color-contrast rule
+# in dark + light themes and fails on any violation not listed in
+# frontend/a11y/contrast-baseline.json.
+#
+# The baseline is currently EMPTY for the guarded pages (essay workspace,
+# gradebook) — they were audited and fixed. When a page is added to the spec:
+#   1. audit it, fix what you can,
+#   2. record remaining signatures:
+#        npx playwright test e2e/contrast-a11y.spec.ts --project=chromium --update-baseline
+#   3. commit the refreshed baseline WITH the fixes (never without).
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  contrast:
+    name: Contrast Audit (axe WCAG AA)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Create backend .env
+        working-directory: backend
+        run: |
+          cat > .env << 'EOF'
+          APP_ENV=testing
+          DEBUG=True
+          DJANGO_SECRET_KEY=test-secret-key
+          DATABASE_URL=sqlite:///db.sqlite3
+          SUPABASE_URL=https://placeholder.supabase.co
+          SUPABASE_SECRET_KEY=placeholder
+          SUPABASE_PUBLISHABLE_KEY=placeholder
+          EMAIL_PROVIDER=mock
+          WHATSAPP_PROVIDER=mock
+          PAYMENT_PROVIDER=mock
+          SEED_PASSWORD=dev-password-2026
+          EOF
+
+      - name: Migrate + seed a realistic database
+        working-directory: backend
+        run: |
+          python manage.py migrate
+          python manage.py seed_data --clear --skip-content --skip-supabase
+          python seed_comprehensive.py
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          python manage.py runserver 0.0.0.0:8000 &
+          sleep 5
+          curl -f http://localhost:8000/api/v1/health/ || exit 1
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Start frontend dev server
+        working-directory: frontend
+        run: |
+          npm run dev &
+          sleep 5
+          curl -f http://localhost:5173/ || exit 1
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: Run contrast audit
+        working-directory: frontend
+        run: |
+          npx playwright test e2e/contrast-a11y.spec.ts \
+            --project=chromium \
+            --reporter=list \
+            --timeout=60000
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contrast-a11y-report
+          path: frontend/playwright-report/
+          retention-days: 7

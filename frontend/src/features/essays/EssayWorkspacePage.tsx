@@ -420,19 +420,19 @@ export function EssayWorkspacePage() {
               {showRubric && (
                 <div className="px-4 pb-4 space-y-2 border-t border-navy-700 pt-3">
                   {question.rubric_criteria.map((criterion) => (
-                    <div key={criterion.id} className="bg-navy-800/50 rounded-lg p-3">
+                    <div key={criterion.id} className="bg-navy-800/50 rounded-lg p-3 light:bg-gray-100">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-medium text-white">{criterion.name}</p>
-                        <span className="text-xs text-navy-400">{criterion.max_score} pts</span>
+                        <p className="text-xs font-medium text-white light:text-gray-900">{criterion.name}</p>
+                        <span className="text-xs text-navy-300 light:text-navy-700">{criterion.max_score} pts</span>
                       </div>
-                      <p className="text-[10px] text-navy-500 mb-2">{criterion.description}</p>
+                      <p className="text-[10px] text-navy-300 mb-2 light:text-navy-700">{criterion.description}</p>
                       {criterion.levels && criterion.levels.length > 0 && (
                         <div className="space-y-1">
                           {criterion.levels.map((level) => (
                             <div key={level.id} className="text-[9px] text-navy-400 flex items-center gap-1">
-                              <span className="w-1 h-1 rounded-full bg-navy-600" />
-                              <span className="text-navy-300">{level.label}</span>
-                              <span className="text-navy-500">({level.score}pts)</span>
+                              <span className="w-1 h-1 rounded-full bg-navy-600 light:bg-gray-400" />
+                              <span className="text-navy-300 light:text-navy-700">{level.label}</span>
+                              <span className="text-navy-400 light:text-navy-700">({level.score}pts)</span>
                             </div>
                           ))}
                         </div>
