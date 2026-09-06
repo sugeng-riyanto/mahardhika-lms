@@ -395,3 +395,69 @@ class AssignmentTaskTypeTests(AssignmentAPITestBase):
         results = res.data.get('results', res.data)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['content_data']['text'], 'for this task')
+
+
+class AssignmentExamTests(AssignmentAPITestBase):
+    """Exam tasks: PDF pages on the assignment, answer key auto-grading."""
+
+    def _create_exam(self):
+        self.auth(self.instructor)
+        return self.client.post('/api/v1/assignments/', {
+            'course': str(self.course.id),
+            'title': 'Midterm Exam',
+            'task_type': 'exam',
+            'max_score': 100,
+            'status': 'published',
+            'exam_pdf_name': 'midterm.pdf',
+            'exam_pages': ['data:image/jpeg;base64,AAAA', 'data:image/jpeg;base64,BBBB'],
+            'questions': [
+                {
+                    'question_type': 'multiple_choice',
+                    'prompt': '1. What is 2+2?',
+                    'options': [{'id': 'a', 'text': '3'}, {'id': 'b', 'text': '4'}, {'id': 'c', 'text': '5'}],
+                    'correct_answer': ['b'],
+                    'points': 5,
+                },
+                {
+                    'question_type': 'multiple_choice',
+                    'prompt': '2. Capital of Indonesia?',
+                    'options': [{'id': 'a', 'text': 'Jakarta'}, {'id': 'b', 'text': 'Bandung'}],
+                    'correct_answer': ['a'],
+                    'points': 5,
+                },
+            ],
+        }, format='json')
+
+    def test_instructor_creates_exam_with_pages(self):
+        res = self._create_exam()
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertEqual(res.data['task_type'], 'exam')
+        self.assertEqual(res.data['exam_pdf_name'], 'midterm.pdf')
+        self.assertEqual(len(res.data['exam_pages']), 2)
+        self.assertEqual(res.data['exam_page_count'], 2)
+
+    def test_list_does_not_send_page_images(self):
+        self._create_exam()
+        self.auth(self.student)
+        res = self.client.get('/api/v1/assignments/')
+        self.assertEqual(res.status_code, 200)
+        item = next(a for a in (res.data.get('results', res.data)) if a.get('task_type') == 'exam')
+        self.assertEqual(item['exam_pages'], [])
+        self.assertEqual(item['exam_page_count'], 2)
+
+    def test_exam_submission_auto_graded_from_key(self):
+        self._create_exam()
+        self.auth(self.student)
+        assignment = Assignment.objects.get(title='Midterm Exam')
+        q1, q2 = list(assignment.questions.order_by('order'))
+        res = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(assignment.id),
+            'content_data': {'mcq_answers': {
+                str(q1.id): 'b',   # correct
+                str(q2.id): 'b',   # wrong
+            }},
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertEqual(res.data['status'], 'graded')
+        self.assertEqual(float(res.data['score']), 50.0)
+        self.assertEqual(res.data['content_data']['mcq_score'], 5)

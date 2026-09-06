@@ -48,6 +48,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
         required=False,
     )
     essay_question_titles = serializers.SerializerMethodField()
+    exam_page_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
@@ -61,6 +62,18 @@ class AssignmentSerializer(serializers.ModelSerializer):
             {'id': str(q.id), 'title': q.title, 'marks': q.marks}
             for q in obj.essay_questions.all()
         ]
+
+    def get_exam_page_count(self, obj):
+        return len(obj.exam_pages or [])
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Exam page images are multi-MB data URLs — never send them in list
+        # responses; the detail endpoint still carries the full pages.
+        view = self.context.get('view')
+        if view is not None and getattr(view, 'action', None) == 'list':
+            data['exam_pages'] = []
+        return data
 
     def _save_questions(self, assignment, questions_data):
         if questions_data is None:
@@ -298,7 +311,7 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
         # Auto-score the MCQ part for MCQ and combined tasks.
         content = serializer.validated_data.get('content_data') or {}
         mcq_answers = content.get('mcq_answers') if isinstance(content, dict) else None
-        if assignment.task_type in ('mcq', 'combined') and assignment.questions.exists():
+        if assignment.task_type in ('mcq', 'combined', 'exam') and assignment.questions.exists():
             if not isinstance(mcq_answers, dict):
                 from rest_framework.exceptions import ValidationError
                 raise ValidationError(
@@ -309,8 +322,8 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
             content['mcq_score'] = earned
             content['mcq_total'] = total
             extra['content_data'] = content
-            if assignment.task_type == 'mcq':
-                # Pure MCQ tasks are graded automatically.
+            if assignment.task_type in ('mcq', 'exam'):
+                # Pure MCQ and exam tasks are graded automatically from the key.
                 max_score = assignment.max_score or 1
                 extra['score'] = round(earned / total * max_score, 2) if total else 0
                 extra['status'] = 'graded'

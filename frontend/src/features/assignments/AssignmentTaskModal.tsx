@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, Save, Loader2, Plus, Trash2, HelpCircle, FileText, ListChecks, PenLine, Upload, Download } from 'lucide-react'
+import { X, Save, Loader2, Plus, Trash2, HelpCircle, FileText, ListChecks, PenLine, Upload, Download, BookOpen } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useCourses, useEssayQuestions } from '@/api/hooks'
 import { parseQuestionsCsv, buildQuestionCsvTemplate } from '@/utils/assignmentCsv'
+import { ExamPdfUploader } from '@/features/assignments/ExamPdfUploader'
 import type { Assignment, AssignmentQuestion } from '@/types'
 
-export type TaskType = 'file' | 'mcq' | 'essay' | 'combined'
+export type TaskType = 'file' | 'mcq' | 'essay' | 'combined' | 'exam'
 
 const TASK_TYPE_OPTIONS: { value: TaskType; label: string; hint: string }[] = [
   { value: 'file', label: 'File / Text', hint: 'Students write an answer or upload a file' },
   { value: 'mcq', label: 'Multiple Choice Quiz', hint: 'Auto-graded quiz with MCQ / True-False questions' },
   { value: 'essay', label: 'Essay Task', hint: 'Students answer an essay question with a rubric' },
   { value: 'combined', label: 'Combined (MCQ + Essay)', hint: 'Quiz part auto-graded, essay part graded manually' },
+  { value: 'exam', label: 'Exam (PDF Paper)', hint: 'Upload the exam PDF; answer sheet A–E on the left, paper on the right' },
 ]
 
 interface DraftQuestion {
@@ -70,6 +72,8 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
   const [taskType, setTaskType] = useState<TaskType>('file')
   const [questions, setQuestions] = useState<DraftQuestion[]>([])
   const [essayIds, setEssayIds] = useState<string[]>([])
+  const [examPdfName, setExamPdfName] = useState('')
+  const [examPages, setExamPages] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [importMsg, setImportMsg] = useState('')
@@ -88,13 +92,15 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
     setTaskType((assignment?.task_type as TaskType) || 'file')
     setQuestions(toDraftQuestions(assignment?.questions))
     setEssayIds(assignment?.essay_questions || [])
+    setExamPdfName(assignment?.exam_pdf_name || '')
+    setExamPages(assignment?.exam_pages || [])
     setError('')
   }, [isOpen, assignment])
 
   if (!isOpen) return null
 
-  const showMcq = taskType === 'mcq' || taskType === 'combined'
-  const showEssay = taskType === 'essay' || taskType === 'combined'
+  const showMcq = taskType === 'mcq' || taskType === 'combined' || taskType === 'exam'
+  const showEssay = taskType === 'essay' || taskType === 'combined' || taskType === 'exam'
 
   const updateQuestion = (idx: number, patch: Partial<DraftQuestion>) => {
     setQuestions((prev) => prev.map((q, i) => (i === idx ? { ...q, ...patch } : q)))
@@ -123,6 +129,7 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
   const validate = (): string => {
     if (!title.trim()) return 'Title is required'
     if (!course) return 'Course is required'
+    if (taskType === 'exam' && examPages.length === 0) return 'Upload the exam PDF first'
     if (showMcq) {
       if (questions.length === 0) return 'Add at least one question for this task'
       for (const q of questions) {
@@ -133,7 +140,9 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
         if (q.question_type !== 'multiple_select' && q.correct.length > 1) return 'MCQ / True-False allows exactly one correct answer'
       }
     }
-    if (showEssay && essayIds.length === 0) return 'Select at least one essay question'
+    if ((taskType === 'essay' || taskType === 'combined') && essayIds.length === 0) {
+      return 'Select at least one essay question'
+    }
     return ''
   }
 
@@ -204,6 +213,10 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
         status,
         task_type: taskType,
       }
+      if (taskType === 'exam') {
+        payload.exam_pdf_name = examPdfName
+        payload.exam_pages = examPages
+      }
       if (showMcq) {
         payload.questions = questions.map((q) => ({
           question_type: q.question_type,
@@ -256,7 +269,9 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
                   type="button"
                   onClick={() => {
                     setTaskType(opt.value)
-                    if (opt.value === 'mcq' && questions.length === 0) setQuestions([emptyQuestion()])
+                    if (['mcq', 'combined', 'exam'].includes(opt.value) && questions.length === 0) {
+                      setQuestions([emptyQuestion()])
+                    }
                   }}
                   className={`p-3 rounded-lg border text-left transition-colors ${
                     taskType === opt.value
@@ -269,6 +284,7 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
                     {opt.value === 'mcq' && <ListChecks size={14} className="text-cyan-400" />}
                     {opt.value === 'essay' && <PenLine size={14} className="text-purple-400" />}
                     {opt.value === 'combined' && <HelpCircle size={14} className="text-teal-400" />}
+                    {opt.value === 'exam' && <BookOpen size={14} className="text-orange-400" />}
                     {opt.label}
                   </p>
                   <p className="text-xs text-navy-500 mt-1">{opt.hint}</p>
@@ -316,6 +332,28 @@ export function AssignmentTaskModal({ isOpen, mode, assignment, onClose, onSaved
               <input className="input-field w-full" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=... or https://drive.google.com/file/d/.../preview" />
             </div>
           </div>
+
+          {/* Exam paper upload */}
+          {taskType === 'exam' && (
+            <div>
+              <label className="block text-sm font-medium text-navy-300 mb-2">Exam Paper (PDF)</label>
+              <ExamPdfUploader
+                pdfName={examPdfName}
+                pages={examPages}
+                onChange={(r) => {
+                  setExamPdfName(r.pdfName)
+                  setExamPages(r.pages)
+                }}
+                onClear={() => {
+                  setExamPdfName('')
+                  setExamPages([])
+                }}
+              />
+              <p className="text-xs text-navy-500 mt-2">
+                Build the answer key below — the questions (A–E) become the answer sheet on the left of the exam viewer.
+              </p>
+            </div>
+          )}
 
           {/* MCQ question builder */}
           {showMcq && (

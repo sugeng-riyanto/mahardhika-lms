@@ -14,6 +14,7 @@ class Assignment(TimestampedModel):
         ('mcq', 'Multiple Choice Quiz'),
         ('essay', 'Essay Task'),
         ('combined', 'Combined (MCQ + Essay)'),
+        ('exam', 'Exam (PDF Paper + Answer Sheet)'),
     ]
 
     course = models.ForeignKey(
@@ -56,6 +57,14 @@ class Assignment(TimestampedModel):
     video_url = models.URLField(
         max_length=500, blank=True, default='',
         help_text='YouTube or Google Drive embed URL for a video brief',
+    )
+    exam_pdf_name = models.CharField(
+        max_length=255, blank=True, default='',
+        help_text='Original PDF filename for exam tasks',
+    )
+    exam_pages = models.JSONField(
+        default=list, blank=True,
+        help_text='Rendered page images (data URLs) of the uploaded exam PDF, in page order',
     )
 
     class Meta:

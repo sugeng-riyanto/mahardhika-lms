@@ -376,11 +376,14 @@ export interface Assignment {
   title: string;
   description: string;
   instructions: string;
-  task_type: 'file' | 'mcq' | 'essay' | 'combined';
+  task_type: 'file' | 'mcq' | 'essay' | 'combined' | 'exam';
   questions?: AssignmentQuestion[];
   essay_questions?: string[];
   essay_question_titles?: { id: string; title: string; marks: number }[];
   mcq_total_points?: number;
+  exam_pdf_name?: string;
+  exam_pages?: string[];
+  exam_page_count?: number;
   max_score: number;
   max_attempts: number;
   due_date: string | null;

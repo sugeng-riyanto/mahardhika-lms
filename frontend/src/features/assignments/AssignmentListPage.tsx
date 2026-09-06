@@ -16,6 +16,7 @@ const TASK_TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
   mcq: { label: 'MCQ Quiz', cls: 'text-cyan-400 bg-cyan-900/30' },
   essay: { label: 'Essay', cls: 'text-purple-400 bg-purple-900/30' },
   combined: { label: 'MCQ + Essay', cls: 'text-teal-400 bg-teal-900/30' },
+  exam: { label: 'Exam', cls: 'text-orange-400 bg-orange-900/30' },
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {

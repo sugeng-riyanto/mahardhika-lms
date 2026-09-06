@@ -319,6 +319,196 @@ function EssayTaskSection({ assignment, isStudent }: { assignment: Assignment; i
   )
 }
 
+function ExamAnswerSheet({ assignment, existing, isStudent }: {
+  assignment: Assignment
+  existing?: AssignmentSubmission | null
+  isStudent: boolean
+}) {
+  const questions: AssignmentQuestion[] = assignment.questions || []
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const results = (existing?.content_data?.mcq_results as
+    | { question_id: string; correct: boolean }[]
+    | undefined) || null
+  const finished = Boolean(isStudent && existing && results)
+
+  const letters = (q: AssignmentQuestion): string[] => (q.options || []).map((o) => o.id)
+  const isMultiple = (q: AssignmentQuestion): boolean => q.question_type === 'multiple_select'
+
+  const isMarked = (q: AssignmentQuestion, letter: string): boolean => {
+    if (finished) {
+      const r = results!.find((res) => res.question_id === q.id)
+      if (!r) return false
+      // Show the student's own answer (green if right, red if wrong)
+      const answersMap = (existing!.content_data.mcq_answers ?? {}) as Record<string, string | string[]>
+      const mine = answersMap[q.id]
+      if (Array.isArray(mine)) return mine.includes(letter)
+      return mine === letter
+    }
+    if (!isStudent) {
+      // Instructor: highlight the correct key
+      return Array.isArray(q.correct_answer) && q.correct_answer.includes(letter)
+    }
+    const sel = answers[q.id]
+    if (Array.isArray(sel)) return sel.includes(letter)
+    return sel === letter
+  }
+
+  const bubbleClass = (q: AssignmentQuestion, letter: string): string => {
+    const marked = isMarked(q, letter)
+    if (finished) {
+      const r = results!.find((res) => res.question_id === q.id)
+      const correct = r?.correct && marked
+      const wrong = r && !r.correct && marked
+      if (correct) return 'bg-green-600 border-green-500 text-white'
+      if (wrong) return 'bg-red-600 border-red-500 text-white'
+      return 'border-navy-600 text-navy-500'
+    }
+    if (!isStudent) {
+      return marked ? 'bg-green-600 border-green-500 text-white' : 'border-navy-600 text-navy-500'
+    }
+    return marked ? 'bg-cyan-600 border-cyan-500 text-white' : 'border-navy-600 text-navy-400 hover:border-cyan-500'
+  }
+
+  const toggle = (q: AssignmentQuestion, letter: string) => {
+    if (isMultiple(q)) {
+      const cur = Array.isArray(answers[q.id]) ? (answers[q.id] as string[]) : []
+      setAnswers((prev) => ({
+        ...prev,
+        [q.id]: cur.includes(letter) ? cur.filter((x) => x !== letter) : [...cur, letter],
+      }))
+    } else {
+      setAnswers((prev) => ({ ...prev, [q.id]: letter }))
+    }
+  }
+
+  const handleSubmit = async () => {
+    const missing = questions.filter((q) => {
+      const a = answers[q.id]
+      if (isMultiple(q)) return !a || (a as string[]).length === 0
+      return !a
+    })
+    if (missing.length > 0) {
+      setError('Answer every question on the sheet before submitting.')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+    try {
+      await apiClient.post('/assignments/submissions/', {
+        assignment: assignment.id,
+        content_data: { mcq_answers: answers },
+      })
+      window.location.reload()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Submission failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-white font-semibold">Answer Sheet</h3>
+        {!isStudent && (
+          <span className="text-xs text-navy-400">Green = correct answer (key)</span>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        {questions.map((q, idx) => (
+          <div key={q.id} className="flex items-center gap-2 py-1 border-b border-navy-800 last:border-0">
+            <span className="w-8 shrink-0 text-sm text-navy-300 font-medium">{idx + 1}.</span>
+            <div className="flex flex-wrap gap-1.5">
+              {letters(q).map((letter) => (
+                <button
+                  key={letter}
+                  type="button"
+                  disabled={finished || !isStudent}
+                  onClick={() => toggle(q, letter)}
+                  className={`w-9 h-9 rounded-full border text-sm font-semibold flex items-center justify-center transition-colors ${
+                    bubbleClass(q, letter)
+                  } ${isStudent && !finished ? 'cursor-pointer' : 'cursor-default'}`}
+                  aria-label={`Question ${idx + 1} option ${letter.toUpperCase()}`}
+                >
+                  {letter.toUpperCase()}
+                </button>
+              ))}
+              {isMultiple(q) && <span className="text-[10px] text-navy-500 self-center">multi</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {isStudent && !finished && (
+        <div className="mt-3">
+          {error && <p className="text-red-400 text-sm mb-2">{error}</p>}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="btn-primary flex items-center gap-2"
+          >
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {submitting ? 'Submitting...' : 'Submit Exam'}
+          </button>
+        </div>
+      )}
+      {finished && (
+        <div className="mt-3 p-3 rounded-lg bg-green-900/20 border border-green-700/30">
+          <p className="text-sm text-green-400 font-medium flex items-center gap-2">
+            <CheckCircle size={16} />
+            Score: {existing!.score} ({String(existing!.content_data.mcq_score)}/{String(existing!.content_data.mcq_total)} points)
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ExamView({ assignment, isStudent, existing }: {
+  assignment: Assignment
+  isStudent: boolean
+  existing?: AssignmentSubmission | null
+}) {
+  const pages = assignment.exam_pages || []
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-4 items-start">
+      {/* Left sidebar: answer sheet */}
+      <aside className="lg:sticky lg:top-20">
+        <ExamAnswerSheet assignment={assignment} existing={existing} isStudent={isStudent} />
+      </aside>
+
+      {/* Main: the exam paper pages */}
+      <div className="card space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-white font-semibold">Exam Paper</h3>
+          <span className="text-xs text-navy-400">
+            {assignment.exam_pdf_name || 'PDF'} · {pages.length} page{pages.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        {pages.length === 0 ? (
+          <p className="text-navy-500 text-sm">No exam pages available.</p>
+        ) : (
+          <div className="space-y-4">
+            {pages.map((page, i) => (
+              <figure key={i} className="rounded-lg overflow-hidden border border-navy-700 bg-navy-900">
+                <img src={page} alt={`Exam page ${i + 1}`} className="w-full h-auto" />
+                <figcaption className="text-center text-xs text-navy-500 py-1">Page {i + 1}</figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
+        {(assignment.essay_question_titles?.length ?? 0) > 0 && (
+          <div className="pt-2 border-t border-navy-700">
+            <EssayTaskSection assignment={assignment} isStudent={isStudent} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function SubmitForm({ assignmentId, attemptNumber }: { assignmentId: string; attemptNumber: number }) {
   const [response, setResponse] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -577,6 +767,16 @@ export function AssignmentDetailPage() {
               <EssayTaskSection assignment={assignment} isStudent />
             </>
           )}
+          {assignment.task_type === 'exam' && (
+            <ExamView assignment={assignment} isStudent existing={mySubmission} />
+          )}
+        </div>
+      )}
+
+      {/* Instructor/Admin: exam paper + answer key, essay part links */}
+      {(isInstructor || isAdmin) && assignment.task_type === 'exam' && (
+        <div className="mt-6">
+          <ExamView assignment={assignment} isStudent={false} existing={null} />
         </div>
       )}
 
