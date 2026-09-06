@@ -34,7 +34,7 @@ html.light aside {
 }
 
 html.light aside nav a {
-  color: rgb(107 114 128) !important;
+  color: rgb(75 85 99) !important; /* gray-600 — 7.56:1 on white (WCAG AA) */
 }
 html.light aside nav a:hover {
   color: rgb(17 24 39) !important;
@@ -62,7 +62,7 @@ html.light header a:hover {
 }
 html.light header nav[aria-label="Breadcrumb"] span,
 html.light header nav[aria-label="Breadcrumb"] a {
-  color: rgb(156 163 175) !important;
+  color: rgb(75 85 99) !important; /* gray-600 — 7.56:1 on white (WCAG AA) */
 }
 
 /* ================================

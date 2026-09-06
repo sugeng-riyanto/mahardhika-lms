@@ -227,11 +227,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <span className="text-navy-600">/</span>
                     )}
                     {crumb.isLast ? (
-                      <span className="text-navy-300 light:text-gray-500">{crumb.label}</span>
+                      <span className="text-navy-300 light:text-gray-600">{crumb.label}</span>
                     ) : (
                       <Link
                         to={crumb.path}
-                        className="text-navy-400 light:text-gray-500 hover:text-white light:hover:text-gray-900"
+                        className="text-navy-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
                       >
                         {crumb.label}
                       </Link>
