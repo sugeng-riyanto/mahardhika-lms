@@ -238,3 +238,135 @@ class SubmissionTests(AssignmentAPITestBase):
             'assignment': str(self.assignment.id),
         }, format='json')
         self.assertEqual(res.status_code, 403)
+
+
+class AssignmentTaskTypeTests(AssignmentAPITestBase):
+    """Instructors can assign MCQ, essay, and combined tasks."""
+
+    def _create_mcq_assignment(self, task_type='mcq', status='published'):
+        payload = {
+            'course': str(self.course.id),
+            'title': 'Quiz 1',
+            'task_type': task_type,
+            'max_score': 100,
+            'status': status,
+            'questions': [
+                {
+                    'question_type': 'multiple_choice',
+                    'prompt': 'What is 2+2?',
+                    'options': [{'id': 'a', 'text': '3'}, {'id': 'b', 'text': '4'}, {'id': 'c', 'text': '5'}],
+                    'correct_answer': ['b'],
+                    'points': 5,
+                },
+                {
+                    'question_type': 'true_false',
+                    'prompt': 'The sky is blue.',
+                    'options': [{'id': 'a', 'text': 'True'}, {'id': 'b', 'text': 'False'}],
+                    'correct_answer': ['a'],
+                    'points': 5,
+                },
+            ],
+        }
+        self.auth(self.instructor)
+        return self.client.post('/api/v1/assignments/', payload, format='json')
+
+    def test_instructor_creates_mcq_with_questions(self):
+        res = self._create_mcq_assignment()
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertEqual(res.data['task_type'], 'mcq')
+        self.assertEqual(len(res.data['questions']), 2)
+        self.assertEqual(res.data['mcq_total_points'], 10)
+
+    def test_instructor_creates_combined_with_essay_link(self):
+        from essays.models import EssayQuestion
+        essay = EssayQuestion.objects.create(
+            title='Essay 1', marks=20, status='published', course=self.course,
+            created_by=self.instructor,
+        )
+        self.auth(self.instructor)
+        res = self.client.post('/api/v1/assignments/', {
+            'course': str(self.course.id),
+            'title': 'Combined Task',
+            'task_type': 'combined',
+            'max_score': 100,
+            'status': 'published',
+            'questions': [{
+                'question_type': 'multiple_choice',
+                'prompt': 'Q?',
+                'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                'correct_answer': ['a'],
+                'points': 4,
+            }],
+            'essay_questions': [str(essay.id)],
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertEqual(len(res.data['essay_questions']), 1)
+        self.assertEqual(res.data['essay_question_titles'][0]['title'], 'Essay 1')
+
+    def test_student_never_sees_correct_answers(self):
+        self._create_mcq_assignment()
+        self.auth(self.student)
+        res = self.client.get('/api/v1/assignments/')
+        item = next(a for a in (res.data.get('results', res.data)) if a.get('task_type') == 'mcq')
+        for q in item['questions']:
+            self.assertNotIn('correct_answer', q)
+
+    def test_mcq_submission_auto_graded(self):
+        self._create_mcq_assignment()
+        self.auth(self.student)
+        assignment = Assignment.objects.get(title='Quiz 1')
+        res = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(assignment.id),
+            'content_data': {'mcq_answers': {
+                str(assignment.questions.get(order=0).id): 'b',
+                str(assignment.questions.get(order=1).id): 'b',  # wrong
+            }},
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertEqual(res.data['status'], 'graded')
+        self.assertEqual(float(res.data['score']), 50.0)  # 5/10 pts
+        self.assertEqual(res.data['content_data']['mcq_score'], 5)
+        self.assertEqual(res.data['content_data']['mcq_total'], 10)
+
+    def test_mcq_submission_requires_answers(self):
+        self._create_mcq_assignment()
+        self.auth(self.student)
+        assignment = Assignment.objects.get(title='Quiz 1')
+        res = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(assignment.id),
+            'content_data': {},
+        }, format='json')
+        self.assertEqual(res.status_code, 400)
+
+    def test_combined_submission_stores_mcq_score_not_finalised(self):
+        from essays.models import EssayQuestion
+        EssayQuestion.objects.create(
+            title='Essay 1', marks=20, status='published', course=self.course,
+            created_by=self.instructor,
+        )
+        self.auth(self.instructor)
+        res = self.client.post('/api/v1/assignments/', {
+            'course': str(self.course.id),
+            'title': 'Combined 2',
+            'task_type': 'combined',
+            'max_score': 100,
+            'status': 'published',
+            'questions': [{
+                'question_type': 'multiple_choice',
+                'prompt': 'Q?',
+                'options': [{'id': 'a', 'text': 'X'}, {'id': 'b', 'text': 'Y'}],
+                'correct_answer': ['a'],
+                'points': 4,
+            }],
+        }, format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        assignment = Assignment.objects.get(title='Combined 2')
+        self.auth(self.student)
+        qid = str(assignment.questions.first().id)
+        sub = self.client.post('/api/v1/assignments/submissions/', {
+            'assignment': str(assignment.id),
+            'content_data': {'mcq_answers': {qid: 'a'}},
+        }, format='json')
+        self.assertEqual(sub.status_code, 201, sub.data)
+        self.assertEqual(sub.data['status'], 'submitted')  # essay part still manual
+        self.assertEqual(sub.data['content_data']['mcq_score'], 4)

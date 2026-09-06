@@ -355,6 +355,18 @@ export interface AttendanceSummary {
 }
 
 // Assignment types
+export interface AssignmentQuestion {
+  id: string;
+  assignment: string;
+  question_type: 'multiple_choice' | 'true_false' | 'multiple_select';
+  prompt: string;
+  options: { id: string; text: string }[];
+  correct_answer?: string[];
+  explanation?: string;
+  points: number;
+  order: number;
+}
+
 export interface Assignment {
   id: string;
   course: string;
@@ -364,6 +376,11 @@ export interface Assignment {
   title: string;
   description: string;
   instructions: string;
+  task_type: 'file' | 'mcq' | 'essay' | 'combined';
+  questions?: AssignmentQuestion[];
+  essay_questions?: string[];
+  essay_question_titles?: { id: string; title: string; marks: number }[];
+  mcq_total_points?: number;
   max_score: number;
   max_attempts: number;
   due_date: string | null;

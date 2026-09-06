@@ -9,6 +9,12 @@ class Assignment(TimestampedModel):
         ('published', 'Published'),
         ('archived', 'Archived'),
     ]
+    TASK_TYPE_CHOICES = [
+        ('file', 'File / Text Submission'),
+        ('mcq', 'Multiple Choice Quiz'),
+        ('essay', 'Essay Task'),
+        ('combined', 'Combined (MCQ + Essay)'),
+    ]
 
     course = models.ForeignKey(
         'courses.Course', on_delete=models.CASCADE, related_name='assignments',
@@ -30,6 +36,14 @@ class Assignment(TimestampedModel):
     allow_late = models.BooleanField(default=False)
     late_penalty_percent = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    task_type = models.CharField(
+        max_length=20, choices=TASK_TYPE_CHOICES, default='file',
+        help_text='What kind of task this is: file/text submission, MCQ quiz, essay task, or a combination.',
+    )
+    essay_questions = models.ManyToManyField(
+        'essays.EssayQuestion', blank=True, related_name='assignments',
+        help_text='Essay questions included in this task (for essay and combined tasks).',
+    )
     created_by = models.ForeignKey(
         'identity.User', on_delete=models.SET_NULL, null=True,
         related_name='assignments_created',
@@ -58,6 +72,43 @@ class Assignment(TimestampedModel):
     @property
     def graded_count(self):
         return self.submissions.filter(status='graded').count()
+
+    @property
+    def mcq_total_points(self):
+        return sum(q.points for q in self.questions.all())
+
+
+class AssignmentQuestion(TimestampedModel):
+    """A multiple-choice style question within an assignment (auto-scored)."""
+    QUESTION_TYPE_CHOICES = [
+        ('multiple_choice', 'Multiple Choice'),
+        ('true_false', 'True/False'),
+        ('multiple_select', 'Multiple Select'),
+    ]
+
+    assignment = models.ForeignKey(
+        Assignment, on_delete=models.CASCADE, related_name='questions',
+    )
+    question_type = models.CharField(max_length=30, choices=QUESTION_TYPE_CHOICES)
+    prompt = models.TextField(help_text='Question text or prompt')
+    options = models.JSONField(
+        default=list,
+        help_text='List of option objects: [{"id": "a", "text": "..."}]',
+    )
+    correct_answer = models.JSONField(
+        default=list,
+        help_text='Correct answer: ["a"] for MC/TF, ["a", "c"] for multiple select',
+    )
+    explanation = models.TextField(blank=True, default='', help_text='Explanation shown after submission')
+    points = models.PositiveIntegerField(default=1)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'assignment_questions'
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return self.prompt[:80]
 
 
 class AssignmentSubmission(TimestampedModel):

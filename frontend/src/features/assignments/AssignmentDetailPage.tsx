@@ -9,7 +9,7 @@ import { videoEmbedUrl } from '@/utils/videoEmbed'
 import { useAssignment, useAssignmentSubmissions } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { apiClient } from '@/api/client'
-import type { AssignmentSubmission } from '@/types'
+import type { Assignment, AssignmentQuestion, AssignmentSubmission } from '@/types'
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-gray-800 text-gray-400',
@@ -39,11 +39,28 @@ function SubmissionCard({ sub }: { sub: AssignmentSubmission }) {
 
       {sub.content_data && Object.keys(sub.content_data).length > 0 && (
         <div className="mt-2 p-3 bg-navy-800/50 rounded-lg">
-          <p className="text-navy-300 text-sm whitespace-pre-wrap">
-            {typeof sub.content_data.response === 'string'
-              ? sub.content_data.response
-              : JSON.stringify(sub.content_data, null, 2)}
-          </p>
+          {Array.isArray(sub.content_data.mcq_results) ? (
+            <div className="space-y-2">
+              <p className="text-sm text-navy-300">
+                MCQ score: {String(sub.content_data.mcq_score ?? '—')} / {String(sub.content_data.mcq_total ?? '—')}
+              </p>
+              {(sub.content_data.mcq_results as { prompt: string; correct: boolean; points: number }[]).map((r, idx) => (
+                <p key={idx} className="text-xs">
+                  <span className={r.correct ? 'text-green-400' : 'text-red-400'}>
+                    {r.correct ? '✓' : '✗'}
+                  </span>{' '}
+                  <span className="text-navy-300">{r.prompt}</span>
+                  <span className="text-navy-500 ml-1">({r.points} pt)</span>
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-navy-300 text-sm whitespace-pre-wrap">
+              {typeof sub.content_data.response === 'string'
+                ? sub.content_data.response
+                : JSON.stringify(sub.content_data, null, 2)}
+            </p>
+          )}
         </div>
       )}
 
@@ -60,6 +77,180 @@ function SubmissionCard({ sub }: { sub: AssignmentSubmission }) {
             </span>
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+function McqQuizForm({ assignment, existing }: { assignment: Assignment; existing?: AssignmentSubmission | null }) {
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const questions: AssignmentQuestion[] = assignment.questions || []
+  const results = (existing?.content_data?.mcq_results as
+    | { question_id: string; prompt: string; answer: unknown; correct: boolean; points: number; explanation?: string }[]
+    | undefined) || null
+
+  if (existing && results) {
+    const earned = (existing.content_data?.mcq_score as number) ?? 0
+    const total = (existing.content_data?.mcq_total as number) ?? 0
+    return (
+      <div className="card border-green-500/30">
+        <div className="flex items-center gap-3 text-green-400 mb-4">
+          <CheckCircle size={24} />
+          <div>
+            <p className="font-semibold">Quiz graded automatically</p>
+            <p className="text-sm text-navy-300">
+              Score: {existing.score !== null && existing.score !== undefined ? existing.score : '—'}
+              {' '}({earned}/{total} points)
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {questions.map((q: AssignmentQuestion, idx: number) => {
+            const r = results.find((res) => res.question_id === q.id)
+            return (
+              <div key={q.id} className={`p-3 rounded-lg border ${r?.correct ? 'border-green-700/40 bg-green-900/10' : 'border-red-700/40 bg-red-900/10'}`}>
+                <p className="text-white text-sm font-medium">
+                  {idx + 1}. {q.prompt}
+                  <span className="ml-2 text-xs text-navy-400">({q.points} pt{q.points !== 1 ? 's' : ''})</span>
+                </p>
+                <p className={`text-sm mt-1 ${r?.correct ? 'text-green-400' : 'text-red-400'}`}>
+                  {r?.correct ? '✓ Correct' : '✗ Incorrect'}
+                </p>
+                {r?.explanation && <p className="text-xs text-navy-300 mt-1">{r.explanation}</p>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const setAnswer = (qid: string, value: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [qid]: value }))
+  }
+
+  const handleSubmit = async () => {
+    const missing = questions.filter((q) => {
+      const a = answers[q.id]
+      if (q.question_type === 'multiple_select') return !a || (a as string[]).length === 0
+      return !a
+    })
+    if (missing.length > 0) {
+      setError('Answer every question before submitting.')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+    try {
+      await apiClient.post('/assignments/submissions/', {
+        assignment: assignment.id,
+        content_data: { mcq_answers: answers },
+      })
+      window.location.reload()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Submission failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="card">
+      <h3 className="text-white font-semibold mb-4">Answer the questions</h3>
+      <div className="space-y-5">
+        {questions.map((q: AssignmentQuestion, idx: number) => {
+          const isMultiple = q.question_type === 'multiple_select'
+          const selected = answers[q.id]
+          return (
+            <div key={q.id} className="p-4 rounded-lg border border-navy-700 bg-navy-800/40">
+              <p className="text-white text-sm font-medium mb-3">
+                {idx + 1}. {q.prompt}
+                <span className="ml-2 text-xs text-navy-400">({q.points} pt{q.points !== 1 ? 's' : ''})</span>
+              </p>
+              <div className="space-y-2">
+                {q.options.map((opt) => {
+                  const optSelected = isMultiple
+                    ? Array.isArray(selected) && selected.includes(opt.id)
+                    : selected === opt.id
+                  return (
+                    <label
+                      key={opt.id}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        optSelected ? 'border-cyan-400 bg-cyan-900/20' : 'border-navy-700 hover:border-navy-500'
+                      }`}
+                    >
+                      <input
+                        type={isMultiple ? 'checkbox' : 'radio'}
+                        name={`q-${q.id}`}
+                        className="accent-cyan-500"
+                        checked={optSelected}
+                        onChange={() => {
+                          if (isMultiple) {
+                            const cur = Array.isArray(selected) ? (selected as string[]) : []
+                            setAnswer(q.id, cur.includes(opt.id) ? cur.filter((x) => x !== opt.id) : [...cur, opt.id])
+                          } else {
+                            setAnswer(q.id, opt.id)
+                          }
+                        }}
+                      />
+                      <span className="text-sm text-navy-200">{opt.id.toUpperCase()}. {opt.text}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
+      <div className="flex justify-end mt-4">
+        <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex items-center gap-2">
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          {submitting ? 'Submitting...' : 'Submit Quiz'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function EssayTaskSection({ assignment, isStudent }: { assignment: Assignment; isStudent: boolean }) {
+  const essayLinks = assignment.essay_question_titles || []
+  if (essayLinks.length === 0) {
+    return (
+      <div className="card">
+        <p className="text-navy-400 text-sm">No essay questions attached to this task.</p>
+      </div>
+    )
+  }
+  return (
+    <div className="card">
+      <h3 className="text-white font-semibold mb-3">Essay Questions</h3>
+      <div className="space-y-2">
+        {essayLinks.map((e) => (
+          <div key={e.id} className="flex items-center justify-between p-3 rounded-lg border border-navy-700 bg-navy-800/40">
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-medium truncate">{e.title}</p>
+              <p className="text-xs text-navy-500">{e.marks} marks</p>
+            </div>
+            {isStudent ? (
+              <Link to={`/essays/${e.id}`} className="text-sm text-cyan-400 hover:text-cyan-300 shrink-0">
+                Answer →
+              </Link>
+            ) : (
+              <Link to="/essays" className="text-sm text-cyan-400 hover:text-cyan-300 shrink-0">
+                Grade →
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+      {isStudent && (
+        <p className="text-xs text-navy-500 mt-3">
+          Your essay answers are submitted and graded in the Essays workspace.
+        </p>
       )}
     </div>
   )
@@ -210,6 +401,9 @@ export function AssignmentDetailPage() {
   const isStudent = roles.includes('student')
   const isInstructor = roles.includes('instructor')
   const isAdmin = roles.includes('admin') || roles.includes('owner')
+  const mySubmission = isStudent
+    ? (submissions.find((s) => s.student_email && s.content_data) || null)
+    : null
 
   if (isLoading) {
     return (
@@ -306,9 +500,28 @@ export function AssignmentDetailPage() {
         )}
       </div>
 
-      {/* Student submission form */}
+      {/* Student task view */}
       {isStudent && assignment.status === 'published' && (
-        <SubmitForm assignmentId={assignment.id} attemptNumber={1} />
+        <div className="mt-6 space-y-4">
+          {assignment.task_type === 'file' && <SubmitForm assignmentId={assignment.id} attemptNumber={1} />}
+          {assignment.task_type === 'mcq' && (
+            <McqQuizForm assignment={assignment} existing={mySubmission} />
+          )}
+          {assignment.task_type === 'essay' && <EssayTaskSection assignment={assignment} isStudent />}
+          {assignment.task_type === 'combined' && (
+            <>
+              <McqQuizForm assignment={assignment} existing={mySubmission} />
+              <EssayTaskSection assignment={assignment} isStudent />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Instructor/Admin: essay part links */}
+      {(isInstructor || isAdmin) && (assignment.task_type === 'essay' || assignment.task_type === 'combined') && (
+        <div className="mt-6">
+          <EssayTaskSection assignment={assignment} isStudent={false} />
+        </div>
       )}
 
       {/* Instructor/Admin: view submissions */}

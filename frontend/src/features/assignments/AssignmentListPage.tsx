@@ -8,7 +8,15 @@ import { useAssignments } from '@/api/hooks'
 import { apiClient } from '@/api/client'
 import { useAuth } from '@/auth/AuthProvider'
 import { CrudModal, type CrudField } from '@/components/CrudModal'
+import { AssignmentTaskModal } from '@/features/assignments/AssignmentTaskModal'
 import type { Assignment } from '@/types'
+
+const TASK_TYPE_CONFIG: Record<string, { label: string; cls: string }> = {
+  file: { label: 'File / Text', cls: 'text-navy-400 bg-navy-800' },
+  mcq: { label: 'MCQ Quiz', cls: 'text-cyan-400 bg-cyan-900/30' },
+  essay: { label: 'Essay', cls: 'text-purple-400 bg-purple-900/30' },
+  combined: { label: 'MCQ + Essay', cls: 'text-teal-400 bg-teal-900/30' },
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'Draft', color: 'text-gray-400', bg: 'bg-gray-800' },
@@ -38,19 +46,6 @@ const ASSIGNMENT_CSV_COLUMNS: CSVColumn[] = [
   { key: 'status', label: 'Status' },
   { key: 'submission_count', label: 'Submissions' },
   { key: 'graded_count', label: 'Graded' },
-]
-
-const ASSIGNMENT_FIELDS: CrudField[] = [
-  { name: 'title', label: 'Title', type: 'text', required: true, placeholder: 'Assignment title' },
-  { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Assignment description...' },
-  { name: 'course', label: 'Course ID', type: 'text', required: true, placeholder: 'Course UUID' },
-  { name: 'max_score', label: 'Max Score', type: 'number', required: true, placeholder: '100' },
-  { name: 'due_date', label: 'Due Date', type: 'text', placeholder: 'YYYY-MM-DD' },
-  { name: 'video_url', label: 'Video Brief (YouTube / Google Drive)', type: 'text', placeholder: 'https://youtube.com/watch?v=... or https://drive.google.com/file/d/.../preview' },
-  { name: 'status', label: 'Status', type: 'select', options: [
-    { value: 'draft', label: 'Draft' },
-    { value: 'published', label: 'Published' },
-  ]},
 ]
 
 function parseCSV(text: string): Record<string, string>[] {
@@ -112,9 +107,14 @@ function AssignmentCard({
           </h3>
           <p className="text-navy-400 text-sm mt-1">{assignment.course_title}</p>
         </div>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${statusCfg.bg} ${statusCfg.color}`}>
-          {statusCfg.label}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 rounded text-xs font-medium ${(TASK_TYPE_CONFIG[assignment.task_type] || TASK_TYPE_CONFIG.file).cls}`}>
+            {(TASK_TYPE_CONFIG[assignment.task_type] || TASK_TYPE_CONFIG.file).label}
+          </span>
+          <span className={`px-2 py-1 rounded text-xs font-medium ${statusCfg.bg} ${statusCfg.color}`}>
+            {statusCfg.label}
+          </span>
+        </div>
       </div>
 
       {assignment.video_url && videoEmbedUrl(assignment.video_url) && (
@@ -160,7 +160,7 @@ function AssignmentCard({
         >
           View details →
         </Link>
-        {isStudent && (
+        {isStudent && assignment.task_type === 'file' && (
           <button
             onClick={() => onSubmit(assignment)}
             className="btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
@@ -203,17 +203,17 @@ export function AssignmentListPage() {
   const [importMsg, setImportMsg] = useState('')
   const importRef = useRef<HTMLInputElement>(null)
 
+  const [taskModal, setTaskModal] = useState<{
+    isOpen: boolean
+    mode: 'create' | 'edit'
+    assignment: Assignment | null
+  }>({ isOpen: false, mode: 'create', assignment: null })
+
   const { data: assignments = [], isLoading, refetch } = useAssignments(params)
 
-  const openCreate = () => setModal({
-    isOpen: true, mode: 'create',
-    data: { title: '', description: '', max_score: 100, due_date: '', video_url: '', status: 'draft' },
-  })
+  const openCreate = () => setTaskModal({ isOpen: true, mode: 'create', assignment: null })
 
-  const openEdit = (a: Assignment) => setModal({
-    isOpen: true, mode: 'edit',
-    data: { id: a.id, title: a.title, description: a.description || '', max_score: a.max_score, due_date: a.due_date || '', video_url: a.video_url || '', status: a.status },
-  })
+  const openEdit = (a: Assignment) => setTaskModal({ isOpen: true, mode: 'edit', assignment: a })
 
   const openSubmit = (a: Assignment) => setModal({
     isOpen: true, mode: 'submit',
@@ -226,17 +226,13 @@ export function AssignmentListPage() {
   })
 
   const handleSave = async (data: Record<string, unknown>) => {
-    if (modal.mode === 'create') {
-      await apiClient.post('/assignments/', data)
-    } else if (modal.mode === 'edit' && data.id) {
-      await apiClient.patch(`/assignments/${data.id}/`, data)
-    } else if (modal.mode === 'submit') {
+    if (modal.mode === 'submit') {
       await apiClient.post('/assignments/submissions/', {
         assignment: data.assignment_id,
         content_data: { text: data.content },
       })
+      await refetch()
     }
-    await refetch()
   }
 
   const handleDelete = async () => {
@@ -375,12 +371,21 @@ export function AssignmentListPage() {
         </div>
       )}
 
-      {/* CRUD Modal */}
+      {/* Task type create/edit modal */}
+      <AssignmentTaskModal
+        isOpen={taskModal.isOpen}
+        mode={taskModal.mode}
+        assignment={taskModal.assignment}
+        onSaved={refetch}
+        onClose={() => setTaskModal({ isOpen: false, mode: 'create', assignment: null })}
+      />
+
+      {/* Delete / submit modal */}
       <CrudModal
         isOpen={modal.isOpen}
         mode={modal.mode === 'submit' ? 'create' : modal.mode}
         title={modal.mode === 'submit' ? `Submit: ${modal.data.assignment_title || 'Assignment'}` : 'Assignment'}
-        fields={modal.mode === 'submit' ? SUBMIT_FIELDS : ASSIGNMENT_FIELDS}
+        fields={modal.mode === 'submit' ? SUBMIT_FIELDS : []}
         data={modal.data}
         onSave={handleSave}
         onDelete={handleDelete}
