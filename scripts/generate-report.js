@@ -90,7 +90,7 @@ function playwrightCollected() {
 const rbacEnforcement  = pytestCount('security/test_rbac_enforcement.py')  ?? 14;
 const rbacComprehensive = pytestCount('security/test_rbac_comprehensive.py') ?? 75;
 const consentTests      = pytestCount('consent')     ?? 23;
-const notificationsTests = pytestCount('notifications') ?? 51;
+const notificationsTests = pytestCount('notifications') ?? 70;
 const attendanceTests   = pytestCount('attendance')  ?? 16;
 const identitySelfService = pytestCount('identity/tests.py', ['-k', 'SelfService']) ?? 12;
 const frontendUnitTests = vitestCount() ?? 44;

@@ -331,7 +331,7 @@ async function loginAs(page, role) {
   if (!email) return; // public page, no login needed
 
   // Navigate to login page first to initialize the app
-  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle', timeout: 15000 });
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 15000 });
   
   // Set mock user in localStorage (this is how the app stores mock auth)
   await page.evaluate((em) => {
@@ -340,7 +340,7 @@ async function loginAs(page, role) {
   }, email);
   
   // Reload to pick up the new auth state
-  await page.reload({ waitUntil: 'networkidle', timeout: 15000 });
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
   await page.waitForTimeout(800);
 }
 
@@ -377,8 +377,9 @@ async function captureAll() {
         lastRole = roles;
       }
 
-      // Navigate to the target page
-      await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle', timeout: 15000 });
+      // Navigate to the target page. domcontentloaded (not networkidle) so pages
+      // with YouTube/Drive embed iframes don't stall the load event.
+      await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
       await page.waitForTimeout(800); // Let animations settle
 
       // Close any modals/notifications that might overlay

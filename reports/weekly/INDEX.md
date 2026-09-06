@@ -19,6 +19,7 @@ git push
 
 | Week | Date | Screenshots | Status |
 |------|------|-------------|--------|
+| Week 8 | [2026-09-06](./2026-09-06/REPORT.md) | 34/41 shots ✅ All 8 dashboards ✅ SMTP email delivery ✅ Health card ✅ Notifications 70/70 ✅ | [View Report](./2026-09-06/REPORT.md) |
 | Week 7 | [2026-09-05](./2026-09-05/REPORT.md) | 37/37 shots ✅ File uploads ✅ Video embeds ✅ Take Roll + CSV exports ✅ | [View Report](./2026-09-05/REPORT.md) |
 | Week 6 | [2026-09-04](./2026-09-04/REPORT.md) | Take Roll + CSV export flows ✅ | [View Report](./2026-09-04/REPORT.md) |
 | Week 5 | [2026-09-02](./2026-09-02/REPORT.md) | 352/352 tests ✅ RBAC 53/54 ✅ RLS 008 ✅ Dark/Light ✅ | [View Report](./2026-09-02/REPORT.md) |
@@ -26,6 +27,22 @@ git push
 | Week 3 | [2026-08-29](./2026-08-29/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-29/REPORT.md) |
 | Week 2 | [2026-08-26](./2026-08-26/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-26/REPORT.md) |
 | Week 1 | [2026-08-25](./2026-08-25/REPORT.md) | 28/28 ✅ | [View Report](./2026-08-25/REPORT.md) |
+
+---
+
+## Week 8 — September 6, 2026
+
+**Highlights:** SMTP email delivery wiring (SendGrid/Brevo, `send_test_email`), email delivery health card on the admin dashboard, editable email templates + branded digests for all notification types, Settings email-template preview.
+
+| Page | Screenshot |
+|------|-----------|
+| **Admin Dashboard** (with Email Delivery Health card) | ![Admin](2026-09-06/02-admin-dashboard.png) |
+| **Student Dashboard** | ![Student](2026-09-06/05-student-dashboard.png) |
+| **Assignments** (video briefs) | ![Assignments](2026-09-06/19-assignments.png) |
+| **Settings** (Email Templates section) | ![Settings](2026-09-06/25-settings.png) |
+| **Notifications** | ![Notifications](2026-09-06/21-notifications.png) |
+
+> Full report: [REPORT.md](./2026-09-06/REPORT.md) — 34/41 screenshots; Take Roll flow shots pending a weekday schedule (date-dependent).
 
 ---
 
