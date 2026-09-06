@@ -370,3 +370,28 @@ class AssignmentTaskTypeTests(AssignmentAPITestBase):
         self.assertEqual(sub.status_code, 201, sub.data)
         self.assertEqual(sub.data['status'], 'submitted')  # essay part still manual
         self.assertEqual(sub.data['content_data']['mcq_score'], 4)
+
+    def test_submission_list_filters_by_assignment(self):
+        other = Assignment.objects.create(
+            course=self.course, organisation=self.org,
+            title='Other Assignment', max_score=100, status='published',
+            created_by=self.instructor,
+        )
+        AssignmentSubmission.objects.create(
+            assignment=other, student=self.student,
+            attempt_number=1, content_data={'text': 'for other task'},
+            status='submitted',
+        )
+        AssignmentSubmission.objects.create(
+            assignment=self.assignment, student=self.student,
+            attempt_number=1, content_data={'text': 'for this task'},
+            status='submitted',
+        )
+        self.auth(self.student)
+        res = self.client.get(
+            f'/api/v1/assignments/submissions/?assignment={self.assignment.id}'
+        )
+        self.assertEqual(res.status_code, 200)
+        results = res.data.get('results', res.data)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['content_data']['text'], 'for this task')

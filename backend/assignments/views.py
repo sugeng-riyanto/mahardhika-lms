@@ -209,6 +209,7 @@ class AssignmentSubmissionViewSet(AuditLogMixin, viewsets.ModelViewSet):
     audit_resource_type = 'assignment_submission'
     serializer_class = AssignmentSubmissionSerializer
     permission_classes = [IsAuthenticated, IsAssignmentRole]
+    filterset_fields = ['assignment', 'student', 'status']
 
     def get_queryset(self):
         user = self.request.user
