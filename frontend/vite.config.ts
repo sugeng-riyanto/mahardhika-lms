@@ -11,6 +11,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Allow public ngrok tunnels so the owner can try the app live.
+    allowedHosts: ['.ngrok-free.app'],
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
