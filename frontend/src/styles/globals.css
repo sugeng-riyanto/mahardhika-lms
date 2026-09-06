@@ -92,3 +92,18 @@
     @apply text-lg text-navy-300 mb-4;
   }
 }
+
+/* Print-friendly answer sheet: hide the app, print only the sheet */
+@media print {
+  body * { visibility: hidden; }
+  #print-sheet, #print-sheet * { visibility: visible; }
+  #print-sheet {
+    position: static;
+    overflow: visible;
+    max-height: none;
+    box-shadow: none;
+    border-radius: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

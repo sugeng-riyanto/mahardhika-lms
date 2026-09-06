@@ -3,10 +3,11 @@ import { useParams, Link } from 'react-router-dom'
 import {
   ClipboardList, Clock, FileText, Users, CheckCircle, Send,
   ArrowLeft, Star, MessageSquare, AlertCircle, Upload, X, Loader2,
-  ZoomIn, ZoomOut,
+  ZoomIn, ZoomOut, Printer,
 } from 'lucide-react'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { videoEmbedUrl } from '@/utils/videoEmbed'
+import { PrintSheetModal } from './PrintSheetModal'
 import { useAssignment, useAssignmentSubmissions, useEssayResponses } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { apiClient } from '@/api/client'
@@ -21,8 +22,10 @@ const STATUS_BADGE: Record<string, string> = {
   returned: 'bg-yellow-900/30 text-yellow-400',
 }
 
-function SubmissionCard({ sub }: { sub: AssignmentSubmission }) {
+function SubmissionCard({ sub, assignment }: { sub: AssignmentSubmission; assignment: Assignment }) {
   const statusCls = STATUS_BADGE[sub.status] || 'bg-navy-800 text-navy-400'
+  const [printOpen, setPrintOpen] = useState(false)
+  const hasMcqResults = Array.isArray(sub.content_data?.mcq_results)
 
   return (
     <div className="card">
@@ -33,10 +36,31 @@ function SubmissionCard({ sub }: { sub: AssignmentSubmission }) {
             {sub.student_email} · {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'Not submitted'}
           </p>
         </div>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${statusCls}`}>
-          {sub.status}
+        <span className="flex items-center gap-2">
+          {hasMcqResults && (
+            <button
+              type="button"
+              onClick={() => setPrintOpen(true)}
+              className="p-1.5 rounded-md border border-navy-700 text-navy-300 hover:text-cyan-400 hover:border-cyan-500 transition-colors"
+              title="Print answer sheet"
+              aria-label="Print answer sheet"
+            >
+              <Printer size={14} />
+            </button>
+          )}
+          <span className={`px-2 py-1 rounded text-xs font-medium ${statusCls}`}>
+            {sub.status}
+          </span>
         </span>
       </div>
+      {hasMcqResults && (
+        <PrintSheetModal
+          assignment={assignment}
+          submission={sub}
+          isOpen={printOpen}
+          onClose={() => setPrintOpen(false)}
+        />
+      )}
 
       {sub.content_data && Object.keys(sub.content_data).length > 0 && (
         <div className="mt-2 p-3 bg-navy-800/50 rounded-lg">
@@ -329,6 +353,7 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [printOpen, setPrintOpen] = useState(false)
 
   const results = (existing?.content_data?.mcq_results as
     | { question_id: string; correct: boolean }[]
@@ -455,13 +480,28 @@ function ExamAnswerSheet({ assignment, existing, isStudent }: {
           </button>
         </div>
       )}
-      {finished && (
-        <div className="mt-3 p-3 rounded-lg bg-green-900/20 border border-green-700/30">
+      {finished && existing && (
+        <div className="mt-3 p-3 rounded-lg bg-green-900/20 border border-green-700/30 flex flex-wrap items-center gap-3">
           <p className="text-sm text-green-400 font-medium flex items-center gap-2">
             <CheckCircle size={16} />
-            Score: {existing!.score} ({String(existing!.content_data.mcq_score)}/{String(existing!.content_data.mcq_total)} points)
+            Score: {existing.score} ({String(existing.content_data.mcq_score)}/{String(existing.content_data.mcq_total)} points)
           </p>
+          <button
+            type="button"
+            onClick={() => setPrintOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-green-700/50 text-green-400 text-sm hover:bg-green-900/30 transition-colors"
+          >
+            <Printer size={14} /> Print answer sheet
+          </button>
         </div>
+      )}
+      {finished && existing && (
+        <PrintSheetModal
+          assignment={assignment}
+          submission={existing}
+          isOpen={printOpen}
+          onClose={() => setPrintOpen(false)}
+        />
       )}
     </div>
   )
@@ -981,7 +1021,7 @@ export function AssignmentDetailPage() {
           ) : (
             <div className="space-y-4">
               {submissions.map((sub: AssignmentSubmission) => (
-                <SubmissionCard key={sub.id} sub={sub} />
+                <SubmissionCard key={sub.id} sub={sub} assignment={assignment} />
               ))}
             </div>
           )}
