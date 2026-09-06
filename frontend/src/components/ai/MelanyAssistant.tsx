@@ -90,7 +90,7 @@ export function MelanyAssistant({ contextType = 'chat' }: MelanyAssistantProps) 
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[550px] bg-navy-900 border border-navy-700 rounded-xl shadow-2xl flex flex-col z-50 overflow-hidden">
+    <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-2rem)] h-[550px] max-h-[calc(100dvh-7rem)] bg-navy-900 border border-navy-700 rounded-xl shadow-2xl flex flex-col z-50 overflow-hidden">
       {/* Header */}
       <div className="p-4 bg-gradient-to-r from-cyan-600 to-teal-600 text-white flex justify-between items-center">
         <div className="flex items-center gap-2">
