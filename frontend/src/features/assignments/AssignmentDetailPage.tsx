@@ -6,10 +6,10 @@ import {
 } from 'lucide-react'
 import { VideoEmbed } from '@/components/VideoEmbed'
 import { videoEmbedUrl } from '@/utils/videoEmbed'
-import { useAssignment, useAssignmentSubmissions } from '@/api/hooks'
+import { useAssignment, useAssignmentSubmissions, useEssayResponses } from '@/api/hooks'
 import { useAuth } from '@/auth/AuthProvider'
 import { apiClient } from '@/api/client'
-import type { Assignment, AssignmentQuestion, AssignmentSubmission } from '@/types'
+import type { Assignment, AssignmentQuestion, AssignmentSubmission, EssayResponse } from '@/types'
 
 const STATUS_BADGE: Record<string, string> = {
   draft: 'bg-gray-800 text-gray-400',
@@ -216,6 +216,68 @@ function McqQuizForm({ assignment, existing }: { assignment: Assignment; existin
   )
 }
 
+const ESSAY_STATUS_BADGE: Record<string, string> = {
+  draft: 'bg-navy-800 text-navy-400',
+  submitted: 'bg-cyan-900/30 text-cyan-400',
+  resubmitted: 'bg-cyan-900/30 text-cyan-400',
+  locked: 'bg-yellow-900/30 text-yellow-400',
+  grading: 'bg-yellow-900/30 text-yellow-400',
+  returned: 'bg-yellow-900/30 text-yellow-400',
+  finalised: 'bg-green-900/30 text-green-400',
+}
+
+function essayStatusLabel(r: EssayResponse | null): string {
+  if (!r) return 'Not started'
+  if (r.status === 'finalised') return r.feedback_released ? 'Graded · Released' : 'Graded'
+  return r.status.charAt(0).toUpperCase() + r.status.slice(1)
+}
+
+function EssayStatus({ questionId, isStudent }: { questionId: string; isStudent: boolean }) {
+  const { data: responses = [] } = useEssayResponses(questionId)
+
+  if (isStudent) {
+    const mine: EssayResponse | null = responses[0] || null
+    const badgeCls = mine ? (ESSAY_STATUS_BADGE[mine.status] || 'bg-navy-800 text-navy-400') : 'bg-navy-800 text-navy-400'
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-medium shrink-0 ${badgeCls}`}>
+        {essayStatusLabel(mine)}
+        {mine?.status === 'finalised' && mine.total_score !== null && mine.total_score !== undefined && (
+          <span className="ml-1">· {mine.total_score}/{mine.question_marks}</span>
+        )}
+      </span>
+    )
+  }
+
+  // Instructor: aggregate progress across all student responses for this question
+  const submitted = responses.filter((r) => r.status !== 'draft').length
+  const graded = responses.filter((r) => r.status === 'finalised').length
+  const released = responses.filter((r) => r.feedback_released).length
+  const firstToGrade = responses.find((r) => r.status !== 'finalised' && r.status !== 'draft')
+  return (
+    <span className="text-xs text-navy-300 shrink-0 text-right">
+      {responses.length === 0 ? (
+        <span className="text-navy-500">No submissions</span>
+      ) : (
+        <>
+          <span className="text-cyan-400">{submitted} submitted</span>
+          <span className="mx-1 text-navy-500">·</span>
+          <span className="text-purple-400">{graded} graded</span>
+          <span className="mx-1 text-navy-500">·</span>
+          <span className="text-green-400">{released} released</span>
+        </>
+      )}
+      {firstToGrade && (
+        <Link
+          to={`/essays/responses/${firstToGrade.id}`}
+          className="block text-sm text-cyan-400 hover:text-cyan-300 mt-1"
+        >
+          Grade next →
+        </Link>
+      )}
+    </span>
+  )
+}
+
 function EssayTaskSection({ assignment, isStudent }: { assignment: Assignment; isStudent: boolean }) {
   const essayLinks = assignment.essay_question_titles || []
   if (essayLinks.length === 0) {
@@ -230,18 +292,19 @@ function EssayTaskSection({ assignment, isStudent }: { assignment: Assignment; i
       <h3 className="text-white font-semibold mb-3">Essay Questions</h3>
       <div className="space-y-2">
         {essayLinks.map((e) => (
-          <div key={e.id} className="flex items-center justify-between p-3 rounded-lg border border-navy-700 bg-navy-800/40">
+          <div key={e.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-navy-700 bg-navy-800/40">
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-medium truncate">{e.title}</p>
               <p className="text-xs text-navy-500">{e.marks} marks</p>
             </div>
+            <EssayStatus questionId={e.id} isStudent={isStudent} />
             {isStudent ? (
               <Link to={`/essays/${e.id}`} className="text-sm text-cyan-400 hover:text-cyan-300 shrink-0">
                 Answer →
               </Link>
             ) : (
               <Link to="/essays" className="text-sm text-cyan-400 hover:text-cyan-300 shrink-0">
-                Grade →
+                All essays →
               </Link>
             )}
           </div>
